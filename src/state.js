@@ -17,6 +17,8 @@ export const state = {
   lastLoaded: null,
   sources: [],
   sourceStatus: {},
+  providerResults: [],
+  systemStatus: "unknown",
   errors: [],
   mapMode: "2d",
   ciiVisible: false,

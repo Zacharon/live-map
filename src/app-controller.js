@@ -173,10 +173,13 @@ export function bootLiveMap() {
       state.lastLoaded = Number(result.generatedAt || Date.now());
       state.sources = result.sources || [];
       state.sourceStatus = result.sourceStatus || {};
+      state.providerResults = result.providerResults || [];
+      state.systemStatus = result.systemStatus || result.mode || "unknown";
       state.errors = result.errors || [];
-      const isPartial = result.mode === "partial-netlify-function" || state.errors.length > 0;
+      const isPartial = result.systemStatus === "partial-data" || result.mode === "partial-netlify-function" || state.errors.length > 0;
+      const noData = result.systemStatus === "no-current-provider-data" || !state.events.length;
       els.systemStatus.classList.toggle("warn", isPartial);
-      els.systemStatus.innerHTML = `<i></i> ${isPartial ? "Partial data" : result.mode === "fallback" ? "Live fallback" : "Live multi-source"}`;
+      els.systemStatus.innerHTML = `<i></i> ${noData ? "No provider data" : isPartial ? "Partial data" : result.mode === "fallback" ? "Live fallback" : "Operational"}`;
       renderSourceHealth(els.sourceHealth, result, state.errors);
       render();
     } catch (error) {
