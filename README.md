@@ -487,6 +487,8 @@ docs/EVENT_TAXONOMY.md
 docs/FEED_SORTING_AND_GROUPING.md
 docs/INCIDENT_CLUSTERING.md
 docs/SOURCE_HEALTH_UI.md
+docs/FRONTEND_STABILITY_AND_CSP.md
+docs/PROVIDER_SOURCE_PLAN.md
 
 The feed keeps these concepts separate:
 
@@ -498,3 +500,11 @@ Confidence - reliability of the event record.
 Impact - potential affected people, assets, markets or regions.
 Verification - source/record verification state.
 Incident - a conservative cluster linking related events while preserving each individual source event.
+
+Phase 1C stability hardening
+
+Leaflet and Leaflet MarkerCluster are self-hosted in `vendor/` and loaded from same-origin paths. The Content Security Policy no longer permits `unpkg.com` and does not include `unsafe-eval`.
+
+The map uses a stable three-column desktop layout with independently scrolling left and right panels. The map controller tracks tile health, resizes with `ResizeObserver`, and keeps the map visible when API, DNS, tile, or provider requests fail.
+
+NOAA/NWS active alerts are implemented server-side through the provider orchestration. Weather alerts are U.S.-coverage only, use a configured User-Agent placeholder, normalize polygons when present, and expose provider-health diagnostics.

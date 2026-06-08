@@ -1,5 +1,6 @@
 import { EVENT_PROVIDERS } from "../../src/data/providers/registry.js";
 import { orchestrateProviders } from "../../src/data/providers/orchestrator.js";
+import { DOMAIN_SOURCE_STATUS, PROVIDER_SOURCE_REGISTRY } from "../../src/data/providers/source-registry.js";
 
 const headers = {
   "content-type": "application/json; charset=utf-8",
@@ -7,17 +8,44 @@ const headers = {
   "access-control-allow-origin": "*",
 };
 
+const providerSourceRegistry = Object.fromEntries(
+  PROVIDER_SOURCE_REGISTRY.map((provider) => [
+    provider.id,
+    {
+      name: provider.name,
+      url: provider.homepageUrl || provider.sourceUrl,
+      type: provider.integrationType || provider.status,
+      attribution: provider.attribution,
+      refreshIntervalMs: provider.refreshIntervalMs,
+      freshnessMs: provider.freshnessMs,
+      categories: provider.categories,
+      domains: provider.domains,
+      status: provider.status,
+      implemented: provider.implemented,
+      credentialRequired: provider.credentialRequired,
+      documentationUrl: provider.documentationUrl,
+      limitations: provider.limitations,
+    },
+  ])
+);
+
 const sourceRegistry = Object.fromEntries(
   EVENT_PROVIDERS.map((provider) => [
     provider.id,
     {
       name: provider.name,
-      url: provider.homepageUrl,
+      url: provider.homepageUrl || provider.sourceUrl,
       type: provider.integrationType,
       attribution: provider.attribution,
       refreshIntervalMs: provider.refreshIntervalMs,
       freshnessMs: provider.freshnessMs,
       categories: provider.categories,
+      domains: provider.domains,
+      status: provider.status,
+      implemented: provider.implemented,
+      credentialRequired: provider.credentialRequired,
+      documentationUrl: provider.documentationUrl,
+      limitations: provider.limitations,
     },
   ])
 );
@@ -43,6 +71,8 @@ export default async (request) => {
         sources: EVENT_PROVIDERS.filter((provider) => result.sourceStatus[provider.id]?.ok).map((provider) => provider.name),
         sourceStatus: result.sourceStatus,
         sourceRegistry,
+        providerSourceRegistry,
+        domainSourceStatus: Object.fromEntries(DOMAIN_SOURCE_STATUS.map(([domainId, status, message]) => [domainId, { status, message }])),
         providerResults: result.providerResults,
         systemStatus: result.systemStatus,
         mode: result.mode,
@@ -57,6 +87,7 @@ export default async (request) => {
         detail: "The event feed orchestration failed before provider diagnostics could be produced.",
         generatedAt: Date.now(),
         sourceRegistry,
+        providerSourceRegistry,
         sourceStatus: {},
         providerResults: [],
         mode: "error",

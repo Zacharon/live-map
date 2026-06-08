@@ -1,12 +1,15 @@
 import { mergeDuplicateEvents } from "../../events/event-deduplication.js";
 import { toLegacyEvent } from "../../events/normalized-event.js";
 import { EVENT_PROVIDERS } from "./registry.js";
+import { createProviderCache } from "./cache.js";
 import { fetchUsgsEvents } from "./usgs.js";
 import { fetchEonetEvents } from "./eonet.js";
+import { fetchNwsAlerts } from "./nws.js";
 
 const ADAPTERS = {
   usgs: fetchUsgsEvents,
   eonet: fetchEonetEvents,
+  "nws-alerts": fetchNwsAlerts,
 };
 
 const lastSuccess = new Map();
@@ -27,7 +30,8 @@ export async function fetchJsonWithTimeout(url, sourceName, options = {}) {
         signal: controller.signal,
         headers: {
           accept: "application/json",
-          "user-agent": "LiveWorldMap/1.0 (+https://liveworldmap.netlify.app/)",
+          "user-agent": options.userAgent || "LiveWorldMap/1.0 (+https://liveworldmap.netlify.app/)",
+          ...(options.headers || {}),
         },
       });
       if (!response.ok) throw new Error(`${sourceName} returned ${response.status}`);
@@ -84,10 +88,23 @@ export async function runProvider(provider, context) {
     const result = await adapter({
       ...context,
       provider,
-      fetchJson: (url, sourceName) => fetchJsonWithTimeout(url, sourceName, { timeoutMs: provider.timeoutMs }),
+      fetchJson: (url, sourceName) => fetchJsonWithTimeout(url, sourceName, { timeoutMs: provider.timeoutMs, userAgent: provider.userAgent }),
     });
     const events = result.events || [];
     lastSuccess.set(provider.id, { events, fetchedAt, providerResult: result });
+    if (context.providerCache) {
+      try {
+        const expiresAt = new Date(Date.now() + Math.max(provider.freshnessMs || 900000, provider.refreshIntervalMs || 120000)).toISOString();
+        await context.providerCache.set(provider.id, events, {
+          providerResponseAt: fetchedAt,
+          lastSuccessfulFetchAt: fetchedAt,
+          sourceFreshness: provider.freshnessMs || null,
+          expiresAt,
+        });
+      } catch {
+        // Cache writes are best-effort; source health should reflect provider state, not storage availability.
+      }
+    }
     return {
       providerId: provider.id,
       status: result.rejected?.length ? "degraded" : "healthy",
@@ -101,7 +118,8 @@ export async function runProvider(provider, context) {
       stale: false,
     };
   } catch (error) {
-    const cached = lastSuccess.get(provider.id);
+    const durableCached = context.providerCache ? await context.providerCache.get(provider.id) : null;
+    const cached = lastSuccess.get(provider.id) || (durableCached ? { events: durableCached.payload, fetchedAt: durableCached.metadata?.lastSuccessfulFetchAt } : null);
     return {
       providerId: provider.id,
       status: cached ? "degraded" : "unavailable",
@@ -113,7 +131,7 @@ export async function runProvider(provider, context) {
       rejectedCount: 0,
       cached: Boolean(cached),
       stale: Boolean(cached),
-      errorCode: error.name === "AbortError" ? "timeout" : "provider_error",
+      errorCode: error.name === "AbortError" ? "timeout" : String(error.message || "").includes("429") ? "rate_limited" : "provider_error",
       errorMessage: error.message || "Provider unavailable",
     };
   }
@@ -122,8 +140,9 @@ export async function runProvider(provider, context) {
 export async function orchestrateProviders(options = {}) {
   const now = options.now || Date.now();
   const hours = options.hours || 168;
+  const providerCache = options.providerCache || (await createProviderCache());
   const enabledProviders = EVENT_PROVIDERS.filter((provider) => provider.enabled !== false);
-  const settled = await Promise.allSettled(enabledProviders.map((provider) => runProvider(provider, { now, hours })));
+  const settled = await Promise.allSettled(enabledProviders.map((provider) => runProvider(provider, { now, hours, providerCache })));
   const providerResults = settled.map((item, index) =>
     item.status === "fulfilled"
       ? item.value

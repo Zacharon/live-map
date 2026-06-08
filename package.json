@@ -13,6 +13,7 @@
     "security:scan": "node scripts/live-map-validator.mjs --security-only",
     "smoke:production": "node scripts/production-smoke-test.mjs",
     "test:platform": "node tests/run-tests.mjs",
+    "test:e2e": "node scripts/e2e-smoke.mjs",
     "test": "npm run test:platform && npm run validate"
   }
 }

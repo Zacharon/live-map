@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { LAYER_CATALOG } from "../src/data/layers.js";
 import { DASHBOARDS } from "../src/data/dashboards.js";
 import { EXCHANGES } from "../src/data/exchanges.js";
@@ -11,6 +12,9 @@ import { arePotentialDuplicates, mergeDuplicateEvents } from "../src/events/even
 import { normalizeUsgsFeature } from "../src/data/providers/usgs.js";
 import { normalizeEonetEvent } from "../src/data/providers/eonet.js";
 import { orchestrateProviders } from "../src/data/providers/orchestrator.js";
+import { normalizeNwsAlert, nwsSeverityScore, representativeNwsPoint } from "../src/data/providers/nws.js";
+import { createMemoryProviderCache } from "../src/data/providers/cache.js";
+import { PROVIDER_SOURCE_REGISTRY, providersForDomain, DOMAIN_SOURCE_STATUS } from "../src/data/providers/source-registry.js";
 import { classifyEvent, domainOptions, TAXONOMY_REGISTRY } from "../src/events/taxonomy.js";
 import { sortEvents, groupEvents } from "../src/events/feed-organization.js";
 import { shouldCluster, buildIncidents } from "../src/events/incident-clustering.js";
@@ -249,6 +253,105 @@ test("Saved view serialization captures shareable feed state", () => {
   assert.equal(view.name, "Japan hazards");
   assert.deepEqual(view.domains, ["natural-disaster"]);
   assert.equal(view.query, "japan");
+});
+
+test("CSP is explicit and production assets are same-origin", () => {
+  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8");
+  const csp = netlifyConfig.match(/Content-Security-Policy = "([^"]+)"/)?.[1] || "";
+  const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(csp, /script-src 'self'/);
+  assert.doesNotMatch(csp, /unsafe-eval|\*/);
+  assert.doesNotMatch(csp, /unpkg\.com/);
+  assert.doesNotMatch(html, /unpkg\.com/);
+  assert.match(html, /vendor\/leaflet\/leaflet\.js/);
+  assert.match(html, /vendor\/leaflet-markercluster\/leaflet\.markercluster\.js/);
+});
+
+test("Repository browser code does not use eval-like patterns", () => {
+  const files = ["app.js", "src/app-controller.js", "src/map/map-controller.js", "src/events/event-normalizer.js"];
+  const combined = files.map((file) => fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8")).join("\n");
+  assert.doesNotMatch(combined, /eval\s*\(|new Function\s*\(|setTimeout\s*\(\s*["']|setInterval\s*\(\s*["']/);
+});
+
+test("Layout CSS declares stable map and independently scrolling panels", () => {
+  const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  assert.match(css, /\.app-shell\{position:fixed;inset:0;height:100dvh/);
+  assert.match(css, /grid-template-areas:"top top top" "side map events"/);
+  assert.match(css, /\.left-panel\{overflow-y:auto/);
+  assert.match(css, /\.right-panel\{overflow:hidden/);
+  assert.match(css, /\.map-stage #map,.globe-stage\{grid-area:1\/1;min-width:0;min-height:360px/);
+  assert.match(css, /\.globe-stage\[hidden\]\{display:none!important\}/);
+});
+
+test("NWS severity and polygon normalization map to weather taxonomy", () => {
+  const feature = {
+    id: "https://api.weather.gov/alerts/urn:oid:test",
+    geometry: { type: "Polygon", coordinates: [[[-90, 40], [-89, 40], [-89, 41], [-90, 41], [-90, 40]]] },
+    properties: {
+      id: "urn:oid:test",
+      event: "Severe Thunderstorm Warning",
+      headline: "Severe Thunderstorm Warning issued",
+      description: "Strong storms are occurring.",
+      instruction: "Move indoors.",
+      severity: "Severe",
+      urgency: "Immediate",
+      certainty: "Observed",
+      areaDesc: "Test County",
+      sent: "2026-06-08T00:00:00Z",
+      effective: "2026-06-08T00:00:00Z",
+      onset: "2026-06-08T00:10:00Z",
+      expires: "2026-06-08T02:00:00Z",
+      web: "https://api.weather.gov/alerts/urn:oid:test",
+      senderName: "NWS Test Office",
+    },
+  };
+  assert.ok(nwsSeverityScore(feature.properties) > 80);
+  const point = representativeNwsPoint(feature.geometry);
+  assert.ok(point.latitude >= 40 && point.latitude <= 41);
+  const result = normalizeNwsAlert(feature, new Date("2026-06-08T00:30:00Z"));
+  assert.ok(result.event);
+  assert.equal(result.event.provider, "nws-alerts");
+  assert.equal(result.event.domain, "weather");
+  assert.equal(result.event.category, "storm");
+  assert.equal(result.event.type, "severe-thunderstorm");
+  assert.equal(result.event.geometry.type, "Polygon");
+});
+
+test("NWS alerts without geometry use labeled coverage fallback", () => {
+  const result = normalizeNwsAlert({
+    properties: {
+      id: "no-geometry",
+      event: "Heat Advisory",
+      headline: "Heat Advisory",
+      severity: "Moderate",
+      urgency: "Expected",
+      certainty: "Likely",
+      sent: "2026-06-08T00:00:00Z",
+      web: "https://api.weather.gov/alerts/no-geometry",
+    },
+  }, new Date("2026-06-08T00:30:00Z"));
+  assert.ok(result.event);
+  assert.equal(result.event.domain, "weather");
+  assert.match(result.event.metadata.coordinateMethod, /fallback/);
+});
+
+test("Provider cache stores normalized payloads without raw secrets", async () => {
+  const cache = createMemoryProviderCache();
+  await cache.set("nws-alerts", [{ id: "safe-event" }], { lastSuccessfulFetchAt: "2026-06-08T00:00:00Z" });
+  const record = await cache.get("nws-alerts");
+  assert.equal(record.payload[0].id, "safe-event");
+  assert.equal(record.cacheVersion, 1);
+  assert.doesNotMatch(JSON.stringify(record), /api[_-]?key|token|secret/i);
+});
+
+test("Source registry covers every top-level domain with non-live planned states", () => {
+  const domains = DOMAIN_SOURCE_STATUS.map(([domain]) => domain);
+  for (const domain of domains) {
+    assert.ok(providersForDomain(domain).length || domain === "other", `${domain} should have provider plan`);
+  }
+  assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "nws-alerts" && provider.implemented));
+  assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "gdelt" && provider.status === "planned-discovery"));
+  assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "acled" && provider.credentialRequired));
 });
 
 console.log("All tests passed.");

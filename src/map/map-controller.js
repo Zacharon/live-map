@@ -1,4 +1,42 @@
-export function createMapController() {
+export function createMapController(options = {}) {
+  const mapElement = document.getElementById("map");
+  const health = {
+    mapInitialized: false,
+    containerWidth: 0,
+    containerHeight: 0,
+    selectedBasemap: "satellite",
+    tileStatus: "loading",
+    requestedTiles: 0,
+    loadedTiles: 0,
+    failedTiles: 0,
+    lastSuccessfulTileAt: null,
+    lastTileErrorAt: null,
+    lastResizeAt: null,
+    safeMessage: "Map is initializing.",
+  };
+  const notifyHealth = () => options.onHealthChange?.({ ...health });
+  const updateSizeHealth = () => {
+    const rect = mapElement.getBoundingClientRect();
+    health.containerWidth = Math.round(rect.width);
+    health.containerHeight = Math.round(rect.height);
+    health.lastResizeAt = new Date().toISOString();
+  };
+  let invalidateTimer = null;
+  const invalidateMapSize = () => {
+    if (invalidateTimer) window.clearTimeout(invalidateTimer);
+    invalidateTimer = window.setTimeout(() => {
+      updateSizeHealth();
+      if (health.containerWidth > 0 && health.containerHeight > 0) {
+        map.invalidateSize({ pan: false });
+        health.mapInitialized = true;
+        health.safeMessage = health.tileStatus === "unavailable" ? health.safeMessage : "Map layout is stable.";
+      } else {
+        health.safeMessage = "Map container is waiting for a visible layout.";
+      }
+      notifyHealth();
+    }, 120);
+  };
+
   const map = L.map("map", { zoomControl: false, minZoom: 2, worldCopyJump: true, preferCanvas: true }).setView([22, 10], 2.35);
   L.control.zoom({ position: "bottomright" }).addTo(map);
 
@@ -15,6 +53,59 @@ export function createMapController() {
     dark: L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19, attribution: "(c) OpenStreetMap (c) CARTO" }),
     street: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "(c) OpenStreetMap contributors" }),
   };
+  let activeBase = "satellite";
+
+  function resetTileHealth(name) {
+    health.selectedBasemap = name;
+    health.tileStatus = "loading";
+    health.requestedTiles = 0;
+    health.loadedTiles = 0;
+    health.failedTiles = 0;
+    health.lastSuccessfulTileAt = null;
+    health.lastTileErrorAt = null;
+    health.safeMessage = "Loading map tiles.";
+    notifyHealth();
+  }
+
+  function updateTileStatus() {
+    if (health.loadedTiles > 0) {
+      health.tileStatus = health.failedTiles > Math.max(5, health.loadedTiles) ? "degraded" : "operational";
+      health.safeMessage = health.tileStatus === "degraded" ? "Some map tiles failed, but the basemap is usable." : "Map tiles are loading normally.";
+    } else if (health.failedTiles >= 3) {
+      health.tileStatus = "unavailable";
+      health.safeMessage = "This basemap is not loading. Markers and event data are still available.";
+    } else {
+      health.tileStatus = "loading";
+      health.safeMessage = "Loading map tiles.";
+    }
+    notifyHealth();
+  }
+
+  Object.entries(basemaps).forEach(([name, layer]) => {
+    layer.on("loading", () => {
+      if (name !== activeBase && !(activeBase === "satellite" && name === "labels")) return;
+      health.tileStatus = "loading";
+      notifyHealth();
+    });
+    layer.on("tileloadstart", () => {
+      if (name !== activeBase && !(activeBase === "satellite" && name === "labels")) return;
+      health.requestedTiles += 1;
+      updateTileStatus();
+    });
+    layer.on("tileload", () => {
+      if (name !== activeBase && !(activeBase === "satellite" && name === "labels")) return;
+      health.loadedTiles += 1;
+      health.lastSuccessfulTileAt = new Date().toISOString();
+      updateTileStatus();
+    });
+    layer.on("tileerror", () => {
+      if (name !== activeBase && !(activeBase === "satellite" && name === "labels")) return;
+      health.failedTiles += 1;
+      health.lastTileErrorAt = new Date().toISOString();
+      updateTileStatus();
+    });
+    layer.on("load", updateTileStatus);
+  });
 
   basemaps.satellite.addTo(map);
   basemaps.labels.addTo(map);
@@ -23,11 +114,11 @@ export function createMapController() {
     ? L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 44, spiderfyOnMaxZoom: true, disableClusteringAtZoom: 7 }).addTo(map)
     : L.layerGroup().addTo(map);
   const ciiLayer = L.layerGroup().addTo(map);
-  let activeBase = "satellite";
 
   function switchBase(name) {
     Object.values(basemaps).forEach((layer) => map.hasLayer(layer) && map.removeLayer(layer));
     activeBase = name;
+    resetTileHealth(name);
     if (name === "satellite") {
       basemaps.satellite.addTo(map);
       basemaps.labels.addTo(map);
@@ -35,6 +126,7 @@ export function createMapController() {
       basemaps[name].addTo(map);
     }
     markerLayer.bringToFront();
+    invalidateMapSize();
   }
 
   function fitEvents(events) {
@@ -57,6 +149,13 @@ export function createMapController() {
     });
   }
 
+  const resizeObserver = "ResizeObserver" in window ? new ResizeObserver(invalidateMapSize) : null;
+  resizeObserver?.observe(mapElement);
+  window.addEventListener("resize", invalidateMapSize, { passive: true });
+  window.addEventListener("orientationchange", invalidateMapSize, { passive: true });
+  window.requestAnimationFrame(invalidateMapSize);
+  resetTileHealth("satellite");
+
   return {
     map,
     markerLayer,
@@ -64,6 +163,8 @@ export function createMapController() {
     fitWorld: () => map.setView([22, 10], 2.35),
     fitEvents,
     renderCountryRisk,
+    invalidateMapSize,
+    health: () => ({ ...health }),
     activeBase: () => activeBase,
   };
 }

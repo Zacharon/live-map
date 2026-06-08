@@ -146,5 +146,5 @@ export function classifyEvent(input = {}) {
 }
 
 export function domainOptions() {
-  return TAXONOMY.filter((entry) => entry.parentId === "all" && entry.id !== "other");
+  return TAXONOMY.filter((entry) => entry.parentId === "all");
 }
