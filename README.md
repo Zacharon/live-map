@@ -445,3 +445,34 @@ True WebGL 3D globe
 See:
 
 Roadmap
+
+Phase 1B reliable event system
+
+Phase 1B adds a normalized event model, provider registry, provider adapters, partial-failure orchestration, conservative deduplication, provider diagnostics, and broader tests for the current USGS and NASA EONET feeds.
+
+Read:
+
+docs/phase-1b-event-system.md
+
+The event API now returns:
+
+events - browser-compatible normalized events
+canonicalEvents - provider-neutral event records
+providerResults - provider timing, accepted/rejected counts, stale/cache flags, and safe errors
+sourceStatus - user-facing source-health summary
+systemStatus - operational, partial-data, major-provider-outage, or no-current-provider-data
+
+Local verification:
+
+npm run check:syntax
+npm run test:platform
+npm run validate
+
+There is no production build command for the current static Netlify setup. Netlify publishes the repository root with `netlify/functions` as the Functions directory.
+
+Deployment warning:
+
+Do not run Netlify deploy commands while developing.
+Do not call Netlify build hooks or deployment APIs.
+Work on feature branches and merge only after review.
+Use Netlify builds only for the final approved release.

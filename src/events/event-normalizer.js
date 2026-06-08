@@ -12,14 +12,29 @@ export function safeSeverity(severity) {
   return SEVERITIES[severity] ? severity : "low";
 }
 
+function timestampMs(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined || value === "") continue;
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) return numeric;
+    const parsed = new Date(value).getTime();
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return Date.now();
+}
+
 export function normalizeEvent(event) {
   const sourceName = event.sourceName || event.source || event.providerName || "Unknown source";
+  const severityKey = event.uiSeverity || event.severityLabel || event.severity;
+  const occurredAt = timestampMs(event.occurredAt, event.startedAt, event.sourcePublishedAt);
+  const updatedAt = timestampMs(event.updatedAt, event.updatedAtIso, event.startedAt, occurredAt);
   return {
     ...event,
     category: safeCategory(event.category),
-    severity: safeSeverity(event.severity),
-    occurredAt: Number(event.occurredAt || Date.now()),
-    updatedAt: Number(event.updatedAt || event.occurredAt || Date.now()),
+    severity: safeSeverity(severityKey === "moderate" ? "medium" : severityKey),
+    severityScore: Number(event.severityScore ?? (typeof event.severity === "number" ? event.severity : 0)),
+    occurredAt,
+    updatedAt,
     lat: Number(event.lat ?? event.latitude),
     lon: Number(event.lon ?? event.longitude),
     confidence: Number(event.confidence || 80),
@@ -29,6 +44,8 @@ export function normalizeEvent(event) {
     verificationStatus: event.verificationStatus || "Single source",
     coordinateMethod: event.coordinateMethod || "provider coordinates",
     details: event.details || {},
+    place: event.place || event.locationName || event.countryName || "Unknown location",
+    country: event.country || event.countryName || "Multiple/unknown",
   };
 }
 

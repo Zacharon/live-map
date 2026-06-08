@@ -4,6 +4,9 @@ These instructions apply to the whole repository.
 
 ## Deployment and API Compatibility
 
+- Never run Netlify deploy commands, build hooks, deployment APIs, manual deploy triggers, or production-publish actions unless the user explicitly asks for deployment.
+- Never merge pull requests automatically.
+- Do not push directly to `main`, `master`, or another production branch.
 - Preserve Netlify static hosting compatibility: publish directory `.` and functions directory `netlify/functions`.
 - Preserve `/api/events` and the direct `/.netlify/functions/events` endpoint. Do not rename, remove, or break either route.
 - Keep browser code static-host friendly. Do not require a build step unless `README.md`, `netlify.toml`, and GitHub Actions are updated together.
@@ -14,6 +17,10 @@ These instructions apply to the whole repository.
 - Keep provider credentials in Netlify environment variables only.
 - Do not place real API keys in `.env.example`, docs, tests, fixtures, screenshots, or source files.
 - Never label fixtures, placeholder data, unavailable providers, or planned integrations as live.
+- Do not fabricate missing event data.
+- Do not add paid services without explicit approval.
+- Keep public-information and risk claims explainable.
+- Treat this application as informational, not emergency dispatch or operational guidance.
 
 ## Source Quality
 
