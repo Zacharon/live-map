@@ -11,6 +11,12 @@ import { arePotentialDuplicates, mergeDuplicateEvents } from "../src/events/even
 import { normalizeUsgsFeature } from "../src/data/providers/usgs.js";
 import { normalizeEonetEvent } from "../src/data/providers/eonet.js";
 import { orchestrateProviders } from "../src/data/providers/orchestrator.js";
+import { classifyEvent, domainOptions, TAXONOMY_REGISTRY } from "../src/events/taxonomy.js";
+import { sortEvents, groupEvents } from "../src/events/feed-organization.js";
+import { shouldCluster, buildIncidents } from "../src/events/incident-clustering.js";
+import { computeQualityDimensions, normalizeVerificationStatus } from "../src/events/event-quality.js";
+import { providerState } from "../src/ui/provider-health-panel.js";
+import { serializeView } from "../src/ui/saved-views.js";
 
 function test(name, fn) {
   try {
@@ -180,6 +186,69 @@ test("Provider orchestration reports partial failure without dropping successful
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("Taxonomy maps provider categories and preserves unknowns safely", () => {
+  assert.ok(TAXONOMY_REGISTRY.length > 40);
+  assert.equal(classifyEvent({ category: "earthquake" }).domain, "natural-disaster");
+  assert.equal(classifyEvent({ category: "storm" }).domain, "weather");
+  assert.equal(classifyEvent({ category: "very-strange-provider-value" }).domain, "other");
+  assert.ok(domainOptions().some((domain) => domain.id === "technology-cyber"));
+});
+
+test("Sort modes preserve time-field meaning and stable tie-breaking", () => {
+  const events = [
+    { id: "b", occurredAt: 1000, firstReportedAt: 5000, updatedAt: 2000, severityScore: 20, confidence: 50, country: "Zulu" },
+    { id: "a", occurredAt: 3000, firstReportedAt: 1000, updatedAt: 4000, severityScore: 90, confidence: 80, country: "Alpha" },
+  ];
+  assert.equal(sortEvents(events, "newest-occurred")[0].id, "a");
+  assert.equal(sortEvents(events, "newest-reported")[0].id, "b");
+  assert.equal(sortEvents(events, "recently-updated")[0].id, "a");
+  assert.equal(sortEvents(events, "country")[0].id, "a");
+});
+
+test("Grouping builds collapsible feed groups with stats", () => {
+  const groups = groupEvents([
+    { id: "1", domain: "natural-disaster", domainLabel: "Natural Disasters", severity: "high", updatedAt: Date.now(), provider: "usgs" },
+    { id: "2", domain: "weather", domainLabel: "Weather", severity: "low", updatedAt: Date.now(), provider: "eonet" },
+  ], "domain", { eonet: { ok: false } });
+  assert.equal(groups.length, 2);
+  assert.equal(groups.find((group) => group.id === "weather").stats.providerWarning, true);
+});
+
+test("Quality dimensions remain separate", () => {
+  const quality = computeQualityDimensions({ severityScore: 80, confidence: 66, updatedAt: Date.now(), independentSourceCount: 2, verificationStatus: "Provider reviewed" });
+  assert.equal(quality.severity, 80);
+  assert.equal(quality.confidence, 66);
+  assert.ok(quality.impactScore >= 0 && quality.impactScore <= 100);
+  assert.equal(normalizeVerificationStatus("Provider reviewed"), "primary-confirmed");
+});
+
+test("Provider health state conversion is explicit", () => {
+  assert.equal(providerState({ ok: true, status: "healthy" }), "operational");
+  assert.equal(providerState({ ok: true, stale: true }), "stale");
+  assert.equal(providerState({ ok: false, message: "Rate limit" }), "rate-limited");
+  assert.equal(providerState({ ok: false, message: "Authentication required" }), "authentication-required");
+});
+
+test("Incident clustering prefers strong matches", () => {
+  const base = { id: "1", title: "Earthquake near Tokyo", type: "earthquake", domain: "natural-disaster", lat: 35, lon: 140, occurredAt: Date.now(), updatedAt: Date.now(), provider: "usgs", country: "Japan" };
+  const related = { ...base, id: "2", title: "Tokyo earthquake update", lat: 35.1, lon: 140.1 };
+  const unrelated = { ...base, id: "3", title: "Wildfire in Canada", type: "wildfire", lat: 60, lon: -110, country: "Canada" };
+  assert.equal(shouldCluster(base, related), true);
+  assert.equal(shouldCluster(base, unrelated), false);
+  assert.equal(buildIncidents([base, related, unrelated]).length, 2);
+});
+
+test("Saved view serialization captures shareable feed state", () => {
+  const view = serializeView(
+    { dashboard: "primary", sort: "recently-updated", groupBy: "domain", cardMode: "compact", hours: 168 },
+    { domains: new Set(["natural-disaster"]), categories: new Set(["earthquake"]), severities: new Set(["high"]), query: "japan" },
+    "Japan hazards"
+  );
+  assert.equal(view.name, "Japan hazards");
+  assert.deepEqual(view.domains, ["natural-disaster"]);
+  assert.equal(view.query, "japan");
 });
 
 console.log("All tests passed.");

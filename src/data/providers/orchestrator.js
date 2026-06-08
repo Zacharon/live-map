@@ -146,10 +146,25 @@ export async function orchestrateProviders(options = {}) {
     .flatMap((result) => result.events)
     .filter((event) => new Date(event.startedAt).getTime() >= cutoff);
   const dedupedEvents = mergeDuplicateEvents(events);
+  const duplicateCount = Math.max(0, events.length - dedupedEvents.length);
+  const duplicateCountByProvider = Object.fromEntries(providerResults.map((result) => [result.providerId, 0]));
+  if (duplicateCount) {
+    const providers = [...new Set(events.map((event) => event.provider))];
+    for (const providerId of providers) duplicateCountByProvider[providerId] = Math.round(duplicateCount / providers.length);
+  }
   const sourceStatus = Object.fromEntries(
     providerResults.map((result) => {
       const provider = EVENT_PROVIDERS.find((item) => item.id === result.providerId);
-      return [result.providerId, providerStatus(provider, result, now)];
+      const status = providerStatus(provider, result, now);
+      const latest = result.events.reduce((max, event) => Math.max(max, new Date(event.updatedAt || event.startedAt).getTime()), 0);
+      return [
+        result.providerId,
+        {
+          ...status,
+          duplicateCount: duplicateCountByProvider[result.providerId] || 0,
+          mostRecentSourceEventAt: latest ? new Date(latest).toISOString() : null,
+        },
+      ];
     })
   );
   const unavailable = providerResults.filter((result) => result.status === "unavailable").length;
@@ -159,7 +174,7 @@ export async function orchestrateProviders(options = {}) {
   return {
     events: dedupedEvents.map(toLegacyEvent),
     canonicalEvents: dedupedEvents,
-    providerResults,
+    providerResults: providerResults.map((result) => ({ ...result, duplicateCount: duplicateCountByProvider[result.providerId] || 0 })),
     sourceStatus,
     systemStatus,
     mode: systemStatus === "operational" ? "netlify-function" : "partial-netlify-function",

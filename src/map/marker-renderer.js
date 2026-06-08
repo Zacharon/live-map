@@ -2,9 +2,10 @@ import { CATEGORIES } from "../config.js";
 import { escapeHtml, relativeTime } from "../events/event-normalizer.js";
 
 export function markerIcon(event) {
+  const markerColor = event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color;
   return L.divIcon({
     className: "",
-    html: `<div class="event-marker" style="--marker:${CATEGORIES[event.category]?.color || CATEGORIES.other.color}"></div>`,
+    html: `<div class="event-marker" style="--marker:${markerColor}"></div>`,
     iconSize: [15, 15],
     iconAnchor: [7, 7],
   });

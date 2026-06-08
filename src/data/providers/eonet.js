@@ -53,6 +53,11 @@ function eonetSeverity(category) {
   return 40;
 }
 
+function eonetType(category) {
+  if (category === "storm") return "weather-warning";
+  return category;
+}
+
 export function normalizeEonetEvent(rawEvent, now = new Date()) {
   const geometry = [...(rawEvent?.geometry || [])].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
   const point = representativePoint(geometry);
@@ -68,6 +73,8 @@ export function normalizeEonetEvent(rawEvent, now = new Date()) {
       rawEvent.description ||
       `Open ${category} event tracked by NASA EONET. Open the source for the latest provider details and boundaries.`,
     category,
+    type: eonetType(category),
+    subtype: rawEvent.categories?.[0]?.title || null,
     subcategory: rawEvent.categories?.map((item) => item.title).join(", ") || category,
     latitude: point.latitude,
     longitude: point.longitude,
@@ -91,6 +98,7 @@ export function normalizeEonetEvent(rawEvent, now = new Date()) {
       : null,
     tags: ["NASA EONET", category, rawEvent.closed ? "closed" : "open"],
     metadata: {
+      originalCategory: rawEvent.categories?.map((item) => item.title).join(", ") || category,
       geometryType: geometry?.type || "Unknown",
       verificationStatus: "primary-confirmed",
       coordinateMethod: point.method,

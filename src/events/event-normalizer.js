@@ -1,4 +1,6 @@
 import { CATEGORIES, SEVERITIES } from "../config.js";
+import { computeQualityDimensions } from "./event-quality.js";
+import { classifyEvent } from "./taxonomy.js";
 
 export function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
@@ -28,9 +30,18 @@ export function normalizeEvent(event) {
   const severityKey = event.uiSeverity || event.severityLabel || event.severity;
   const occurredAt = timestampMs(event.occurredAt, event.startedAt, event.sourcePublishedAt);
   const updatedAt = timestampMs(event.updatedAt, event.updatedAtIso, event.startedAt, occurredAt);
-  return {
+  const taxonomy = classifyEvent(event);
+  const normalized = {
     ...event,
     category: safeCategory(event.category),
+    domain: event.domain || taxonomy.domain,
+    domainLabel: event.domainLabel || taxonomy.domainLabel,
+    taxonomyCategory: event.taxonomyCategory || taxonomy.category,
+    categoryLabel: event.categoryLabel || taxonomy.categoryLabel,
+    type: event.type || taxonomy.type,
+    typeLabel: event.typeLabel || taxonomy.typeLabel,
+    subtype: event.subtype || taxonomy.subtype,
+    taxonomyColor: event.taxonomyColor || taxonomy.color,
     severity: safeSeverity(severityKey === "moderate" ? "medium" : severityKey),
     severityScore: Number(event.severityScore ?? (typeof event.severity === "number" ? event.severity : 0)),
     occurredAt,
@@ -47,6 +58,9 @@ export function normalizeEvent(event) {
     place: event.place || event.locationName || event.countryName || "Unknown location",
     country: event.country || event.countryName || "Multiple/unknown",
   };
+  const quality = computeQualityDimensions(normalized);
+  const { severity: qualitySeverity, ...qualityRest } = quality;
+  return { ...normalized, qualitySeverity, ...qualityRest };
 }
 
 export function relativeTime(timestamp, now = Date.now()) {

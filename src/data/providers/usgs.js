@@ -28,6 +28,8 @@ export function normalizeUsgsFeature(feature, now = new Date()) {
       Number.isFinite(depthKm) ? depthKm.toFixed(1) : "unknown"
     } km depth. ${reviewed ? "Reviewed by USGS." : "Preliminary solution; details may change."}`,
     category: "earthquake",
+    type: "earthquake",
+    subtype: "tectonic-earthquake",
     subcategory: "seismic",
     latitude,
     longitude,
@@ -46,6 +48,7 @@ export function normalizeUsgsFeature(feature, now = new Date()) {
     geometry: feature.geometry || null,
     tags: ["USGS", "earthquake", properties.status || "unknown"],
     metadata: {
+      originalCategory: "earthquake",
       magnitude: Number.isFinite(magnitude) ? magnitude : null,
       depthKm: Number.isFinite(depthKm) ? depthKm : null,
       tsunami: Boolean(properties.tsunami),
