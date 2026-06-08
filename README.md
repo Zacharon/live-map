@@ -1,84 +1,162 @@
-# Live Map - Netlify v2
+# Live Map - Intelligence Platform Foundation
 
 Live Map is a map-first global event dashboard deployed at:
 
 - https://liveworldmap.netlify.app/
 
-It currently aggregates:
+It is evolving into a modular intelligence, risk, finance, infrastructure, and OSINT platform. Phase 1 keeps the working static Netlify deployment while adding dashboard architecture, transparent registries, prototype scoring, and safe scaffolding for credentialed future providers.
 
-- [USGS Earthquake Hazards Program](https://earthquake.usgs.gov/earthquakes/feed/) earthquake GeoJSON feeds
-- [NASA EONET](https://eonet.gsfc.nasa.gov/docs/v3) natural hazard events
+This is a near-real-time public information aggregator. It is not an emergency dispatch, evacuation, military, navigation, legal, compliance, credit, travel, or financial rating system.
 
-This is a near-real-time public information aggregator. It is not an emergency dispatch, evacuation, military, navigation, or official alerting system. Provider reporting delays, outages, duplicates, and corrections may apply.
+## Current working layers
 
-## Correct Netlify deployment
+- [USGS Earthquake Hazards Program](https://earthquake.usgs.gov/earthquakes/feed/) earthquake feeds
+- [NASA EONET](https://eonet.gsfc.nasa.gov/docs/v3) natural hazard events, with partial-data handling when the provider is unavailable
+- Source-health reporting
+- Marker clustering
+- Event filters
+- Satellite, dark, and street basemaps
+- Event detail dialogs with source links
 
-Use a GitHub-connected deployment. Do not use drag-and-drop when you need the `/api/events` Netlify Function.
+## Phase 1 features
 
-1. In Netlify choose **Add new project -> Import an existing project**.
-2. Select `Zacharon/live-map`.
-3. Build command: leave blank.
-4. Publish directory: `.`.
-5. Functions directory: Netlify should read `netlify/functions` from `netlify.toml` automatically.
-6. Deploy.
+- Five dashboard modes: Primary, Finance, Technology, Commodity, Happy
+- URL-preserved dashboard state through `?dashboard=...`
+- Configuration-driven 45+ layer registry
+- 2D/3D mode control with stable 2D default and documented 3D beta boundary
+- Country Instability Index prototype
+- 92-exchange finance registry
+- Delayed/fixture market cards with no fake live prices
+- Event-to-market correlation prototype using cautious language
+- Local browser-stored alert preview rules
+- API scaffolding for layers, countries, country risk, markets, infrastructure, source status, briefs, and alert testing
+- Security/privacy documentation and `.env.example`
 
-Every push to `main` should trigger a new Netlify production deploy.
+## Architecture
 
-## Test these URLs
+- `index.html` - static app shell
+- `app.js` - native module bootstrap
+- `src/` - frontend modules
+- `data/` - fixture notes and data pointers
+- `docs/` - architecture, source, CII, provider, privacy, and roadmap docs
+- `netlify/functions/` - Netlify Functions
 
-- https://liveworldmap.netlify.app/
-- https://liveworldmap.netlify.app/api/events
-- https://liveworldmap.netlify.app/.netlify/functions/events
+More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-Both API URLs should return JSON. If they do not, open **Netlify -> Live Map -> Logs & Metrics -> Functions -> events**.
+## Dashboards
 
-## How updates work
+- Primary: global events, country risk, natural hazards, security, and infrastructure context
+- Finance: exchange registry, delayed fixture market cards, event-market correlations
+- Technology: cyber, cloud, outage, breach, and technology infrastructure scaffolding
+- Commodity: energy, metals, agriculture, ports, shipping, and supply-chain scaffolding
+- Happy: positive developments, humanitarian wins, recovery, conservation, science, and stability improvements
 
-- The browser requests `/api/events` when the page opens.
-- It polls again every 120 seconds.
-- The Netlify Function pulls current USGS and NASA EONET data.
-- The function response is cached for 60 seconds to reduce repeated upstream requests.
-- If one source fails, the API returns partial data plus a `sourceStatus` object.
-- If the function is missing, the browser falls back to direct USGS earthquake data so the map does not go blank.
+## Country Instability Index
 
-This is near-real-time polling, not instant streaming.
+CII is an experimental analytic indicator with a 0-100 score:
 
-## Source transparency
+- 0-19: Stable
+- 20-39: Guarded
+- 40-59: Elevated
+- 60-79: High
+- 80-100: Critical
 
-Each normalized event can include:
+It is explainable and reproducible from visible event data. It is not an official rating.
 
-- event title and summary
-- category and severity
-- severity reason
-- latitude and longitude
-- coordinate method
-- reported timestamp
-- provider updated timestamp
-- original source link
-- source type
-- verification status
-- confidence score
-- provider ID
+Methodology: [docs/COUNTRY_INSTABILITY_INDEX.md](docs/COUNTRY_INSTABILITY_INDEX.md)
 
-## Satellite map
+## API routes
 
-The Satellite option uses [Esri World Imagery](https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9) with an Esri labels overlay. Google Earth and Apple Maps imagery should not be copied or used as unrestricted tile servers; they require their own approved APIs, terms, and usually billing credentials.
+- `GET /api/events`
+- `GET /api/layers`
+- `GET /api/countries`
+- `GET /api/country-risk`
+- `GET /api/markets`
+- `GET /api/infrastructure`
+- `GET /api/source-status`
+- `POST /api/briefs`
+- `POST /api/alerts/test`
 
-## Local testing
+New scaffold endpoints use:
 
-Install Netlify CLI if needed:
-
-```bash
-npm install -g netlify-cli
+```js
+{
+  data,
+  generatedAt,
+  sourceStatus,
+  warnings,
+  errors,
+  requestId
+}
 ```
 
-Run locally:
+The legacy `/api/events` shape is preserved for the current frontend.
+
+## Data-source limitations
+
+Many requested sources require credentials, licensing, or explicit terms review. Planned or credentialed layers are not labeled live.
+
+Examples requiring credentials or additional setup:
+
+- ACLED
+- ADS-B aviation feeds
+- AIS maritime feeds
+- Finance price providers
+- NASA FIRMS
+- Groq/OpenRouter AI providers
+- Supabase/Neon database
+
+See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md).
+
+## Security and privacy
+
+- Do not put secrets in frontend JavaScript.
+- Use Netlify environment variables for private provider keys.
+- `.env.example` contains variable names only.
+- CSP is configured in `netlify.toml`.
+- AI, OSINT, cyber, aviation, maritime, and dark-web style provider integrations are disabled/scaffolded until explicitly configured.
+- Do not bypass logins, CAPTCHAs, paywalls, or access restrictions.
+- Do not display raw passwords or unnecessary sensitive personal data.
+
+See [docs/SECURITY_AND_PRIVACY.md](docs/SECURITY_AND_PRIVACY.md).
+
+## Environment variables
+
+Suggested future variables:
+
+- `ACLED_ACCESS_TOKEN`
+- `ACLED_EMAIL`
+- `GROQ_API_KEY`
+- `OPENROUTER_API_KEY`
+- `OLLAMA_BASE_URL`
+- `FINANCE_API_KEY`
+- `ADS_B_API_KEY`
+- `AIS_API_KEY`
+- `NASA_FIRMS_MAP_KEY`
+- `RELIEFWEB_ENABLED`
+- `GDELT_ENABLED`
+- `DATABASE_URL`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+The Supabase service-role key must never reach browser code.
+
+## Local development
+
+Install dependencies only if you need local tooling:
+
+```bash
+npm install
+```
+
+Run Netlify locally:
 
 ```bash
 netlify dev
 ```
 
-Then test:
+Test local endpoints:
 
 ```text
 http://localhost:8888/
@@ -86,29 +164,51 @@ http://localhost:8888/api/events
 http://localhost:8888/.netlify/functions/events
 ```
 
-## Adding conflict data
+## Testing
 
-Verified global conflict feeds usually require an account, API key, or license. Add credentials as Netlify environment variables and extend `netlify/functions/events.mjs`. Never put private API keys in `app.js`.
+Syntax:
 
-Suggested future sources:
+```bash
+npm run check
+```
 
-- [ACLED](https://acleddata.com/)
-- [ACLED Conflict Index](https://acleddata.com/series/acled-conflict-index)
-- [CFR Global Conflict Tracker](https://www.cfr.org/interactive/global-conflict-tracker)
-- [International Crisis Group CrisisWatch](https://www.crisisgroup.org/crisiswatch)
-- [GeoConfirmed](https://geoconfirmed.org/)
-- [GDELT](https://www.gdeltproject.org/)
-- [ReliefWeb API](https://apidoc.reliefweb.int/)
-- [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/)
-- [GDACS](https://www.gdacs.org/)
-- [NOAA/NWS Alerts API](https://www.weather.gov/documentation/services-web-alerts)
+Unit tests:
 
-Suggested environment variable names:
+```bash
+npm test
+```
 
-- `ACLED_ACCESS_TOKEN`
-- `ACLED_EMAIL`
-- `GDELT_ENABLED`
-- `NASA_FIRMS_MAP_KEY`
-- `RELIEFWEB_ENABLED`
+Manual checks:
 
-After adding variables, trigger a new production deploy.
+- Desktop layout
+- Mobile-width layout
+- Dashboard switching
+- URL dashboard state
+- Satellite, dark, and street basemaps
+- 2D mode
+- 3D beta fallback
+- Event search and filters
+- Marker clustering
+- Event dialog
+- CII methodology dialog
+- Finance dashboard exchange markers
+- `/api/events`
+- `/api/layers`
+- `/api/markets`
+
+## Netlify deployment
+
+Use GitHub-connected deployment. Do not use drag-and-drop when functions are required.
+
+Netlify settings:
+
+- Branch: `main`
+- Build command: blank
+- Publish directory: `.`
+- Functions directory: `netlify/functions`
+
+Every merge to `main` should trigger a production deploy.
+
+## Future roadmap
+
+See [docs/ROADMAP.md](docs/ROADMAP.md).
