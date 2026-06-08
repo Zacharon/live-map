@@ -3,16 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Live Map — a streamlined global events dashboard with live hazard feeds and source details." />
+  <meta name="description" content="Live Map — a streamlined global events dashboard with near-real-time hazard feeds and source details." />
   <title>Live Map — Global Events Dashboard</title>
   <link rel="preconnect" href="https://unpkg.com" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <div class="brand"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Global event intelligence</span></div></div>
+      <div class="brand"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Global event dashboard</span></div></div>
       <div class="topbar-actions"><span id="systemStatus" class="status"><i></i> Connecting</span><span id="feedAge" class="feed-age">—</span><button id="themeToggle" class="icon-btn" aria-label="Toggle theme">◐</button></div>
     </header>
 
@@ -21,7 +23,8 @@
       <section><div class="section-title"><span>Event layers</span><button id="clearFilters">Reset</button></div><div id="layerFilters" class="filter-list"></div></section>
       <section><div class="section-title"><span>Severity</span></div><div id="severityFilters" class="severity-row"></div></section>
       <section class="stats-grid"><article><span>Visible</span><strong id="visibleCount">0</strong></article><article><span>High / critical</span><strong id="highCount">0</strong></article><article><span>Countries</span><strong id="countryCount">0</strong></article><article><span>Last refresh</span><strong id="updatedAt">—</strong></article></section>
-      <section class="method-note"><strong>Source-aware reporting</strong><p>Each event includes an exact timestamp, coordinates, source status, and available measurements. “Live” means the page polls frequently; each provider still has its own reporting delay.</p></section>
+      <section class="method-note"><strong>Source-aware reporting</strong><p>Each event includes timestamps, coordinates, source status, confidence, and available measurements. Near-real-time means frequent polling; provider reporting delays still apply.</p></section>
+      <section class="method-note source-note"><strong>Source health</strong><p id="sourceHealth">Waiting for live feeds…</p></section>
     </aside>
 
     <main class="map-stage">
@@ -43,6 +46,7 @@
 
   <dialog id="eventDialog"><button id="closeDialog" class="dialog-close" aria-label="Close">×</button><div id="dialogContent"></div></dialog>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
   <script src="app.js"></script>
 </body>
 </html>
