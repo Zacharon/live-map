@@ -1,0 +1,5 @@
+{
+  "sourceOfTruth": "src/data/layers.js",
+  "minimumLayerCount": 45,
+  "notes": "The runtime layer catalog is maintained as a JavaScript module so the static frontend and Netlify Functions can import the same definitions without a build step."
+}

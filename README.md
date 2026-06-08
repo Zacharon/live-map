@@ -1,179 +1,447 @@
-# Live Map - Netlify v2
+Live Map — Intelligence Platform Foundation
 
 Live Map is a map-first global event dashboard deployed at:
 
-- https://liveworldmap.netlify.app/
+https://liveworldmap.netlify.app/
 
-It currently aggregates:
+It is evolving into a modular intelligence, risk, finance, infrastructure, and OSINT platform. Phase 1 preserves the working Netlify deployment while adding dashboard architecture, transparent source registries, prototype risk scoring, automated validation, and safe scaffolding for credentialed providers.
 
-- [USGS Earthquake Hazards Program](https://earthquake.usgs.gov/earthquakes/feed/) earthquake GeoJSON feeds
-- [NASA EONET](https://eonet.gsfc.nasa.gov/docs/v3) natural hazard events
+Live Map is a near-real-time public-information aggregator. It is not an emergency dispatch, evacuation, military, navigation, legal, compliance, credit, travel, or financial-rating system.
 
-This is a near-real-time public information aggregator. It is not an emergency dispatch, evacuation, military, navigation, or official alerting system. Provider reporting delays, outages, duplicates, and corrections may apply.
+Current working layers
+USGS Earthquake Hazards Program earthquake feeds
+NASA EONET natural-hazard events
+Partial-data handling when a provider is temporarily unavailable
+Source-health reporting
+Marker clustering
+Event search and filters
+Satellite, dark, and street basemaps
+Event-detail dialogs with original source links
+Phase 1 features
+Five dashboard modes:
+Primary
+Finance
+Technology
+Commodity
+Happy
+Dashboard state preserved through ?dashboard=...
+Configuration-driven catalog of more than 45 layers
+Stable 2D map with a documented 3D beta boundary
+Prototype Country Instability Index
+Registry of 92 global stock exchanges
+Clearly labeled delayed or fixture market cards
+No fabricated live market prices
+Event-to-market correlation prototype using cautious language
+Local browser-stored alert-rule previews
+Source-health interface
+API scaffolding for layers, countries, country risk, markets, infrastructure, source status, briefs, and alert testing
+Security and privacy documentation
+Environment-variable template
+Automated validation and production monitoring
+Architecture
+index.html
+app.js
+styles.css
+src/
+data/
+docs/
+scripts/
+tests/
+netlify/
+  functions/
+.github/
+  workflows/
 
-## Correct Netlify deployment
+Main areas:
 
-Use a GitHub-connected deployment. Do not use drag-and-drop when you need the `/api/events` Netlify Function.
+index.html — static application shell
+app.js — native JavaScript module bootstrap
+src/ — frontend modules
+data/ — fixture policies and data pointers
+docs/ — architecture, source, risk, provider, privacy, and roadmap documentation
+scripts/ — validation and production smoke-test scripts
+tests/ — platform tests
+netlify/functions/ — server-side Netlify Functions
+.github/workflows/ — validation, security, and production-monitoring workflows
+.codex/skills/ — reusable Codex project skills
+AGENTS.md — permanent repository instructions for coding agents
 
-1. In Netlify choose **Add new project -> Import an existing project**.
-2. Select `Zacharon/live-map`.
-3. Build command: leave blank.
-4. Publish directory: `.`.
-5. Functions directory: Netlify should read `netlify/functions` from `netlify.toml` automatically.
-6. Deploy.
+More detail:
 
-Every push to `main` should trigger a new Netlify production deploy.
+Architecture documentation
+Provider adapter documentation
+Dashboards
+Primary
 
-## Test these URLs
+Global events, country risk, natural hazards, security conditions, source health, and infrastructure context.
 
-- https://liveworldmap.netlify.app/
-- https://liveworldmap.netlify.app/api/events
-- https://liveworldmap.netlify.app/.netlify/functions/events
+Finance
 
-Both API URLs should return JSON. If they do not, open **Netlify -> Live Map -> Logs & Metrics -> Functions -> events**.
+Exchange registry, delayed development market cards, market status, and cautious event-to-market correlations.
 
-## How updates work
+Technology
 
-- The browser requests `/api/events` when the page opens.
-- It polls again every 120 seconds.
-- The Netlify Function pulls current USGS and NASA EONET data.
-- The function response is cached for 60 seconds to reduce repeated upstream requests.
-- If one source fails, the API returns partial data plus a `sourceStatus` object.
-- If the function is missing, the browser falls back to direct USGS earthquake data so the map does not go blank.
+Cybersecurity, cloud status, service outages, data breaches, Internet disruptions, and technology-infrastructure scaffolding.
 
-This is near-real-time polling, not instant streaming.
+Commodity
 
-## Source transparency
+Energy, metals, agriculture, ports, shipping, production, weather, and supply-chain scaffolding.
 
-Each normalized event can include:
+Happy
 
-- event title and summary
-- category and severity
-- severity reason
-- latitude and longitude
-- coordinate method
-- reported timestamp
-- provider updated timestamp
-- original source link
-- source type
-- verification status
-- confidence score
-- provider ID
+Positive developments, humanitarian achievements, recovery milestones, conservation, scientific progress, and improvements in stability or safety.
 
-## Satellite map
+Country Instability Index
 
-The Satellite option uses [Esri World Imagery](https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9) with an Esri labels overlay. Google Earth and Apple Maps imagery should not be copied or used as unrestricted tile servers; they require their own approved APIs, terms, and usually billing credentials.
+The Country Instability Index, or CII, is an experimental analytical indicator using a score from 0 to 100.
 
-## Local testing
+Score	Classification
+0–19	Stable
+20–39	Guarded
+40–59	Elevated
+60–79	High
+80–100	Critical
 
-Install Netlify CLI if needed:
+The score is designed to be explainable and reproducible from visible event data. It is not an official government, credit, insurance, travel, or financial-risk rating.
 
-```bash
+See:
+
+Country Instability Index methodology
+API routes
+
+Current and scaffolded routes include:
+
+GET  /api/events
+GET  /api/layers
+GET  /api/countries
+GET  /api/country-risk
+GET  /api/markets
+GET  /api/infrastructure
+GET  /api/source-status
+POST /api/briefs
+POST /api/alerts/test
+
+New scaffold endpoints use a consistent response envelope:
+
+{
+  data,
+  generatedAt,
+  sourceStatus,
+  warnings,
+  errors,
+  requestId
+}
+
+The existing /api/events response remains compatible with the current frontend.
+
+Data-source limitations
+
+Many requested sources require credentials, commercial licensing, redistribution permission, or explicit terms review.
+
+Planned, disabled, fixture, or credential-required sources must never be labeled as live.
+
+Examples requiring credentials or additional setup include:
+
+ACLED
+ADS-B aviation providers
+AIS maritime providers
+Financial-market price providers
+NASA FIRMS
+Groq
+OpenRouter
+Supabase
+Neon PostgreSQL
+Licensed cyber or OSINT providers
+
+See:
+
+Data sources
+Provider adapters
+Security and privacy
+
+Project security rules include:
+
+Never place private credentials in frontend JavaScript.
+Store private provider keys in Netlify environment variables.
+Keep .env.example limited to variable names and blank values.
+Never commit real API keys, passwords, tokens, or service-role credentials.
+Keep the Supabase service-role key server-side only.
+Preserve the Content Security Policy configured in netlify.toml.
+Validate external URLs and open them safely.
+Escape imported and user-controlled HTML.
+Do not bypass logins, CAPTCHAs, paywalls, or access restrictions.
+Do not expose raw passwords or unnecessary personal information.
+Keep AI, OSINT, aviation, maritime, cyber, and licensed-data integrations disabled until properly configured.
+Clearly distinguish verified information from automated analysis or discovery leads.
+
+See:
+
+Security and privacy
+Environment variables
+
+The repository may use the following variables as integrations are implemented:
+
+ACLED_ACCESS_TOKEN=
+ACLED_EMAIL=
+GROQ_API_KEY=
+OPENROUTER_API_KEY=
+OLLAMA_BASE_URL=
+FINANCE_API_KEY=
+ADS_B_API_KEY=
+AIS_API_KEY=
+NASA_FIRMS_MAP_KEY=
+RELIEFWEB_ENABLED=
+GDELT_ENABLED=
+DATABASE_URL=
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+Do not add real credentials to .env.example.
+
+Configure production credentials in:
+
+Netlify
+→ Live Map
+→ Project configuration
+→ Environment variables
+
+Trigger a new deployment after changing environment variables.
+
+Local development
+
+Node.js 20 or newer is recommended.
+
+Install project tooling:
+
+npm install
+
+Install the Netlify CLI when needed:
+
 npm install -g netlify-cli
-```
 
-Run locally:
+Start the local Netlify environment:
 
-```bash
 netlify dev
-```
 
-Then test:
+Test:
 
-```text
 http://localhost:8888/
 http://localhost:8888/api/events
 http://localhost:8888/.netlify/functions/events
-```
+Testing and validation
 
-## Automation and quality checks
+Run all platform tests and validation:
 
-This repository includes a safe automation foundation for pull requests, security checks, and production monitoring.
+npm test
 
-Run the main validator locally:
+Run the Phase 1 platform tests only:
 
-```bash
-npm run validate
-```
+npm run test:platform
 
-Run only JavaScript syntax checks:
+Run syntax checks:
 
-```bash
 npm run check:syntax
-```
+
+Run the repository validator:
+
+npm run validate
 
 Run the browser-side secret scan:
 
-```bash
 npm run security:scan
-```
 
 Run the production smoke test:
 
-```bash
 npm run smoke:production
-```
 
 The validator checks:
 
-- JavaScript syntax for browser code, Netlify Functions, and validation scripts
-- local `netlify/functions/events.mjs` response shape
-- event coordinate validity
-- event source attribution and source URLs
-- browser-served files for secret-looking tokens
-- source status, freshness, partial modes, fallback modes, and provider errors
+JavaScript syntax
+Netlify Function syntax
+Local event-response structure
+Coordinate validity
+Source attribution
+Source URL format and reachability
+Source freshness
+Provider errors
+Partial and fallback modes
+Secret-looking values in browser-served files
 
 The production smoke test checks:
 
-- https://liveworldmap.netlify.app/
-- https://liveworldmap.netlify.app/api/events
-- https://liveworldmap.netlify.app/.netlify/functions/events
+https://liveworldmap.netlify.app/
+https://liveworldmap.netlify.app/api/events
+https://liveworldmap.netlify.app/.netlify/functions/events
 
-If USGS, NASA EONET, Netlify Functions, or source URLs fail, the validator and production smoke test should fail instead of reporting a false success.
+A provider outage may cause the production smoke test to fail even when the website remains partially usable. This is intentional so provider failures are not hidden.
 
-## GitHub Actions
+Manual testing checklist
 
-The repository defines these workflows:
+Before merging a major pull request, verify:
 
-- `.github/workflows/validate.yml` runs `npm run validate` on pull requests, pushes to `main`, and manual dispatches.
-- `.github/workflows/production-smoke-test.yml` runs `npm run smoke:production` every six hours and on manual dispatch.
-- `.github/workflows/security.yml` runs browser-side secret scanning and CodeQL JavaScript analysis.
+Desktop layout
+Mobile-width layout
+Dashboard switching
+URL-preserved dashboard state
+Satellite basemap
+Dark basemap
+Street basemap
+2D mode
+3D beta fallback
+Event search
+Category filters
+Severity filters
+Marker clustering
+Event-detail dialog
+Original source links
+Source-health display
+CII methodology dialog
+Finance exchange markers
+Alert-rule preview
+/api/events
+/api/layers
+/api/countries
+/api/country-risk
+/api/markets
+/api/source-status
+GitHub Actions
 
-Dependabot is configured in `.github/dependabot.yml` for weekly npm checks and weekly GitHub Actions updates.
+The repository includes these workflows:
 
-CodeQL configuration lives in `.github/codeql/codeql-config.yml`. Because this repository is private, GitHub code scanning or GitHub Advanced Security may need to be enabled manually before CodeQL alerts appear. If your current GitHub plan does not support CodeQL for private repositories, the workflow may not upload analysis results even though the config is present.
+Validation
+.github/workflows/validate.yml
 
-## Troubleshooting automation
+Runs repository validation on:
 
-- If `npm run validate` fails on `sourceStatus`, check whether USGS or NASA EONET is down or returning partial data.
-- If production smoke tests fail but the page loads in your browser, open **Netlify -> Live Map -> Logs & Metrics -> Functions -> events** and inspect the latest function invocation.
-- If CodeQL does not publish alerts, check GitHub repository settings for **Code security and analysis** and enable code scanning if your plan supports it.
-- If a secret scan fails, remove the token from browser-served files and rotate the credential before merging.
-- If you add a new live provider, update `netlify/functions/events.mjs`, source attribution, freshness handling, `.env.example`, and these docs together.
+Pull requests
+Pushes to main
+Manual workflow dispatches
+Production smoke testing
+.github/workflows/production-smoke-test.yml
 
-## Adding conflict data
+Runs production checks:
 
-Verified global conflict feeds usually require an account, API key, or license. Add credentials as Netlify environment variables and extend `netlify/functions/events.mjs`. Never put private API keys in `app.js`.
+Every six hours
+On manual workflow dispatch
+Security
+.github/workflows/security.yml
 
-Suggested future sources:
+Runs:
 
-- [ACLED](https://acleddata.com/)
-- [ACLED Conflict Index](https://acleddata.com/series/acled-conflict-index)
-- [CFR Global Conflict Tracker](https://www.cfr.org/interactive/global-conflict-tracker)
-- [International Crisis Group CrisisWatch](https://www.crisisgroup.org/crisiswatch)
-- [GeoConfirmed](https://geoconfirmed.org/)
-- [GDELT](https://www.gdeltproject.org/)
-- [ReliefWeb API](https://apidoc.reliefweb.int/)
-- [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/)
-- [GDACS](https://www.gdacs.org/)
-- [NOAA/NWS Alerts API](https://www.weather.gov/documentation/services-web-alerts)
+Browser-side secret scanning
+CodeQL JavaScript analysis when supported by the repository’s GitHub plan and settings
+Dependabot
+.github/dependabot.yml
 
-Suggested environment variable names:
+Checks weekly for:
 
-- `ACLED_ACCESS_TOKEN`
-- `ACLED_EMAIL`
-- `GDELT_ENABLED`
-- `NASA_FIRMS_MAP_KEY`
-- `RELIEFWEB_ENABLED`
+npm dependency updates
+GitHub Actions updates
+CodeQL
+.github/codeql/codeql-config.yml
 
-After adding variables, trigger a new production deploy.
+CodeQL alerts for a private repository may require GitHub Code Security or GitHub Advanced Security.
+
+If the GitHub plan does not support CodeQL for this private repository, the CodeQL job may fail to upload results even when the application code is valid. The browser-secret scan and other validation workflows can still operate independently.
+
+Troubleshooting automation
+Validation fails on source status
+
+Check whether USGS or NASA EONET is unavailable or returning partial data.
+
+Review:
+
+Netlify
+→ Live Map
+→ Logs & Metrics
+→ Functions
+→ events
+Production smoke test fails while the page still loads
+
+The site may be operating in a partial-data or fallback mode. Inspect the /api/events response and sourceStatus object.
+
+CodeQL fails
+
+Open the failed GitHub Actions job and inspect the error.
+
+For a private repository, verify:
+
+GitHub repository
+→ Settings
+→ Code security and analysis
+
+CodeQL may require additional GitHub security features. If unavailable, disable only the CodeQL analysis job rather than removing the browser-secret scan or validation workflows.
+
+Secret scan fails
+
+Remove the credential from every browser-served file and Git history where practical, rotate the exposed credential, and configure the replacement through Netlify environment variables.
+
+A new provider is added
+
+Update all relevant areas together:
+
+Provider adapter
+Source registry
+Source attribution
+Freshness rules
+Failure handling
+.env.example
+Documentation
+Tests
+Netlify deployment
+
+Use a GitHub-connected deployment. Do not use drag-and-drop when Netlify Functions are required.
+
+Recommended settings:
+
+Branch: main
+Base directory: blank
+Build command: blank
+Publish directory: .
+Functions directory: netlify/functions
+
+Every merge into main should trigger a production deployment.
+
+After deployment, test:
+
+https://liveworldmap.netlify.app/
+https://liveworldmap.netlify.app/api/events
+https://liveworldmap.netlify.app/.netlify/functions/events
+Pull-request workflow
+
+For major changes:
+
+Create a new branch from the latest main.
+Make focused changes.
+Run all applicable tests.
+Push the branch.
+Open a pull request into main.
+Review the Netlify deploy preview.
+Resolve conflicts by combining required functionality from both branches.
+Wait for required checks.
+Merge only after reviewing the preview and test results.
+Verify the production Netlify deployment.
+
+To reduce future conflicts, new branches should always be created or updated from the latest main after earlier pull requests are merged.
+
+Future roadmap
+
+Planned work includes:
+
+Additional verified conflict feeds
+OSINT source explorer
+Financial and commodity feeds
+Cybersecurity feeds
+Aviation tracking
+Maritime tracking
+Infrastructure monitoring
+AI-generated briefs with citations
+Persistent event history
+User accounts and alerts
+Investigation and entity-relationship tools
+True WebGL 3D globe
+
+See:
+
+Roadmap

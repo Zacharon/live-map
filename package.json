@@ -1,16 +1,18 @@
 {
   "name": "live-map-netlify-v2",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.1.0",
   "type": "module",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
+    "check": "node --check app.js && node --check netlify/functions/events.mjs",
     "check:syntax": "node --check app.js && node --check netlify/functions/events.mjs && node --check scripts/live-map-validator.mjs && node --check scripts/production-smoke-test.mjs",
     "validate": "node scripts/live-map-validator.mjs",
     "security:scan": "node scripts/live-map-validator.mjs --security-only",
     "smoke:production": "node scripts/production-smoke-test.mjs",
-    "test": "npm run validate"
+    "test:platform": "node tests/run-tests.mjs",
+    "test": "npm run test:platform && npm run validate"
   }
 }
