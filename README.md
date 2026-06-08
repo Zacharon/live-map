@@ -86,6 +86,71 @@ http://localhost:8888/api/events
 http://localhost:8888/.netlify/functions/events
 ```
 
+## Automation and quality checks
+
+This repository includes a safe automation foundation for pull requests, security checks, and production monitoring.
+
+Run the main validator locally:
+
+```bash
+npm run validate
+```
+
+Run only JavaScript syntax checks:
+
+```bash
+npm run check:syntax
+```
+
+Run the browser-side secret scan:
+
+```bash
+npm run security:scan
+```
+
+Run the production smoke test:
+
+```bash
+npm run smoke:production
+```
+
+The validator checks:
+
+- JavaScript syntax for browser code, Netlify Functions, and validation scripts
+- local `netlify/functions/events.mjs` response shape
+- event coordinate validity
+- event source attribution and source URLs
+- browser-served files for secret-looking tokens
+- source status, freshness, partial modes, fallback modes, and provider errors
+
+The production smoke test checks:
+
+- https://liveworldmap.netlify.app/
+- https://liveworldmap.netlify.app/api/events
+- https://liveworldmap.netlify.app/.netlify/functions/events
+
+If USGS, NASA EONET, Netlify Functions, or source URLs fail, the validator and production smoke test should fail instead of reporting a false success.
+
+## GitHub Actions
+
+The repository defines these workflows:
+
+- `.github/workflows/validate.yml` runs `npm run validate` on pull requests, pushes to `main`, and manual dispatches.
+- `.github/workflows/production-smoke-test.yml` runs `npm run smoke:production` every six hours and on manual dispatch.
+- `.github/workflows/security.yml` runs browser-side secret scanning and CodeQL JavaScript analysis.
+
+Dependabot is configured in `.github/dependabot.yml` for weekly npm checks and weekly GitHub Actions updates.
+
+CodeQL configuration lives in `.github/codeql/codeql-config.yml`. Because this repository is private, GitHub code scanning or GitHub Advanced Security may need to be enabled manually before CodeQL alerts appear. If your current GitHub plan does not support CodeQL for private repositories, the workflow may not upload analysis results even though the config is present.
+
+## Troubleshooting automation
+
+- If `npm run validate` fails on `sourceStatus`, check whether USGS or NASA EONET is down or returning partial data.
+- If production smoke tests fail but the page loads in your browser, open **Netlify -> Live Map -> Logs & Metrics -> Functions -> events** and inspect the latest function invocation.
+- If CodeQL does not publish alerts, check GitHub repository settings for **Code security and analysis** and enable code scanning if your plan supports it.
+- If a secret scan fails, remove the token from browser-served files and rotate the credential before merging.
+- If you add a new live provider, update `netlify/functions/events.mjs`, source attribution, freshness handling, `.env.example`, and these docs together.
+
 ## Adding conflict data
 
 Verified global conflict feeds usually require an account, API key, or license. Add credentials as Netlify environment variables and extend `netlify/functions/events.mjs`. Never put private API keys in `app.js`.
