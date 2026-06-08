@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Live Map — a streamlined global events dashboard with near-real-time hazard feeds and source details." />
-  <title>Live Map — Global Events Dashboard</title>
+  <meta name="description" content="Live Map - a source-transparent global event, risk, finance, and OSINT dashboard." />
+  <title>Live Map - Intelligence Platform</title>
   <link rel="preconnect" href="https://unpkg.com" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="" />
@@ -14,39 +14,49 @@
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <div class="brand"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Global event dashboard</span></div></div>
-      <div class="topbar-actions"><span id="systemStatus" class="status"><i></i> Connecting</span><span id="feedAge" class="feed-age">—</span><button id="themeToggle" class="icon-btn" aria-label="Toggle theme">◐</button></div>
+      <div class="brand"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Intelligence platform</span></div></div>
+      <nav id="dashboardNav" class="dashboard-nav" aria-label="Dashboards"></nav>
+      <div class="topbar-actions">
+        <span id="systemStatus" class="status" aria-live="polite"><i></i> Connecting</span>
+        <span id="feedAge" class="feed-age">-</span>
+        <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">T</button>
+      </div>
     </header>
 
     <aside class="sidebar">
-      <section class="search-wrap"><label for="search">Search events or places</label><input id="search" type="search" placeholder="Japan, M6.2, wildfire…" /></section>
+      <section class="search-wrap"><label for="search">Search events, countries, or sources</label><input id="search" type="search" placeholder="Japan, M6.2, wildfire..." /></section>
       <section><div class="section-title"><span>Event layers</span><button id="clearFilters">Reset</button></div><div id="layerFilters" class="filter-list"></div></section>
       <section><div class="section-title"><span>Severity</span></div><div id="severityFilters" class="severity-row"></div></section>
-      <section class="stats-grid"><article><span>Visible</span><strong id="visibleCount">0</strong></article><article><span>High / critical</span><strong id="highCount">0</strong></article><article><span>Countries</span><strong id="countryCount">0</strong></article><article><span>Last refresh</span><strong id="updatedAt">—</strong></article></section>
-      <section class="method-note"><strong>Source-aware reporting</strong><p>Each event includes timestamps, coordinates, source status, confidence, and available measurements. Near-real-time means frequent polling; provider reporting delays still apply.</p></section>
-      <section class="method-note source-note"><strong>Source health</strong><p id="sourceHealth">Waiting for live feeds…</p></section>
+      <section class="stats-grid"><article><span>Visible</span><strong id="visibleCount">0</strong></article><article><span>High / critical</span><strong id="highCount">0</strong></article><article><span>Countries</span><strong id="countryCount">0</strong></article><article><span>Last refresh</span><strong id="updatedAt">-</strong></article></section>
+      <section class="method-note"><strong>Source-aware reporting</strong><p>Near-real-time means frequent polling. Provider reporting delays still apply. Planned layers are never labeled live.</p></section>
+      <section class="method-note source-note"><strong>Source health</strong><p id="sourceHealth">Waiting for live feeds...</p></section>
+      <section id="dashboardPanel" class="dashboard-panel"></section>
     </aside>
 
     <main class="map-stage">
       <div id="map"></div>
+      <div id="globeStage" class="globe-stage" hidden></div>
       <div class="map-toolbar">
         <button id="fitWorld">World</button><button id="fitEvents">Fit events</button>
+        <select id="mapMode" aria-label="Map mode"><option value="2d" selected>2D map</option><option value="3d">3D beta</option></select>
         <select id="baseMap" aria-label="Basemap"><option value="satellite" selected>Satellite</option><option value="dark">Dark map</option><option value="street">Street map</option></select>
         <select id="timeWindow" aria-label="Time window"><option value="24">Last 24 hours</option><option value="72">Last 3 days</option><option value="168" selected>Last 7 days</option><option value="720">Last 30 days</option></select>
         <button id="refreshNow">Refresh</button>
       </div>
       <div id="mapLegend" class="legend"></div>
+      <button id="ciiToggle" class="map-toggle" type="button">CII countries</button>
     </main>
 
     <aside class="event-panel">
-      <div class="panel-head"><div><span class="eyebrow">LIVE FEED</span><h1>Global events</h1></div><select id="sortOrder" aria-label="Sort events"><option value="severity">Priority</option><option value="newest">Newest</option></select></div>
+      <div class="panel-head"><div><span id="dashboardEyebrow" class="eyebrow">PRIMARY</span><h1 id="dashboardTitle">Global events</h1></div><select id="sortOrder" aria-label="Sort events"><option value="severity">Priority</option><option value="newest">Newest</option></select></div>
       <div id="eventList" class="event-list"></div>
     </aside>
   </div>
 
-  <dialog id="eventDialog"><button id="closeDialog" class="dialog-close" aria-label="Close">×</button><div id="dialogContent"></div></dialog>
+  <dialog id="eventDialog"><button id="closeDialog" class="dialog-close" aria-label="Close">x</button><div id="dialogContent"></div></dialog>
+  <dialog id="methodologyDialog"><button id="closeMethodology" class="dialog-close" aria-label="Close">x</button><div id="methodologyContent"></div></dialog>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

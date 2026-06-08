@@ -11,11 +11,60 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/api/layers"
+  to = "/.netlify/functions/layers"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/countries"
+  to = "/.netlify/functions/countries"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/country-risk"
+  to = "/.netlify/functions/country-risk"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/markets"
+  to = "/.netlify/functions/markets"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/infrastructure"
+  to = "/.netlify/functions/infrastructure"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/source-status"
+  to = "/.netlify/functions/source-status"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/briefs"
+  to = "/.netlify/functions/briefs"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/alerts/test"
+  to = "/.netlify/functions/alerts-test"
+  status = 200
+  force = true
+
 [[headers]]
   for = "/*"
   [headers.values]
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; connect-src 'self' https://earthquake.usgs.gov https://eonet.gsfc.nasa.gov https://liveworldmap.netlify.app; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 
 [[headers]]
   for = "/app.js"
