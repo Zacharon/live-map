@@ -192,7 +192,7 @@ function hazard(event) {
   };
 }
 
-async function fetchJson(url, sourceName, attempts = 2) {
+async function fetchJson(url, sourceName, attempts = 3) {
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
@@ -206,7 +206,23 @@ async function fetchJson(url, sourceName, attempts = 2) {
       return await response.json();
     } catch (error) {
       lastError = error;
-      if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, 450 * attempt));
+      if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+    }
+  }
+  throw lastError;
+}
+
+async function fetchEonet(days) {
+  const urls = [
+    `https://eonet.gsfc.nasa.gov/api/v3/events?status=open&days=${days}&limit=250`,
+    "https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=250",
+  ];
+  let lastError;
+  for (const url of urls) {
+    try {
+      return await fetchJson(url, "NASA EONET", 3);
+    } catch (error) {
+      lastError = error;
     }
   }
   throw lastError;
@@ -231,7 +247,7 @@ export default async (request) => {
 
     const [usgs, eonet] = await Promise.allSettled([
       fetchJson("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson", "USGS"),
-      fetchJson(`https://eonet.gsfc.nasa.gov/api/v3/events?status=open&days=${days}&limit=250`, "NASA EONET"),
+      fetchEonet(days),
     ]);
 
     const events = [];
