@@ -1,0 +1,13 @@
+name: Live Map CodeQL
+
+queries:
+  - uses: security-and-quality
+
+paths:
+  - app.js
+  - netlify/functions
+  - scripts
+
+paths-ignore:
+  - node_modules
+  - .netlify

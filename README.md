@@ -1,85 +1,128 @@
-# Live Map - Intelligence Platform Foundation
+Live Map — Intelligence Platform Foundation
 
 Live Map is a map-first global event dashboard deployed at:
 
-- https://liveworldmap.netlify.app/
+https://liveworldmap.netlify.app/
 
-It is evolving into a modular intelligence, risk, finance, infrastructure, and OSINT platform. Phase 1 keeps the working static Netlify deployment while adding dashboard architecture, transparent registries, prototype scoring, and safe scaffolding for credentialed future providers.
+It is evolving into a modular intelligence, risk, finance, infrastructure, and OSINT platform. Phase 1 preserves the working Netlify deployment while adding dashboard architecture, transparent source registries, prototype risk scoring, automated validation, and safe scaffolding for credentialed providers.
 
-This is a near-real-time public information aggregator. It is not an emergency dispatch, evacuation, military, navigation, legal, compliance, credit, travel, or financial rating system.
+Live Map is a near-real-time public-information aggregator. It is not an emergency dispatch, evacuation, military, navigation, legal, compliance, credit, travel, or financial-rating system.
 
-## Current working layers
+Current working layers
+USGS Earthquake Hazards Program earthquake feeds
+NASA EONET natural-hazard events
+Partial-data handling when a provider is temporarily unavailable
+Source-health reporting
+Marker clustering
+Event search and filters
+Satellite, dark, and street basemaps
+Event-detail dialogs with original source links
+Phase 1 features
+Five dashboard modes:
+Primary
+Finance
+Technology
+Commodity
+Happy
+Dashboard state preserved through ?dashboard=...
+Configuration-driven catalog of more than 45 layers
+Stable 2D map with a documented 3D beta boundary
+Prototype Country Instability Index
+Registry of 92 global stock exchanges
+Clearly labeled delayed or fixture market cards
+No fabricated live market prices
+Event-to-market correlation prototype using cautious language
+Local browser-stored alert-rule previews
+Source-health interface
+API scaffolding for layers, countries, country risk, markets, infrastructure, source status, briefs, and alert testing
+Security and privacy documentation
+Environment-variable template
+Automated validation and production monitoring
+Architecture
+index.html
+app.js
+styles.css
+src/
+data/
+docs/
+scripts/
+tests/
+netlify/
+  functions/
+.github/
+  workflows/
 
-- [USGS Earthquake Hazards Program](https://earthquake.usgs.gov/earthquakes/feed/) earthquake feeds
-- [NASA EONET](https://eonet.gsfc.nasa.gov/docs/v3) natural hazard events, with partial-data handling when the provider is unavailable
-- Source-health reporting
-- Marker clustering
-- Event filters
-- Satellite, dark, and street basemaps
-- Event detail dialogs with source links
+Main areas:
 
-## Phase 1 features
+index.html — static application shell
+app.js — native JavaScript module bootstrap
+src/ — frontend modules
+data/ — fixture policies and data pointers
+docs/ — architecture, source, risk, provider, privacy, and roadmap documentation
+scripts/ — validation and production smoke-test scripts
+tests/ — platform tests
+netlify/functions/ — server-side Netlify Functions
+.github/workflows/ — validation, security, and production-monitoring workflows
+.codex/skills/ — reusable Codex project skills
+AGENTS.md — permanent repository instructions for coding agents
 
-- Five dashboard modes: Primary, Finance, Technology, Commodity, Happy
-- URL-preserved dashboard state through `?dashboard=...`
-- Configuration-driven 45+ layer registry
-- 2D/3D mode control with stable 2D default and documented 3D beta boundary
-- Country Instability Index prototype
-- 92-exchange finance registry
-- Delayed/fixture market cards with no fake live prices
-- Event-to-market correlation prototype using cautious language
-- Local browser-stored alert preview rules
-- API scaffolding for layers, countries, country risk, markets, infrastructure, source status, briefs, and alert testing
-- Security/privacy documentation and `.env.example`
+More detail:
 
-## Architecture
+Architecture documentation
+Provider adapter documentation
+Dashboards
+Primary
 
-- `index.html` - static app shell
-- `app.js` - native module bootstrap
-- `src/` - frontend modules
-- `data/` - fixture notes and data pointers
-- `docs/` - architecture, source, CII, provider, privacy, and roadmap docs
-- `netlify/functions/` - Netlify Functions
+Global events, country risk, natural hazards, security conditions, source health, and infrastructure context.
 
-More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+Finance
 
-## Dashboards
+Exchange registry, delayed development market cards, market status, and cautious event-to-market correlations.
 
-- Primary: global events, country risk, natural hazards, security, and infrastructure context
-- Finance: exchange registry, delayed fixture market cards, event-market correlations
-- Technology: cyber, cloud, outage, breach, and technology infrastructure scaffolding
-- Commodity: energy, metals, agriculture, ports, shipping, and supply-chain scaffolding
-- Happy: positive developments, humanitarian wins, recovery, conservation, science, and stability improvements
+Technology
 
-## Country Instability Index
+Cybersecurity, cloud status, service outages, data breaches, Internet disruptions, and technology-infrastructure scaffolding.
 
-CII is an experimental analytic indicator with a 0-100 score:
+Commodity
 
-- 0-19: Stable
-- 20-39: Guarded
-- 40-59: Elevated
-- 60-79: High
-- 80-100: Critical
+Energy, metals, agriculture, ports, shipping, production, weather, and supply-chain scaffolding.
 
-It is explainable and reproducible from visible event data. It is not an official rating.
+Happy
 
-Methodology: [docs/COUNTRY_INSTABILITY_INDEX.md](docs/COUNTRY_INSTABILITY_INDEX.md)
+Positive developments, humanitarian achievements, recovery milestones, conservation, scientific progress, and improvements in stability or safety.
 
-## API routes
+Country Instability Index
 
-- `GET /api/events`
-- `GET /api/layers`
-- `GET /api/countries`
-- `GET /api/country-risk`
-- `GET /api/markets`
-- `GET /api/infrastructure`
-- `GET /api/source-status`
-- `POST /api/briefs`
-- `POST /api/alerts/test`
+The Country Instability Index, or CII, is an experimental analytical indicator using a score from 0 to 100.
 
-New scaffold endpoints use:
+Score	Classification
+0–19	Stable
+20–39	Guarded
+40–59	Elevated
+60–79	High
+80–100	Critical
 
-```js
+The score is designed to be explainable and reproducible from visible event data. It is not an official government, credit, insurance, travel, or financial-risk rating.
+
+See:
+
+Country Instability Index methodology
+API routes
+
+Current and scaffolded routes include:
+
+GET  /api/events
+GET  /api/layers
+GET  /api/countries
+GET  /api/country-risk
+GET  /api/markets
+GET  /api/infrastructure
+GET  /api/source-status
+POST /api/briefs
+POST /api/alerts/test
+
+New scaffold endpoints use a consistent response envelope:
+
 {
   data,
   generatedAt,
@@ -88,127 +131,317 @@ New scaffold endpoints use:
   errors,
   requestId
 }
-```
 
-The legacy `/api/events` shape is preserved for the current frontend.
+The existing /api/events response remains compatible with the current frontend.
 
-## Data-source limitations
+Data-source limitations
 
-Many requested sources require credentials, licensing, or explicit terms review. Planned or credentialed layers are not labeled live.
+Many requested sources require credentials, commercial licensing, redistribution permission, or explicit terms review.
 
-Examples requiring credentials or additional setup:
+Planned, disabled, fixture, or credential-required sources must never be labeled as live.
 
-- ACLED
-- ADS-B aviation feeds
-- AIS maritime feeds
-- Finance price providers
-- NASA FIRMS
-- Groq/OpenRouter AI providers
-- Supabase/Neon database
+Examples requiring credentials or additional setup include:
 
-See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md).
+ACLED
+ADS-B aviation providers
+AIS maritime providers
+Financial-market price providers
+NASA FIRMS
+Groq
+OpenRouter
+Supabase
+Neon PostgreSQL
+Licensed cyber or OSINT providers
 
-## Security and privacy
+See:
 
-- Do not put secrets in frontend JavaScript.
-- Use Netlify environment variables for private provider keys.
-- `.env.example` contains variable names only.
-- CSP is configured in `netlify.toml`.
-- AI, OSINT, cyber, aviation, maritime, and dark-web style provider integrations are disabled/scaffolded until explicitly configured.
-- Do not bypass logins, CAPTCHAs, paywalls, or access restrictions.
-- Do not display raw passwords or unnecessary sensitive personal data.
+Data sources
+Provider adapters
+Security and privacy
 
-See [docs/SECURITY_AND_PRIVACY.md](docs/SECURITY_AND_PRIVACY.md).
+Project security rules include:
 
-## Environment variables
+Never place private credentials in frontend JavaScript.
+Store private provider keys in Netlify environment variables.
+Keep .env.example limited to variable names and blank values.
+Never commit real API keys, passwords, tokens, or service-role credentials.
+Keep the Supabase service-role key server-side only.
+Preserve the Content Security Policy configured in netlify.toml.
+Validate external URLs and open them safely.
+Escape imported and user-controlled HTML.
+Do not bypass logins, CAPTCHAs, paywalls, or access restrictions.
+Do not expose raw passwords or unnecessary personal information.
+Keep AI, OSINT, aviation, maritime, cyber, and licensed-data integrations disabled until properly configured.
+Clearly distinguish verified information from automated analysis or discovery leads.
 
-Suggested future variables:
+See:
 
-- `ACLED_ACCESS_TOKEN`
-- `ACLED_EMAIL`
-- `GROQ_API_KEY`
-- `OPENROUTER_API_KEY`
-- `OLLAMA_BASE_URL`
-- `FINANCE_API_KEY`
-- `ADS_B_API_KEY`
-- `AIS_API_KEY`
-- `NASA_FIRMS_MAP_KEY`
-- `RELIEFWEB_ENABLED`
-- `GDELT_ENABLED`
-- `DATABASE_URL`
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+Security and privacy
+Environment variables
 
-The Supabase service-role key must never reach browser code.
+The repository may use the following variables as integrations are implemented:
 
-## Local development
+ACLED_ACCESS_TOKEN=
+ACLED_EMAIL=
+GROQ_API_KEY=
+OPENROUTER_API_KEY=
+OLLAMA_BASE_URL=
+FINANCE_API_KEY=
+ADS_B_API_KEY=
+AIS_API_KEY=
+NASA_FIRMS_MAP_KEY=
+RELIEFWEB_ENABLED=
+GDELT_ENABLED=
+DATABASE_URL=
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 
-Install dependencies only if you need local tooling:
+Do not add real credentials to .env.example.
 
-```bash
+Configure production credentials in:
+
+Netlify
+→ Live Map
+→ Project configuration
+→ Environment variables
+
+Trigger a new deployment after changing environment variables.
+
+Local development
+
+Node.js 20 or newer is recommended.
+
+Install project tooling:
+
 npm install
-```
 
-Run Netlify locally:
+Install the Netlify CLI when needed:
 
-```bash
+npm install -g netlify-cli
+
+Start the local Netlify environment:
+
 netlify dev
-```
 
-Test local endpoints:
+Test:
 
-```text
 http://localhost:8888/
 http://localhost:8888/api/events
 http://localhost:8888/.netlify/functions/events
-```
+Testing and validation
 
-## Testing
+Run all platform tests and validation:
 
-Syntax:
-
-```bash
-npm run check
-```
-
-Unit tests:
-
-```bash
 npm test
-```
 
-Manual checks:
+Run the Phase 1 platform tests only:
 
-- Desktop layout
-- Mobile-width layout
-- Dashboard switching
-- URL dashboard state
-- Satellite, dark, and street basemaps
-- 2D mode
-- 3D beta fallback
-- Event search and filters
-- Marker clustering
-- Event dialog
-- CII methodology dialog
-- Finance dashboard exchange markers
-- `/api/events`
-- `/api/layers`
-- `/api/markets`
+npm run test:platform
 
-## Netlify deployment
+Run syntax checks:
 
-Use GitHub-connected deployment. Do not use drag-and-drop when functions are required.
+npm run check:syntax
 
-Netlify settings:
+Run the repository validator:
 
-- Branch: `main`
-- Build command: blank
-- Publish directory: `.`
-- Functions directory: `netlify/functions`
+npm run validate
 
-Every merge to `main` should trigger a production deploy.
+Run the browser-side secret scan:
 
-## Future roadmap
+npm run security:scan
 
-See [docs/ROADMAP.md](docs/ROADMAP.md).
+Run the production smoke test:
+
+npm run smoke:production
+
+The validator checks:
+
+JavaScript syntax
+Netlify Function syntax
+Local event-response structure
+Coordinate validity
+Source attribution
+Source URL format and reachability
+Source freshness
+Provider errors
+Partial and fallback modes
+Secret-looking values in browser-served files
+
+The production smoke test checks:
+
+https://liveworldmap.netlify.app/
+https://liveworldmap.netlify.app/api/events
+https://liveworldmap.netlify.app/.netlify/functions/events
+
+A provider outage may cause the production smoke test to fail even when the website remains partially usable. This is intentional so provider failures are not hidden.
+
+Manual testing checklist
+
+Before merging a major pull request, verify:
+
+Desktop layout
+Mobile-width layout
+Dashboard switching
+URL-preserved dashboard state
+Satellite basemap
+Dark basemap
+Street basemap
+2D mode
+3D beta fallback
+Event search
+Category filters
+Severity filters
+Marker clustering
+Event-detail dialog
+Original source links
+Source-health display
+CII methodology dialog
+Finance exchange markers
+Alert-rule preview
+/api/events
+/api/layers
+/api/countries
+/api/country-risk
+/api/markets
+/api/source-status
+GitHub Actions
+
+The repository includes these workflows:
+
+Validation
+.github/workflows/validate.yml
+
+Runs repository validation on:
+
+Pull requests
+Pushes to main
+Manual workflow dispatches
+Production smoke testing
+.github/workflows/production-smoke-test.yml
+
+Runs production checks:
+
+Every six hours
+On manual workflow dispatch
+Security
+.github/workflows/security.yml
+
+Runs:
+
+Browser-side secret scanning
+CodeQL JavaScript analysis when supported by the repository’s GitHub plan and settings
+Dependabot
+.github/dependabot.yml
+
+Checks weekly for:
+
+npm dependency updates
+GitHub Actions updates
+CodeQL
+.github/codeql/codeql-config.yml
+
+CodeQL alerts for a private repository may require GitHub Code Security or GitHub Advanced Security.
+
+If the GitHub plan does not support CodeQL for this private repository, the CodeQL job may fail to upload results even when the application code is valid. The browser-secret scan and other validation workflows can still operate independently.
+
+Troubleshooting automation
+Validation fails on source status
+
+Check whether USGS or NASA EONET is unavailable or returning partial data.
+
+Review:
+
+Netlify
+→ Live Map
+→ Logs & Metrics
+→ Functions
+→ events
+Production smoke test fails while the page still loads
+
+The site may be operating in a partial-data or fallback mode. Inspect the /api/events response and sourceStatus object.
+
+CodeQL fails
+
+Open the failed GitHub Actions job and inspect the error.
+
+For a private repository, verify:
+
+GitHub repository
+→ Settings
+→ Code security and analysis
+
+CodeQL may require additional GitHub security features. If unavailable, disable only the CodeQL analysis job rather than removing the browser-secret scan or validation workflows.
+
+Secret scan fails
+
+Remove the credential from every browser-served file and Git history where practical, rotate the exposed credential, and configure the replacement through Netlify environment variables.
+
+A new provider is added
+
+Update all relevant areas together:
+
+Provider adapter
+Source registry
+Source attribution
+Freshness rules
+Failure handling
+.env.example
+Documentation
+Tests
+Netlify deployment
+
+Use a GitHub-connected deployment. Do not use drag-and-drop when Netlify Functions are required.
+
+Recommended settings:
+
+Branch: main
+Base directory: blank
+Build command: blank
+Publish directory: .
+Functions directory: netlify/functions
+
+Every merge into main should trigger a production deployment.
+
+After deployment, test:
+
+https://liveworldmap.netlify.app/
+https://liveworldmap.netlify.app/api/events
+https://liveworldmap.netlify.app/.netlify/functions/events
+Pull-request workflow
+
+For major changes:
+
+Create a new branch from the latest main.
+Make focused changes.
+Run all applicable tests.
+Push the branch.
+Open a pull request into main.
+Review the Netlify deploy preview.
+Resolve conflicts by combining required functionality from both branches.
+Wait for required checks.
+Merge only after reviewing the preview and test results.
+Verify the production Netlify deployment.
+
+To reduce future conflicts, new branches should always be created or updated from the latest main after earlier pull requests are merged.
+
+Future roadmap
+
+Planned work includes:
+
+Additional verified conflict feeds
+OSINT source explorer
+Financial and commodity feeds
+Cybersecurity feeds
+Aviation tracking
+Maritime tracking
+Infrastructure monitoring
+AI-generated briefs with citations
+Persistent event history
+User accounts and alerts
+Investigation and entity-relationship tools
+True WebGL 3D globe
+
+See:
+
+Roadmap

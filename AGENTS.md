@@ -1,0 +1,44 @@
+# Live Map Agent Instructions
+
+These instructions apply to the whole repository.
+
+## Deployment and API Compatibility
+
+- Preserve Netlify static hosting compatibility: publish directory `.` and functions directory `netlify/functions`.
+- Preserve `/api/events` and the direct `/.netlify/functions/events` endpoint. Do not rename, remove, or break either route.
+- Keep browser code static-host friendly. Do not require a build step unless `README.md`, `netlify.toml`, and GitHub Actions are updated together.
+
+## Secrets and Data Safety
+
+- Never expose secrets, access tokens, API keys, emails used for provider auth, or private credentials in browser code.
+- Keep provider credentials in Netlify environment variables only.
+- Do not place real API keys in `.env.example`, docs, tests, fixtures, screenshots, or source files.
+- Never label fixtures, placeholder data, unavailable providers, or planned integrations as live.
+
+## Source Quality
+
+- Every live event source must include attribution, source URL, provider freshness, and source status.
+- Provider failures must be visible in `sourceStatus` and must not be hidden behind a successful-looking workflow result.
+- If freshness, source status, or attribution changes, update the relevant docs and validator checks.
+
+## Workflow
+
+- Use branches and pull requests for changes. Do not push directly to `main` unless the user explicitly asks for that.
+- Keep changes scoped to the requested behavior.
+- Update documentation whenever app behavior, deployment behavior, API shape, provider status, or validation behavior changes.
+
+## Required Checks
+
+Run the available syntax and validation checks before opening a PR:
+
+```bash
+npm run check:syntax
+npm run validate
+```
+
+For production or release changes, also run:
+
+```bash
+npm run smoke:production
+npm run security:scan
+```

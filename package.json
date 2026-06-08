@@ -8,6 +8,11 @@
   },
   "scripts": {
     "check": "node --check app.js && node --check netlify/functions/events.mjs",
-    "test": "node tests/run-tests.mjs"
+    "check:syntax": "node --check app.js && node --check netlify/functions/events.mjs && node --check scripts/live-map-validator.mjs && node --check scripts/production-smoke-test.mjs",
+    "validate": "node scripts/live-map-validator.mjs",
+    "security:scan": "node scripts/live-map-validator.mjs --security-only",
+    "smoke:production": "node scripts/production-smoke-test.mjs",
+    "test:platform": "node tests/run-tests.mjs",
+    "test": "npm run test:platform && npm run validate"
   }
 }
