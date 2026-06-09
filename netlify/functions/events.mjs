@@ -55,19 +55,45 @@ function parseHours(request) {
   return Math.min(720, Math.max(24, Number(url.searchParams.get("hours") || 168)));
 }
 
+function parseApiFilters(request) {
+  const url = new URL(request.url);
+  return {
+    recordKind: url.searchParams.get("recordKind") || null,
+    verification: url.searchParams.get("verification") || null,
+    domain: url.searchParams.get("domain") || null,
+  };
+}
+
+function eventVerification(event) {
+  return event.verification?.state || event.metadata?.verificationStatus || event.verificationStatus || "single-source";
+}
+
+function applyApiFilters(events, filters) {
+  return events.filter((event) => {
+    if (filters.recordKind && event.recordKind !== filters.recordKind) return false;
+    if (filters.domain && event.domain !== filters.domain) return false;
+    if (filters.verification && eventVerification(event) !== filters.verification) return false;
+    return true;
+  });
+}
+
 export default async (request) => {
   if (request.method === "OPTIONS") return new Response("", { status: 204, headers });
 
   try {
     const hours = parseHours(request);
+    const filters = parseApiFilters(request);
     const generatedAt = Date.now();
     const result = await orchestrateProviders({ hours, now: generatedAt });
+    const canonicalEvents = applyApiFilters(result.canonicalEvents, filters);
+    const legacyEvents = applyApiFilters(result.events, filters);
 
     return new Response(
       JSON.stringify({
-        events: result.events,
-        canonicalEvents: result.canonicalEvents,
+        events: legacyEvents,
+        canonicalEvents,
         generatedAt,
+        filters,
         sources: EVENT_PROVIDERS.filter((provider) => result.sourceStatus[provider.id]?.ok).map((provider) => provider.name),
         sourceStatus: result.sourceStatus,
         sourceRegistry,

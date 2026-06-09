@@ -170,6 +170,7 @@ docs/NVD_PROVIDER.md
 docs/SEC_EDGAR_PROVIDER.md
 docs/FRED_PROVIDER.md
 docs/EIA_PROVIDER.md
+docs/OPEN_NEWS_AND_INFRASTRUCTURE_PROVIDERS.md
 docs/FINANCE_EVENT_CLASSIFICATION.md
 docs/COMMODITY_SIGNAL_RULES.md
 docs/PROVIDER_INCREMENTAL_STATE.md
@@ -233,6 +234,9 @@ NASA_FIRMS_MAP_KEY=
 RELIEFWEB_ENABLED=
 RELIEFWEB_APPNAME=
 GDELT_ENABLED=
+RIPESTAT_SOURCEAPP=
+RIPESTAT_RESOURCES=
+CLOUDFLARE_RADAR_TOKEN=
 NVD_API_KEY=
 EIA_API_KEY=
 SEC_CONTACT_EMAIL=
@@ -574,3 +578,30 @@ The adapter covers:
 GDACS records preserve provider IDs, alert level and score, event type, affected countries, source/report/details URLs, event dates, severity metadata, and provider geometry when present. Alert levels are mapped conservatively: green is low, orange is high, and red is critical. GDACS events remain `reported` or single-provider unless independently corroborated by another source.
 
 Live Map polls GDACS server-side with bounded timeout/retry behavior and a 10-minute provider interval. Browser code must not call the GDACS upstream API directly.
+
+Phase 2C open news and Internet infrastructure
+
+Phase 2C adds the foundation for open news discovery and Internet infrastructure observations without adding commercial news, licensed tracking feeds, dark-web sources, aviation, maritime, AI investigation features, or ACLED.
+
+New record kinds:
+
+- `event`
+- `observation`
+- `discovery-lead`
+- `moving-object`
+
+New provider foundations:
+
+- GDELT DOC API discovery leads through `src/data/providers/gdelt.js`. This is configuration-required and only runs when `GDELT_ENABLED=true`.
+- Official RSS/Atom allowlist through `src/data/providers/rss-feed.js`. Items are metadata-only discovery leads with original source links.
+- Official Statuspage incident adapter through `src/data/providers/statuspage.js`. Only active user-impacting incidents are labeled current events.
+- RIPEstat observation adapter through `src/data/providers/ripestat.js`. It requires `RIPESTAT_SOURCEAPP` and `RIPESTAT_RESOURCES`; normal observations stay observations and only conservative anomaly rules create events.
+- Cloudflare Radar is documented as a future authenticated boundary only. No Radar API calls run in Phase 2C.
+
+Safety rules:
+
+- Do not accept arbitrary RSS or Atom URLs from browser requests.
+- Do not republish full article bodies, images, or scraped pages.
+- Keep discovery leads visually and structurally separate from confirmed events.
+- Keep provider credentials server-side in Netlify environment variables.
+- Treat unavailable configured providers as visible source-health warnings.

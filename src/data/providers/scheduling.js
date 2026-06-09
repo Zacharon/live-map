@@ -12,6 +12,10 @@ export const PROVIDER_SCHEDULES = {
   "sec-edgar": schedule("sec-edgar", { refreshIntervalMs: 5 * 60 * 1000, cacheTtlMs: 5 * 60 * 1000, staleAfterMs: 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 180 }),
   fred: schedule("fred", { refreshIntervalMs: 60 * 60 * 1000, cacheTtlMs: 60 * 60 * 1000, staleAfterMs: 24 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 48 }),
   eia: schedule("eia", { refreshIntervalMs: 60 * 60 * 1000, cacheTtlMs: 60 * 60 * 1000, staleAfterMs: 12 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 72 }),
+  gdelt: schedule("gdelt", { refreshIntervalMs: 15 * 60 * 1000, cacheTtlMs: 15 * 60 * 1000, staleAfterMs: 2 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 96 }),
+  "official-rss": schedule("official-rss", { refreshIntervalMs: 20 * 60 * 1000, cacheTtlMs: 20 * 60 * 1000, staleAfterMs: 4 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 96 }),
+  statuspage: schedule("statuspage", { refreshIntervalMs: 5 * 60 * 1000, cacheTtlMs: 5 * 60 * 1000, staleAfterMs: 60 * 60 * 1000, requestTimeoutMs: 12000, maximumRetries: 1, dailyRequestBudget: 180 }),
+  ripestat: schedule("ripestat", { refreshIntervalMs: 30 * 60 * 1000, cacheTtlMs: 30 * 60 * 1000, staleAfterMs: 6 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 72 }),
 };
 
 export function schedule(providerId, overrides = {}) {

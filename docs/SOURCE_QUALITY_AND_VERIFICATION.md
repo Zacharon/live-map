@@ -13,6 +13,7 @@ Verification state answers: how well supported is the event or source claim?
 - `unverified`
 - `single-source`
 - `reported`
+- `observed`
 - `corroborated`
 - `primary-confirmed`
 - `disputed`
@@ -20,4 +21,13 @@ Verification state answers: how well supported is the event or source claim?
 - `retracted`
 
 Severity, confidence, impact, freshness, corroboration, and source quality must remain separate fields. Do not collapse them into one unexplained number.
+
+Record kind answers what the platform is displaying:
+
+- `event`: a normalized incident, alert, report, filing, or provider-confirmed occurrence.
+- `observation`: a measurement or structured fact that may inform an event but is not itself an incident.
+- `discovery-lead`: a lead from news discovery or official feed metadata that is not confirmation.
+- `moving-object`: reserved for future aviation or maritime tracking after terms and safety review.
+
+Discovery leads must not be styled, sorted, or described as confirmed live events. Promotion requires a primary source or corroboration rules plus human review.
 

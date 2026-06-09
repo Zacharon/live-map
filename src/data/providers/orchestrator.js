@@ -12,6 +12,10 @@ import { fetchNvdEvents } from "./nvd.js";
 import { fetchSecEdgarEvents } from "./sec-edgar.js";
 import { fetchFredEvents } from "./fred.js";
 import { fetchEiaEvents } from "./eia.js";
+import { fetchGdeltDiscoveryLeads } from "./gdelt.js";
+import { fetchOfficialFeedEvents } from "./rss-feed.js";
+import { fetchStatuspageEvents } from "./statuspage.js";
+import { fetchRipestatEvents } from "./ripestat.js";
 import { scheduleForProvider } from "./scheduling.js";
 import { createRequestBudgetStore } from "./request-budget.js";
 import { createProviderStateStore } from "./provider-state.js";
@@ -27,6 +31,10 @@ const ADAPTERS = {
   "sec-edgar": fetchSecEdgarEvents,
   fred: fetchFredEvents,
   eia: fetchEiaEvents,
+  gdelt: fetchGdeltDiscoveryLeads,
+  "official-rss": fetchOfficialFeedEvents,
+  statuspage: fetchStatuspageEvents,
+  ripestat: fetchRipestatEvents,
 };
 
 const lastSuccess = new Map();
@@ -82,6 +90,11 @@ function providerStatus(provider, result, now) {
     attachedReportCount: result.attachedReportCount || 0,
     standaloneEventCount: result.standaloneEventCount ?? result.events.length,
     observationCount: result.observations?.length || 0,
+    recordKinds: result.recordKinds || {},
+    recordsClustered: result.recordsClustered || 0,
+    recordsPromoted: result.recordsPromoted || 0,
+    nextScheduledRefreshAt: result.nextScheduledRefreshAt || null,
+    stateStorageMode: result.stateStorageMode || "memory",
     attribution: provider.attribution,
     url: provider.homepageUrl,
   };
@@ -156,6 +169,15 @@ export async function runProvider(provider, context) {
       attachedReportCount: result.attachedReportCount || 0,
       standaloneEventCount: result.standaloneEventCount ?? events.length,
       observations: result.observations || [],
+      recordsClustered: result.recordsClustered || 0,
+      recordsPromoted: result.recordsPromoted || 0,
+      recordKinds: events.reduce((acc, event) => {
+        const kind = event.recordKind || "event";
+        acc[kind] = (acc[kind] || 0) + 1;
+        return acc;
+      }, {}),
+      nextScheduledRefreshAt: schedule.refreshIntervalMs ? new Date(Date.now() + schedule.refreshIntervalMs).toISOString() : null,
+      stateStorageMode: context.providerStateStore?.mode || "memory",
       cached: false,
       stale: false,
     };

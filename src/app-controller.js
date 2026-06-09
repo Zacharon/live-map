@@ -154,14 +154,15 @@ function sourceButton(event) {
 }
 
 function qualityBadges(event) {
-  return `<div class="quality-row"><span>Severity: ${escapeHtml(event.severity)}</span><span>Confidence: ${Math.round(event.confidence || 0)}%</span><span>Verification: ${escapeHtml(event.verificationStatus)}</span><span>Sources: ${escapeHtml(event.independentSourceCount || 1)} independent</span><span>Freshness: ${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>`;
+  const kind = (event.recordKind || "event").replace(/-/g, " ");
+  return `<div class="quality-row"><span>Kind: ${escapeHtml(kind)}</span><span>Severity: ${escapeHtml(event.severity)}</span><span>Confidence: ${Math.round(event.confidence || 0)}%</span><span>Verification: ${escapeHtml(event.verificationStatus)}</span><span>Sources: ${escapeHtml(event.independentSourceCount || 1)} independent</span><span>Freshness: ${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>`;
 }
 
 function renderEventCard(event) {
   const expanded = state.cardMode === "expanded";
   const summary = expanded ? `<p>${escapeHtml(event.summary)}</p>` : "";
   const details = expanded ? `<div class="event-facts"><span class="fact-chip">Occurred: ${escapeHtml(new Date(event.occurredAt).toLocaleString())}</span><span class="fact-chip">Reported: ${escapeHtml(new Date(event.firstReportedAt || event.occurredAt).toLocaleString())}</span><span class="fact-chip">Updated: ${escapeHtml(new Date(event.updatedAt || event.occurredAt).toLocaleString())}</span>${event.geographic === false ? `<span class="fact-chip">Not mapped: ${escapeHtml(event.nonGeographicReason || "no supported geography")}</span>` : ""}${event.incidentSize > 1 ? `<span class="fact-chip">Incident: ${escapeHtml(event.incidentSize)} linked events</span>` : ""}</div>` : "";
-  return `<article class="event-card ${expanded ? "expanded" : "compact"}" data-id="${escapeHtml(event.id)}"><div class="event-meta"><span class="category-pill" style="--cat:${event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color}">${escapeHtml(event.domainLabel || CATEGORIES[event.category]?.label || "Other")}</span><span>${escapeHtml(event.typeLabel || event.category)}</span><span>${escapeHtml(event.country)}</span><span class="severity-tag" style="--sev:${SEVERITIES[event.severity].color}">${SEVERITIES[event.severity].label}</span></div><h2>${escapeHtml(event.title)}</h2>${summary}${qualityBadges(event)}${details}<div class="source-row"><span>${escapeHtml(event.sourceName)}</span><span>${escapeHtml(event.verificationStatus)}</span>${event.incidentSize > 1 ? `<span>${escapeHtml(event.incidentTitle || "Incident cluster")}</span>` : ""}${sourceButton(event)}</div><div class="event-foot"><span>${relativeTime(event.occurredAt)} occurred - ${escapeHtml(event.sourceType)}</span><span class="confidence">${event.confidence}% confidence</span></div></article>`;
+  return `<article class="event-card ${expanded ? "expanded" : "compact"} record-${escapeHtml(event.recordKind || "event")}" data-id="${escapeHtml(event.id)}"><div class="event-meta"><span class="category-pill" style="--cat:${event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color}">${escapeHtml(event.domainLabel || CATEGORIES[event.category]?.label || "Other")}</span><span>${escapeHtml(event.typeLabel || event.category)}</span><span>${escapeHtml(event.country)}</span><span class="record-kind">${escapeHtml(event.recordKind || "event")}</span><span class="severity-tag" style="--sev:${SEVERITIES[event.severity].color}">${SEVERITIES[event.severity].label}</span></div><h2>${escapeHtml(event.title)}</h2>${summary}${qualityBadges(event)}${details}<div class="source-row"><span>${escapeHtml(event.sourceName)}</span><span>${escapeHtml(event.verificationStatus)}</span>${event.incidentSize > 1 ? `<span>${escapeHtml(event.incidentTitle || "Incident cluster")}</span>` : ""}${sourceButton(event)}</div><div class="event-foot"><span>${relativeTime(event.occurredAt)} occurred - ${escapeHtml(event.sourceType)}</span><span class="confidence">${event.confidence}% confidence</span></div></article>`;
 }
 
 function renderList(els, events) {
@@ -186,7 +187,10 @@ function renderFilters(els) {
   els.layerFilters.innerHTML = Object.entries(CATEGORIES).map(([key, category]) => `<button class="filter-item ${filters.categories.has(key) ? "active" : ""}" title="Layers control which concrete event types appear on the map." style="--category:${category.color}" data-category="${key}"><span><i class="dot"></i>${category.label}</span><b>${state.events.filter((event) => event.category === key).length}</b></button>`).join("");
   els.severityFilters.innerHTML = Object.entries(SEVERITIES).map(([key, severity]) => `<button class="severity-btn ${filters.severities.has(key) ? "active" : ""}" style="--sev:${severity.color}" data-severity="${key}">${severity.label}</button>`).join("");
   const activeDomains = domainOptions().filter((domain) => state.events.some((event) => event.domain === domain.id));
-  els.mapLegend.innerHTML = activeDomains.map((domain) => `<div class="legend-row"><i class="dot" style="--category:${domain.defaultColor}"></i>${domain.label}</div>`).join("");
+  const recordLegend = state.events.some((event) => (event.recordKind || "event") !== "event")
+    ? '<div class="legend-row"><i class="dot record-dot"></i>Discovery/observation records</div>'
+    : "";
+  els.mapLegend.innerHTML = activeDomains.map((domain) => `<div class="legend-row"><i class="dot" style="--category:${domain.defaultColor}"></i>${domain.label}</div>`).join("") + recordLegend;
 }
 
 function renderMapHealth(element, health) {

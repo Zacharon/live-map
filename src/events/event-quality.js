@@ -2,6 +2,7 @@ export const VERIFICATION_STATUSES = [
   "unverified",
   "single-source",
   "reported",
+  "observed",
   "corroborated",
   "primary-confirmed",
   "disputed",
