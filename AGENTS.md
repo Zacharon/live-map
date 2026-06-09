@@ -9,6 +9,7 @@ These instructions apply to the whole repository.
 - Do not push directly to `main`, `master`, or another production branch.
 - Preserve Netlify static hosting compatibility: publish directory `.` and functions directory `netlify/functions`.
 - Preserve `/api/events` and the direct `/.netlify/functions/events` endpoint. Do not rename, remove, or break either route.
+- Preserve `/api/sources` and `/sources` when editing the master source registry or Source Explorer.
 - Keep browser code static-host friendly. Do not require a build step unless `README.md`, `netlify.toml`, and GitHub Actions are updated together.
 
 ## Secrets and Data Safety
@@ -17,6 +18,7 @@ These instructions apply to the whole repository.
 - Keep provider credentials in Netlify environment variables only.
 - Do not place real API keys in `.env.example`, docs, tests, fixtures, screenshots, or source files.
 - Never label fixtures, placeholder data, unavailable providers, or planned integrations as live.
+- Never mark a master source registry entry `live` unless an adapter exists, terms are reviewed, attribution is implemented, and cache/retention policies are documented.
 - Do not fabricate missing event data.
 - Do not add paid services without explicit approval.
 - Keep public-information and risk claims explainable.
@@ -25,6 +27,7 @@ These instructions apply to the whole repository.
 ## Source Quality
 
 - Every live event source must include attribution, source URL, provider freshness, and source status.
+- Every registry source must include access classification, implementation status, source tier, verification state, source URL, attribution, review dates, cache guidance, retention guidance, and limitations.
 - Provider failures must be visible in `sourceStatus` and must not be hidden behind a successful-looking workflow result.
 - If freshness, source status, or attribution changes, update the relevant docs and validator checks.
 - Keep taxonomy, grouping, sorting, incident clustering, and provider-health behavior documented when changed.

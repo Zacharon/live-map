@@ -12,6 +12,8 @@ import { arePotentialDuplicates, mergeDuplicateEvents } from "../src/events/even
 import { normalizeUsgsFeature } from "../src/data/providers/usgs.js";
 import { normalizeEonetEvent } from "../src/data/providers/eonet.js";
 import { orchestrateProviders } from "../src/data/providers/orchestrator.js";
+import { IMPLEMENTATION_STATUSES, MASTER_SOURCE_REGISTRY, SOURCE_ACCESS_CLASSIFICATIONS, SOURCE_DOMAINS, SOURCE_QUALITY_TIERS, VERIFICATION_STATES, filterSources, sourceRegistryStats, validateSourceRegistry } from "../src/sources/master-source-registry.js";
+import { classifyProviderError, createAdapterResult, nextRefreshWithBackoff, sanitizeProviderError, shouldOpenCircuitBreaker } from "../src/sources/source-adapter-contract.js";
 import { normalizeNwsAlert, nwsSeverityScore, representativeNwsPoint } from "../src/data/providers/nws.js";
 import { createMemoryProviderCache } from "../src/data/providers/cache.js";
 import { PROVIDER_SOURCE_REGISTRY, providersForDomain, DOMAIN_SOURCE_STATUS } from "../src/data/providers/source-registry.js";
@@ -21,6 +23,8 @@ import { shouldCluster, buildIncidents } from "../src/events/incident-clustering
 import { computeQualityDimensions, normalizeVerificationStatus } from "../src/events/event-quality.js";
 import { providerState } from "../src/ui/provider-health-panel.js";
 import { serializeView } from "../src/ui/saved-views.js";
+import sourcesFunction from "../netlify/functions/sources.mjs";
+import { validateProviderSourceLinks } from "../src/sources/provider-source-links.js";
 
 function test(name, fn) {
   try {
@@ -190,6 +194,112 @@ test("Provider orchestration reports partial failure without dropping successful
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("Master source registry schema and enums stay valid", () => {
+  const validation = validateSourceRegistry();
+  assert.deepEqual(validation.errors, []);
+  assert.equal(validation.valid, true);
+  assert.ok(MASTER_SOURCE_REGISTRY.length >= 80);
+  assert.ok(SOURCE_ACCESS_CLASSIFICATIONS.includes("commercial-license"));
+  assert.ok(IMPLEMENTATION_STATUSES.includes("authentication-required"));
+  assert.ok(SOURCE_QUALITY_TIERS.includes("tier-5-discovery-only"));
+  assert.ok(VERIFICATION_STATES.includes("retracted"));
+  assert.ok(SOURCE_DOMAINS.includes("maritime"));
+});
+
+test("Master source registry protects licensing and implementation state", () => {
+  const live = MASTER_SOURCE_REGISTRY.filter((source) => source.status === "live");
+  assert.deepEqual(live.map((source) => source.adapterId).sort(), ["eonet", "nws-alerts", "usgs"]);
+  assert.ok(live.every((source) => source.implemented && !source.legalReviewRequired));
+  assert.ok(MASTER_SOURCE_REGISTRY.every((source) => source.accessMode !== "prohibited-or-unclear" || source.status === "disabled"));
+  assert.ok(MASTER_SOURCE_REGISTRY.every((source) => source.status !== "link-only" || !source.implemented));
+  assert.ok(MASTER_SOURCE_REGISTRY.every((source) => source.status !== "live" || source.commercialUse !== "unknown"));
+  assert.ok(MASTER_SOURCE_REGISTRY.every((source) => source.status !== "live" || source.redistribution !== "unknown"));
+});
+
+test("Master source registry has attribution, HTTPS URLs, tiers, and domain coverage", () => {
+  const ids = new Set();
+  const urls = new Set();
+  for (const source of MASTER_SOURCE_REGISTRY) {
+    assert.ok(source.attribution);
+    assert.match(source.sourceUrl, /^https:\/\//);
+    assert.ok(source.sourceTier.startsWith("tier-"));
+    assert.ok(source.sourceStatusPolicy.includes("surfaced"));
+    assert.ok(source.cachePolicy.includes("server-side"));
+    assert.ok(source.takedownPolicy.includes("takedown"));
+    assert.equal(ids.has(source.id), false, `duplicate id ${source.id}`);
+    assert.equal(urls.has(source.sourceUrl), false, `duplicate URL ${source.sourceUrl}`);
+    ids.add(source.id);
+    urls.add(source.sourceUrl);
+    for (const envVar of source.environmentVariables) assert.match(envVar, /^[A-Z][A-Z0-9_]+$/);
+  }
+  const stats = sourceRegistryStats();
+  for (const domain of ["conflict-security", "natural-disaster", "weather", "major-news", "finance-markets", "technology-cyber", "commodity-supply-chain", "infrastructure", "aviation", "maritime", "humanitarian", "positive-development", "health", "geospatial-reference"]) {
+    assert.ok(stats.domains[domain] > 0, `${domain} missing`);
+  }
+  assert.ok(stats.openOrPublic > stats.live);
+  assert.ok(stats.licensedOrCredentialed > 0);
+  assert.ok(stats.linkOnlyOrDisabled > 0);
+});
+
+test("Source Explorer search and filters preserve useful source groups", () => {
+  assert.ok(filterSources(undefined, { q: "weather" }).length >= 5);
+  assert.ok(filterSources(undefined, { domain: "aviation" }).some((source) => source.name.includes("OpenSky")));
+  assert.ok(filterSources(undefined, { domain: "geospatial-reference" }).length >= 1);
+  assert.ok(filterSources(undefined, { accessMode: "commercial-license" }).every((source) => source.status === "license-required"));
+  assert.ok(filterSources(undefined, { implemented: "true" }).every((source) => source.implemented));
+  assert.ok(filterSources(undefined, { official: "true" }).every((source) => source.official));
+});
+
+test("Source adapter contract sanitizes errors and opens breakers safely", () => {
+  const result = createAdapterResult({ providerId: "test", status: "partial", receivedCount: 3, acceptedCount: 2 });
+  assert.equal(result.providerId, "test");
+  assert.equal(result.status, "partial");
+  assert.equal(classifyProviderError("HTTP 401 token=abc123 user=test@example.com"), "authentication-required");
+  assert.equal(sanitizeProviderError("Bearer abc.def.ghi api_key=secret user=test@example.com").includes("secret"), false);
+  assert.equal(shouldOpenCircuitBreaker({ consecutiveFailures: 3, lastStatus: "provider-unavailable" }), true);
+  assert.equal(shouldOpenCircuitBreaker({ consecutiveFailures: 0, accessMode: "commercial-license", legalReviewRequired: true }), true);
+  assert.ok(nextRefreshWithBackoff({ now: 1000, baseRefreshMs: 1000, consecutiveFailures: 2 }) > 1000);
+});
+
+test("Runtime providers map to master source registry entries", () => {
+  const validation = validateProviderSourceLinks();
+  assert.deepEqual(validation.errors, []);
+  assert.equal(validation.valid, true);
+  for (const provider of PROVIDER_SOURCE_REGISTRY.filter((item) => item.implemented)) {
+    assert.ok(provider.sourceRegistryId, `${provider.id} needs sourceRegistryId`);
+  }
+});
+
+test("Source API returns JSON envelope, filters, and invalid source warnings", async () => {
+  const response = await sourcesFunction(new Request("https://liveworldmap.netlify.app/api/sources?domain=aviation&access=open-api&status=planned"));
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type"), /json/);
+  const body = await response.json();
+  assert.equal(body.data.registryVersion, "1");
+  assert.ok(body.data.statistics.total >= 80);
+  assert.ok(body.data.sources.every((source) => source.domain === "aviation" && source.accessMode === "open-api" && source.status === "planned"));
+
+  const invalid = await sourcesFunction(new Request("https://liveworldmap.netlify.app/api/sources?source=does-not-exist"));
+  const invalidBody = await invalid.json();
+  assert.equal(invalidBody.data.selectedSource, null);
+  assert.ok(invalidBody.warnings.some((warning) => warning.includes("Unknown source id")));
+});
+
+test("Source Explorer markup supports routing, fallback state, and escaping-safe controls", () => {
+  const html = fs.readFileSync(new URL("../source-explorer.html", import.meta.url), "utf8");
+  const app = fs.readFileSync(new URL("../src/source-explorer-app.js", import.meta.url), "utf8");
+  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8");
+  assert.match(netlifyConfig, /from = "\/api\/sources"[\s\S]*to = "\/\.netlify\/functions\/sources"/);
+  assert.match(netlifyConfig, /from = "\/sources"[\s\S]*to = "\/source-explorer\.html"/);
+  assert.match(html, /role="listbox"/);
+  assert.match(html, /id="sourceExplorerStatus"/);
+  assert.match(html, /id="sourceRetry"/);
+  assert.match(app, /popstate/);
+  assert.match(app, /encodeURIComponent|URLSearchParams/);
+  assert.match(app, /escapeHtml/);
+  assert.match(app, /local source registry fallback/i);
 });
 
 test("Taxonomy maps provider categories and preserves unknowns safely", () => {

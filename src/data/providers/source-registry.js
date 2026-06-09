@@ -11,12 +11,15 @@ export const DOMAIN_SOURCE_STATUS = [
   ["maritime", "planned", "Global Fishing Watch and AIS sources require access and attribution review."],
   ["humanitarian", "planned", "ReliefWeb is planned and requires a pre-approved appname."],
   ["positive-development", "planned", "Positive developments require measurable outcomes from primary sources."],
+  ["health", "planned", "Health sources are planned; patient-level data and restricted outbreak sources are not ingested."],
+  ["geospatial-reference", "planned", "Reference sources are used for context and must not be labeled active events."],
   ["other", "live", "Other catches valid events that do not map cleanly to a specific domain."],
 ];
 
 export const PROVIDER_SOURCE_REGISTRY = [
   {
     id: "usgs",
+    sourceRegistryId: "usgs-earthquake-geojson",
     name: "USGS Earthquake Hazards Program",
     domains: ["natural-disaster"],
     categories: ["earthquake"],
@@ -34,6 +37,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
   },
   {
     id: "eonet",
+    sourceRegistryId: "nasa-eonet",
     name: "NASA EONET",
     domains: ["natural-disaster", "weather", "positive-development"],
     categories: ["wildfire", "storm", "volcano", "flood", "other"],
@@ -51,6 +55,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
   },
   {
     id: "nws-alerts",
+    sourceRegistryId: "nws-alerts-api",
     name: "NOAA/NWS Active Alerts",
     domains: ["weather"],
     categories: ["storm"],
@@ -68,6 +73,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
   },
   {
     id: "gdacs",
+    sourceRegistryId: "gdacs-alerts",
     name: "GDACS",
     domains: ["natural-disaster"],
     categories: ["earthquake", "storm", "flood", "volcano"],
@@ -85,6 +91,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
   },
   {
     id: "reliefweb",
+    sourceRegistryId: "reliefweb-api",
     name: "ReliefWeb V2",
     domains: ["humanitarian", "natural-disaster"],
     categories: ["humanitarian"],
@@ -102,6 +109,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
   },
   {
     id: "gdelt",
+    sourceRegistryId: "gdelt-doc-api",
     name: "GDELT",
     domains: ["major-news", "conflict-security"],
     categories: ["other"],
@@ -119,6 +127,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
   },
   {
     id: "nvd",
+    sourceRegistryId: "nvd-api",
     name: "NIST NVD",
     domains: ["technology-cyber"],
     categories: ["cyber"],
@@ -136,6 +145,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
   },
   {
     id: "cisa-kev",
+    sourceRegistryId: "cisa-kev",
     name: "CISA Known Exploited Vulnerabilities",
     domains: ["technology-cyber"],
     categories: ["cyber"],
@@ -153,6 +163,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
   },
   {
     id: "sec-edgar",
+    sourceRegistryId: "sec-edgar-submissions",
     name: "SEC EDGAR",
     domains: ["finance-markets"],
     categories: ["finance"],
@@ -170,6 +181,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
   },
   {
     id: "eia",
+    sourceRegistryId: "eia-open-data",
     name: "EIA Open Data",
     domains: ["commodity-supply-chain", "infrastructure"],
     categories: ["finance", "infrastructure"],
@@ -187,6 +199,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
   },
   {
     id: "acled",
+    sourceRegistryId: "acled",
     name: "ACLED",
     domains: ["conflict-security", "humanitarian"],
     categories: ["conflict"],
@@ -204,6 +217,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
   },
   {
     id: "opensky",
+    sourceRegistryId: "opensky-network",
     name: "OpenSky Network",
     domains: ["aviation"],
     categories: ["infrastructure"],
@@ -221,6 +235,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
   },
   {
     id: "global-fishing-watch",
+    sourceRegistryId: "global-fishing-watch",
     name: "Global Fishing Watch",
     domains: ["maritime"],
     categories: ["infrastructure"],
@@ -238,6 +253,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
   },
   {
     id: "owid",
+    sourceRegistryId: "our-world-in-data",
     name: "Our World in Data",
     domains: ["positive-development"],
     categories: ["other"],
@@ -252,6 +268,42 @@ export const PROVIDER_SOURCE_REGISTRY = [
     documentationUrl: "https://docs.owid.io/projects/etl/api/",
     attribution: "Our World in Data",
     limitations: "Require measurable positive outcomes; do not rely on sentiment.",
+  },
+  {
+    id: "who-disease-outbreak-news",
+    sourceRegistryId: "who-disease-outbreak-news",
+    name: "WHO Disease Outbreak News",
+    domains: ["health"],
+    categories: ["other"],
+    official: true,
+    status: "planned",
+    implemented: false,
+    credentialRequired: false,
+    licensingStatus: "terms-review-required",
+    refreshInterval: "planned",
+    geographicCoverage: "Global public-health reports at safe aggregation.",
+    sourceUrl: "https://www.who.int/emergencies/disease-outbreak-news",
+    documentationUrl: "https://www.who.int/emergencies/disease-outbreak-news",
+    attribution: "World Health Organization",
+    limitations: "No patient-level data; avoid precise sensitive locations.",
+  },
+  {
+    id: "openstreetmap-reference",
+    sourceRegistryId: "openstreetmap",
+    name: "OpenStreetMap reference layers",
+    domains: ["geospatial-reference", "infrastructure"],
+    categories: ["infrastructure"],
+    official: false,
+    status: "planned",
+    implemented: false,
+    credentialRequired: false,
+    licensingStatus: "odbl-attribution-required",
+    refreshInterval: "static-reference",
+    geographicCoverage: "Global reference map features and infrastructure context.",
+    sourceUrl: "https://www.openstreetmap.org/",
+    documentationUrl: "https://wiki.openstreetmap.org/wiki/API",
+    attribution: "OpenStreetMap contributors",
+    limitations: "Reference data is not an active event feed and must not imply current outage or damage.",
   },
 ];
 

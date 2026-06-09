@@ -48,6 +48,17 @@
   force = true
 
 [[redirects]]
+  from = "/api/sources"
+  to = "/.netlify/functions/sources"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/sources"
+  to = "/source-explorer.html"
+  status = 200
+
+[[redirects]]
   from = "/api/briefs"
   to = "/.netlify/functions/briefs"
   status = 200

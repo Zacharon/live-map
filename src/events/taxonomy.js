@@ -12,6 +12,8 @@ export const TAXONOMY = [
   { id: "maritime", label: "Maritime", description: "Maritime, port and vessel-related events.", parentId: "all", icon: "anchor", defaultColor: "#6ec6ff", dashboard: "primary", mapLayer: "maritime", aliases: [] },
   { id: "humanitarian", label: "Humanitarian", description: "Humanitarian emergencies, aid and displacement.", parentId: "all", icon: "aid", defaultColor: "#ff9fc1", dashboard: "happy", mapLayer: "humanitarian", aliases: ["humanitarian"] },
   { id: "positive-development", label: "Positive Developments", description: "Recovery, science, conservation and improving public outcomes.", parentId: "all", icon: "spark", defaultColor: "#38e0a3", dashboard: "happy", mapLayer: "positive", aliases: ["positive", "other"] },
+  { id: "health", label: "Health", description: "Public-health emergencies, outbreak reports, and health-system signals.", parentId: "all", icon: "health", defaultColor: "#fca5a5", dashboard: "primary", mapLayer: "health", aliases: ["public-health", "outbreak"] },
+  { id: "geospatial-reference", label: "Geospatial/reference", description: "Reference layers, basemaps, boundaries, and static context sources.", parentId: "all", icon: "map", defaultColor: "#c4b5fd", dashboard: "primary", mapLayer: "reference", aliases: ["geospatial", "reference"] },
   { id: "other", label: "Other", description: "Events that do not map cleanly to a known taxonomy entry.", parentId: "all", icon: "dot", defaultColor: "#68d6b7", dashboard: "primary", mapLayer: "other", aliases: [] },
 ];
 
@@ -51,6 +53,8 @@ const TYPE_ROWS = [
   ["leadership-change", "Leadership change", "major-news"],
   ["diplomatic-development", "Diplomatic development", "major-news"],
   ["public-health-emergency", "Public-health emergency", "major-news"],
+  ["outbreak", "Outbreak", "health"],
+  ["health-alert", "Health alert", "health"],
   ["major-accident", "Major accident", "major-news"],
   ["legal-ruling", "Legal ruling", "major-news"],
   ["international-agreement", "International agreement", "major-news"],
@@ -93,6 +97,7 @@ const TYPE_ROWS = [
   ["airport-disruption", "Airport disruption", "infrastructure"],
   ["rail-disruption", "Rail disruption", "infrastructure"],
   ["water-system-incident", "Dam or water-system incident", "infrastructure"],
+  ["basemap-reference", "Basemap or reference layer", "geospatial-reference"],
 ];
 
 export const TAXONOMY_TYPES = TYPE_ROWS.map(([id, label, parentId, aliases = []]) => ({

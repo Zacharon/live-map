@@ -228,6 +228,16 @@ function renderCountDebug() {
   return `<section class="method-note count-debug"><strong>Count debug</strong><pre>${escapeHtml(JSON.stringify(state.countDebug, null, 2))}</pre></section>`;
 }
 
+function updateSourcesLink(element) {
+  if (!element) return;
+  const params = new URLSearchParams();
+  params.set("dashboard", state.dashboard);
+  params.set("sort", state.sort);
+  params.set("group", state.groupBy);
+  params.set("cards", state.cardMode);
+  element.href = `/sources?${params.toString()}`;
+}
+
 function renderStats(els, events) {
   els.visibleCount.textContent = events.length;
   els.highCount.textContent = events.filter((event) => ["critical", "high"].includes(event.severity)).length;
@@ -260,7 +270,7 @@ function renderAlerts(events) {
 }
 
 export function bootLiveMap() {
-  const els = ids(["dashboardNav", "domainFilters", "layerFilters", "severityFilters", "eventList", "visibleCount", "highCount", "countryCount", "updatedAt", "search", "clearDomains", "clearFilters", "timeWindow", "sortOrder", "groupBy", "cardMode", "savedViews", "saveView", "fitWorld", "fitEvents", "themeToggle", "eventDialog", "dialogContent", "closeDialog", "methodologyDialog", "methodologyContent", "closeMethodology", "mapLegend", "systemStatus", "feedAge", "baseMap", "refreshNow", "sourceHealth", "providerHealthPanel", "sourcesStatusPanel", "dashboardPanel", "dashboardEyebrow", "dashboardTitle", "mapMode", "mapHealth", "feedError", "ciiToggle"]);
+  const els = ids(["dashboardNav", "domainFilters", "layerFilters", "severityFilters", "eventList", "visibleCount", "highCount", "countryCount", "updatedAt", "search", "clearDomains", "clearFilters", "timeWindow", "sortOrder", "groupBy", "cardMode", "savedViews", "saveView", "fitWorld", "fitEvents", "themeToggle", "eventDialog", "dialogContent", "closeDialog", "methodologyDialog", "methodologyContent", "closeMethodology", "mapLegend", "systemStatus", "feedAge", "baseMap", "refreshNow", "sourceHealth", "providerHealthPanel", "sourcesStatusPanel", "dashboardPanel", "dashboardEyebrow", "dashboardTitle", "mapMode", "mapHealth", "feedError", "ciiToggle", "sourcesLink"]);
   const mapController = createMapController({ onHealthChange: (health) => { state.mapHealth = health; renderMapHealth(els.mapHealth, health); } });
   let refreshTimer = null;
   let retryAttempts = 0;
@@ -288,6 +298,7 @@ export function bootLiveMap() {
     renderStats(els, events);
     renderFeedError(els.feedError);
     renderMapHealth(els.mapHealth, state.mapHealth || mapController.health());
+    updateSourcesLink(els.sourcesLink);
     els.providerHealthPanel.innerHTML = renderProviderHealthPanel(state.sourceStatus, state.providerResults);
     els.sourcesStatusPanel.innerHTML = renderSourcesStatusPanel(state.events, state.sourceStatus);
     applyDashboardTitle(state.dashboard, els.dashboardEyebrow, els.dashboardTitle);
