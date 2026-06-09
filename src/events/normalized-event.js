@@ -76,7 +76,7 @@ export function validateNormalizedEvent(event) {
   if (!event?.provider) errors.push("provider is required");
   if (!event?.title) errors.push("title is required");
   if (!event?.category) errors.push("category is required");
-  if (!isValidCoordinate(event?.latitude, event?.longitude)) errors.push("latitude/longitude must be valid");
+  if (event?.geographic !== false && !isValidCoordinate(event?.latitude, event?.longitude)) errors.push("latitude/longitude must be valid");
   if (!toIsoString(event?.startedAt)) errors.push("startedAt must be a valid timestamp");
   if (!toIsoString(event?.ingestedAt)) errors.push("ingestedAt must be a valid timestamp");
   if (!SEVERITY_LABELS.includes(event?.severityLabel)) errors.push("severityLabel is invalid");
@@ -105,6 +105,7 @@ export function createNormalizedEvent(input) {
   const providerEventId = input.providerEventId ?? input.providerId ?? null;
   const stableId = input.id || `${input.provider}:${providerEventId || stableStringHash(`${input.title}:${startedAt}:${input.latitude}:${input.longitude}`)}`;
   const taxonomy = classifyEvent(input);
+  const isExplicitlyNonGeographic = input.geographic === false;
   const event = {
     id: stableId,
     provider: input.provider,
@@ -123,6 +124,9 @@ export function createNormalizedEvent(input) {
     subcategory: input.subcategory ?? null,
     latitude: Number(input.latitude ?? input.lat),
     longitude: Number(input.longitude ?? input.lon),
+    geographic: isExplicitlyNonGeographic ? false : true,
+    mapDisplayStatus: input.mapDisplayStatus || (isExplicitlyNonGeographic ? "not-mapped" : "mapped"),
+    nonGeographicReason: input.nonGeographicReason || null,
     countryCode: input.countryCode ?? null,
     countryName: input.countryName ?? input.country ?? null,
     region: input.region ?? null,
@@ -161,6 +165,9 @@ export function toLegacyEvent(event) {
     uiSeverity,
     lat: event.latitude,
     lon: event.longitude,
+    geographic: event.geographic,
+    mapDisplayStatus: event.mapDisplayStatus,
+    nonGeographicReason: event.nonGeographicReason,
     country: event.countryName || "Multiple/unknown",
     place: event.locationName || event.countryName || "Unknown location",
     location: event.locationName || event.countryName || "Unknown location",

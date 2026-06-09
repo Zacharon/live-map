@@ -6,12 +6,20 @@ import { fetchUsgsEvents } from "./usgs.js";
 import { fetchEonetEvents } from "./eonet.js";
 import { fetchNwsAlerts } from "./nws.js";
 import { fetchGdacsEvents } from "./gdacs.js";
+import { fetchReliefWebEvents } from "./reliefweb.js";
+import { fetchCisaKevEvents } from "./cisa-kev.js";
+import { fetchNvdEvents } from "./nvd.js";
+import { scheduleForProvider } from "./scheduling.js";
+import { createRequestBudgetStore } from "./request-budget.js";
 
 const ADAPTERS = {
   usgs: fetchUsgsEvents,
   eonet: fetchEonetEvents,
   "nws-alerts": fetchNwsAlerts,
   gdacs: fetchGdacsEvents,
+  reliefweb: fetchReliefWebEvents,
+  "cisa-kev": fetchCisaKevEvents,
+  nvd: fetchNvdEvents,
 };
 
 const lastSuccess = new Map();
@@ -56,12 +64,16 @@ function providerStatus(provider, result, now) {
     count: result.events.length,
     acceptedCount: result.events.length,
     rejectedCount: result.rejectedCount,
-    message: result.errorMessage || (result.stale ? "Showing stale provider data" : ok ? "Live" : "Unavailable"),
+    message: result.errorMessage || result.safeError || result.warnings?.[0] || (result.stale ? "Showing stale provider data" : ok ? "Live" : result.status === "configuration-required" ? "Configuration required" : "Unavailable"),
     lastAttemptedAt: result.fetchedAt,
     lastSuccessfulAt: result.lastSuccessfulAt || null,
     durationMs: result.durationMs,
     cached: result.cached,
     stale: result.stale,
+    requestBudget: result.requestBudget || null,
+    warnings: result.warnings || [],
+    attachedReportCount: result.attachedReportCount || 0,
+    standaloneEventCount: result.standaloneEventCount ?? result.events.length,
     attribution: provider.attribution,
     url: provider.homepageUrl,
   };
@@ -87,19 +99,28 @@ export async function runProvider(provider, context) {
     };
   }
   try {
+    const schedule = scheduleForProvider(provider.id);
+    const requestBudget = context.requestBudgetStore
+      ? await context.requestBudgetStore.recordRequest(provider.id, schedule.dailyRequestBudget)
+      : null;
     const result = await adapter({
       ...context,
       provider,
+      schedule,
+      requestBudget,
       fetchJson: (url, sourceName) =>
         fetchJsonWithTimeout(url, sourceName, {
-          timeoutMs: provider.timeoutMs,
+          timeoutMs: provider.timeoutMs || schedule.requestTimeoutMs,
           userAgent: provider.userAgent,
-          attempts: provider.fetchAttempts,
+          attempts: provider.fetchAttempts || schedule.maximumRetries,
         }),
     });
     const events = result.events || [];
-    lastSuccess.set(provider.id, { events, fetchedAt, providerResult: result });
-    if (context.providerCache) {
+    const adapterStatus = result.status || (result.rejected?.length ? "degraded" : "healthy");
+    const normalizedStatus = adapterStatus === "ok" ? "healthy" : adapterStatus;
+    const successfulResult = events.length || normalizedStatus === "healthy" || normalizedStatus === "degraded";
+    if (successfulResult) lastSuccess.set(provider.id, { events, fetchedAt, providerResult: result });
+    if (context.providerCache && successfulResult) {
       try {
         const expiresAt = new Date(Date.now() + Math.max(provider.freshnessMs || 900000, provider.refreshIntervalMs || 120000)).toISOString();
         await context.providerCache.set(provider.id, events, {
@@ -114,13 +135,18 @@ export async function runProvider(provider, context) {
     }
     return {
       providerId: provider.id,
-      status: result.rejected?.length ? "degraded" : "healthy",
+      status: normalizedStatus,
       events,
       fetchedAt,
-      lastSuccessfulAt: fetchedAt,
+      lastSuccessfulAt: successfulResult ? fetchedAt : null,
       durationMs: Date.now() - started,
-      recordCount: events.length + (result.rejected?.length || 0),
+      recordCount: result.receivedCount ?? events.length + (result.rejected?.length || 0),
       rejectedCount: result.rejected?.length || 0,
+      warnings: result.warnings || [],
+      safeError: result.safeError || null,
+      requestBudget,
+      attachedReportCount: result.attachedReportCount || 0,
+      standaloneEventCount: result.standaloneEventCount ?? events.length,
       cached: false,
       stale: false,
     };
@@ -148,8 +174,9 @@ export async function orchestrateProviders(options = {}) {
   const now = options.now || Date.now();
   const hours = options.hours || 168;
   const providerCache = options.providerCache || (await createProviderCache());
+  const requestBudgetStore = options.requestBudgetStore || (await createRequestBudgetStore());
   const enabledProviders = EVENT_PROVIDERS.filter((provider) => provider.enabled !== false);
-  const settled = await Promise.allSettled(enabledProviders.map((provider) => runProvider(provider, { now, hours, providerCache })));
+  const settled = await Promise.allSettled(enabledProviders.map((provider) => runProvider(provider, { now, hours, providerCache, requestBudgetStore })));
   const providerResults = settled.map((item, index) =>
     item.status === "fulfilled"
       ? item.value

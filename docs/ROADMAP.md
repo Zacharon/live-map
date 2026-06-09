@@ -16,8 +16,11 @@
 
 - Master OSINT source registry and Source Explorer governance foundation
 - Source access, licensing, quality, verification, cache, retention, and takedown policy docs
-- Aviation and maritime provider integrations
-- Cyber and infrastructure provider adapters
+- Completed foundation: USGS, NASA EONET, NOAA/NWS, GDACS, Source Explorer, provider health diagnostics, taxonomy, grouping, saved views, URL filters, incident clustering, synchronized map layers, and mobile-friendly feed controls.
+- Phase 2A implemented: ReliefWeb humanitarian adapter foundation, CISA KEV non-geographic cyber events, NVD focused CVE enrichment, provider schedules, request budgets, and non-geographic event handling.
+- Phase 2B next: SEC EDGAR, EIA, FRED, official status/RSS feeds, and GDELT discovery leads after the interface and source-health model remain stable.
+- Later provider waves: ACLED, aircraft tracking, maritime tracking, and licensed finance/OSINT feeds after credentials, licensing, rate limits, and safety reviews are complete.
+- Cyber and infrastructure provider adapters beyond CISA KEV/NVD remain planned until each source has a registry entry, budget, cache policy, and safety notes.
 - Static infrastructure GeoJSON with attribution
 - Scaffold source: `src/data/scaffolded-modules.js`
 

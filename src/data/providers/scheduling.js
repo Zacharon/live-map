@@ -1,0 +1,42 @@
+const MIN_REFRESH_MS = 5 * 60 * 1000;
+const MIN_CACHE_TTL_MS = 60 * 1000;
+
+export const PROVIDER_SCHEDULES = {
+  usgs: schedule("usgs", { refreshIntervalMs: 2 * 60 * 1000, cacheTtlMs: 2 * 60 * 1000, staleAfterMs: 15 * 60 * 1000, dailyRequestBudget: 720 }),
+  eonet: schedule("eonet", { refreshIntervalMs: 2 * 60 * 1000, cacheTtlMs: 5 * 60 * 1000, staleAfterMs: 30 * 60 * 1000, dailyRequestBudget: 720 }),
+  "nws-alerts": schedule("nws-alerts", { refreshIntervalMs: 2 * 60 * 1000, cacheTtlMs: 2 * 60 * 1000, staleAfterMs: 10 * 60 * 1000, dailyRequestBudget: 720 }),
+  gdacs: schedule("gdacs", { refreshIntervalMs: 10 * 60 * 1000, cacheTtlMs: 10 * 60 * 1000, staleAfterMs: 30 * 60 * 1000, dailyRequestBudget: 144 }),
+  reliefweb: schedule("reliefweb", { refreshIntervalMs: 20 * 60 * 1000, cacheTtlMs: 15 * 60 * 1000, staleAfterMs: 4 * 60 * 60 * 1000, requestTimeoutMs: 15000, dailyRequestBudget: 144 }),
+  "cisa-kev": schedule("cisa-kev", { refreshIntervalMs: 60 * 60 * 1000, cacheTtlMs: 60 * 60 * 1000, staleAfterMs: 24 * 60 * 60 * 1000, requestTimeoutMs: 15000, dailyRequestBudget: 48 }),
+  nvd: schedule("nvd", { refreshIntervalMs: 2 * 60 * 60 * 1000, cacheTtlMs: 2 * 60 * 60 * 1000, staleAfterMs: 24 * 60 * 60 * 1000, requestTimeoutMs: 15000, dailyRequestBudget: 40 }),
+};
+
+export function schedule(providerId, overrides = {}) {
+  return {
+    providerId,
+    refreshIntervalMs: overrides.refreshIntervalMs ?? MIN_REFRESH_MS,
+    cacheTtlMs: overrides.cacheTtlMs ?? 10 * 60 * 1000,
+    staleAfterMs: overrides.staleAfterMs ?? 60 * 60 * 1000,
+    retryIntervalMs: overrides.retryIntervalMs ?? 5 * 60 * 1000,
+    circuitBreakerCooldownMs: overrides.circuitBreakerCooldownMs ?? 30 * 60 * 1000,
+    requestTimeoutMs: overrides.requestTimeoutMs ?? 12000,
+    maximumRetries: overrides.maximumRetries ?? 2,
+    backoffBaseMs: overrides.backoffBaseMs ?? 300,
+    dailyRequestBudget: overrides.dailyRequestBudget ?? 144,
+    enabled: overrides.enabled !== false,
+  };
+}
+
+export function validateProviderSchedule(config) {
+  const errors = [];
+  if (!config?.providerId) errors.push("providerId is required");
+  if (config?.refreshIntervalMs < MIN_REFRESH_MS) errors.push(`${config.providerId} refreshIntervalMs is dangerously low`);
+  if (config?.cacheTtlMs < MIN_CACHE_TTL_MS) errors.push(`${config.providerId} cacheTtlMs is dangerously low`);
+  if (config?.staleAfterMs < config?.cacheTtlMs) errors.push(`${config.providerId} staleAfterMs must be >= cacheTtlMs`);
+  if (config?.dailyRequestBudget > 900) errors.push(`${config.providerId} dailyRequestBudget leaves too little provider quota headroom`);
+  return { valid: errors.length === 0, errors };
+}
+
+export function scheduleForProvider(providerId) {
+  return PROVIDER_SCHEDULES[providerId] || schedule(providerId);
+}

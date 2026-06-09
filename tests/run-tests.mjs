@@ -16,6 +16,11 @@ import { IMPLEMENTATION_STATUSES, MASTER_SOURCE_REGISTRY, SOURCE_ACCESS_CLASSIFI
 import { classifyProviderError, createAdapterResult, nextRefreshWithBackoff, sanitizeProviderError, shouldOpenCircuitBreaker } from "../src/sources/source-adapter-contract.js";
 import { normalizeNwsAlert, nwsSeverityScore, representativeNwsPoint } from "../src/data/providers/nws.js";
 import { gdacsSeverityScore, gdacsUrl, normalizeGdacsFeature, representativeGdacsPoint } from "../src/data/providers/gdacs.js";
+import { normalizeCisaKevItem } from "../src/data/providers/cisa-kev.js";
+import { normalizeNvdCve } from "../src/data/providers/nvd.js";
+import { fetchReliefWebEvents, normalizeReliefWebRecord } from "../src/data/providers/reliefweb.js";
+import { PROVIDER_SCHEDULES, validateProviderSchedule } from "../src/data/providers/scheduling.js";
+import { createMemoryRequestBudgetStore, retryAfterMs } from "../src/data/providers/request-budget.js";
 import { createMemoryProviderCache } from "../src/data/providers/cache.js";
 import { PROVIDER_SOURCE_REGISTRY, providersForDomain, DOMAIN_SOURCE_STATUS } from "../src/data/providers/source-registry.js";
 import { classifyEvent, domainOptions, TAXONOMY_REGISTRY } from "../src/events/taxonomy.js";
@@ -211,7 +216,7 @@ test("Master source registry schema and enums stay valid", () => {
 
 test("Master source registry protects licensing and implementation state", () => {
   const live = MASTER_SOURCE_REGISTRY.filter((source) => source.status === "live");
-  assert.deepEqual(live.map((source) => source.adapterId).sort(), ["eonet", "gdacs", "nws-alerts", "usgs"]);
+  assert.deepEqual(live.map((source) => source.adapterId).sort(), ["cisa-kev", "eonet", "gdacs", "nws-alerts", "usgs"]);
   assert.ok(live.every((source) => source.implemented && !source.legalReviewRequired));
   assert.ok(MASTER_SOURCE_REGISTRY.every((source) => source.accessMode !== "prohibited-or-unclear" || source.status === "disabled"));
   assert.ok(MASTER_SOURCE_REGISTRY.every((source) => source.status !== "link-only" || !source.implemented));
@@ -271,6 +276,17 @@ test("Runtime providers map to master source registry entries", () => {
   for (const provider of PROVIDER_SOURCE_REGISTRY.filter((item) => item.implemented)) {
     assert.ok(provider.sourceRegistryId, `${provider.id} needs sourceRegistryId`);
   }
+});
+
+test("Provider schedules and request budgets protect upstream services", async () => {
+  assert.equal(validateProviderSchedule(PROVIDER_SCHEDULES.reliefweb).valid, true);
+  assert.equal(validateProviderSchedule({ providerId: "bad", refreshIntervalMs: 1000, cacheTtlMs: 1000, staleAfterMs: 1000, dailyRequestBudget: 1000 }).valid, false);
+  const store = createMemoryRequestBudgetStore();
+  const first = await store.recordRequest("test-budget", 2);
+  const second = await store.recordRequest("test-budget", 2);
+  assert.equal(first.remainingRequests, 1);
+  assert.equal(second.status, "exhausted");
+  assert.ok(retryAfterMs("60") >= 60000);
 });
 
 test("Source API returns JSON envelope, filters, and invalid source warnings", async () => {
@@ -449,6 +465,90 @@ test("NWS alerts without geometry use labeled coverage fallback", () => {
   assert.ok(result.event);
   assert.equal(result.event.domain, "weather");
   assert.match(result.event.metadata.coordinateMethod, /fallback/);
+});
+
+test("CISA KEV normalization creates safe non-geographic cyber events", () => {
+  const result = normalizeCisaKevItem({
+    cveID: "CVE-2026-0001",
+    vendorProject: "Example",
+    product: "Example Product",
+    vulnerabilityName: "Example Product Vulnerability",
+    dateAdded: "2026-06-09",
+    shortDescription: "A vulnerability is known to be exploited.",
+    requiredAction: "Apply vendor mitigation.",
+    dueDate: "2026-06-30",
+    knownRansomwareCampaignUse: "Known",
+    notes: "https://nvd.nist.gov/vuln/detail/CVE-2026-0001",
+    cwes: ["CWE-79"],
+  }, new Date("2026-06-09T00:00:00Z"));
+  assert.ok(result.event);
+  assert.equal(result.event.provider, "cisa-kev");
+  assert.equal(result.event.geographic, false);
+  assert.equal(result.event.domain, "technology-cyber");
+  assert.equal(result.event.metadata.knownRansomwareCampaignUse, "Known");
+  assert.doesNotMatch(result.event.description, /exploit code|proof of concept/i);
+});
+
+test("NVD normalization enriches CVEs without map coordinates", () => {
+  const result = normalizeNvdCve({
+    cve: {
+      id: "CVE-2026-0002",
+      published: "2026-06-01T00:00:00.000",
+      lastModified: "2026-06-08T00:00:00.000",
+      vulnStatus: "Analyzed",
+      descriptions: [{ lang: "en", value: "Example vulnerability description." }],
+      metrics: { cvssMetricV31: [{ cvssData: { baseScore: 9.8 } }] },
+    },
+  }, new Date("2026-06-09T00:00:00Z"));
+  assert.ok(result.event);
+  assert.equal(result.event.provider, "nvd");
+  assert.equal(result.event.geographic, false);
+  assert.equal(result.event.metadata.cvss, 9.8);
+});
+
+test("ReliefWeb stays configuration-required without appname and limits report bodies", async () => {
+  const previous = globalThis.process.env.RELIEFWEB_APPNAME;
+  delete globalThis.process.env.RELIEFWEB_APPNAME;
+  const status = await fetchReliefWebEvents({ now: Date.now(), hours: 72 });
+  assert.equal(status.status, "configuration-required");
+  assert.equal(status.events.length, 0);
+  if (previous !== undefined) globalThis.process.env.RELIEFWEB_APPNAME = previous;
+
+  const longBody = "Sensitive report body. ".repeat(200);
+  const result = normalizeReliefWebRecord({
+    id: "12345",
+    fields: {
+      title: "Displacement update in Sudan",
+      body: longBody,
+      date: { created: "2026-06-08T00:00:00Z", changed: "2026-06-09T00:00:00Z" },
+      url: "https://reliefweb.int/report/sudan/example",
+      source: [{ name: "Example NGO" }],
+      country: [{ name: "Sudan", iso3: "SDN" }],
+      theme: [{ name: "Protection and Human Rights" }],
+    },
+  }, new Date("2026-06-09T00:00:00Z"));
+  assert.ok(result.event);
+  assert.equal(result.event.domain, "humanitarian");
+  assert.equal(result.event.metadata.coordinateMethod, "country-centroid");
+  assert.equal(result.event.metadata.copyrightPolicy, "metadata-and-limited-excerpt-only");
+  assert.ok(result.event.description.length <= 420);
+  assert.notEqual(result.event.description, longBody);
+});
+
+test("Non-geographic normalized events remain valid", () => {
+  const result = createNormalizedEvent({
+    provider: "test",
+    title: "Non-geographic event",
+    category: "cyber",
+    domain: "technology-cyber",
+    type: "exploited-vulnerability",
+    geographic: false,
+    sourceName: "Test source",
+    sourceUrl: "https://example.com/non-geo",
+  });
+  assert.equal(result.valid, true);
+  assert.equal(result.event.geographic, false);
+  assert.equal(validateNormalizedEvent(result.event).valid, true);
 });
 
 test("GDACS normalizes disaster alert taxonomy, severity, and source links", () => {
