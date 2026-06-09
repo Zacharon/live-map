@@ -10,6 +10,8 @@
 - AI, aviation, maritime, cyber, and dark-web style providers are disabled until explicit server-side configuration exists
 - Source Explorer is metadata-only and must not expose private credentials or restricted provider content
 - Master registry entries with unknown licensing remain planned, disabled, link-only, authentication-required, or license-required
+- Detailed provider diagnostics are separated onto `/diagnostics` and must stay sanitized
+- Opt-in provider groups fail visibly as `configuration-required` instead of silently pretending to be live
 
 ## Boundaries
 
@@ -18,6 +20,8 @@ The platform must not support credential theft, doxxing, harassment, unlawful su
 Licensed or sensitive sources must include access controls, redaction, audit logging, and retention policies before production use.
 
 Browsers should call Live Map APIs rather than upstream providers. Provider adapters must sanitize errors, hide credentials, obey cache and retention limits, and surface provider failure in source status.
+
+The `/api/provider-health` endpoint must never return raw upstream payloads, stack traces, environment variables, tokens, keys, private contact emails, or provider credentials.
 
 Humanitarian providers must not display sensitive camps, shelters, medical facilities, children, trafficking survivors, conflict victims, persecuted groups, or aid-worker movement locations at harmful precision.
 

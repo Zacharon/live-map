@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Live Map country scores, CII v2, confidence, completeness, trends, and contributing factors." />
+  <title>Country Scores - Live Map</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="source-explorer.css" />
+</head>
+<body class="source-explorer-page countries-page">
+  <div class="source-shell">
+    <header class="source-header">
+      <a class="brand source-brand" href="/"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Country Scores</span></div></a>
+      <nav class="source-links" aria-label="Country scores navigation">
+        <a href="/">Back to map</a>
+        <a href="/sources">Sources</a>
+      </nav>
+    </header>
+    <main class="source-workspace">
+      <section class="source-controls">
+        <div class="source-status-row">
+          <div id="countriesStatus" class="source-load-status" role="status" aria-live="polite"><strong>Loading country scores...</strong></div>
+          <button id="countriesRefresh" type="button">Refresh</button>
+        </div>
+        <div class="source-filter-grid">
+          <label for="countrySearch">Search<input id="countrySearch" type="search" placeholder="Ukraine, Europe, high..." /></label>
+          <label for="countrySort">Sort<select id="countrySort"></select></label>
+          <label for="countryRegion">Region<select id="countryRegion"></select></label>
+          <label for="countryLevel">Level<select id="countryLevel"></select></label>
+          <label for="confidenceFilter">Confidence<select id="confidenceFilter"><option value="">Any</option><option value="70">70%+</option><option value="50">50%+</option></select></label>
+          <label for="completenessFilter">Completeness<select id="completenessFilter"><option value="">Any</option><option value="70">70%+</option><option value="50">50%+</option></select></label>
+        </div>
+      </section>
+      <section id="countryDistribution" class="source-summary"></section>
+      <section class="source-layout country-layout">
+        <div id="countryTable" class="country-score-list"></div>
+        <aside id="countryDetail" class="source-detail"></aside>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="src/countries-app.js"></script>
+</body>
+</html>

@@ -3,6 +3,13 @@ import { OFFICIAL_FEED_REGISTRY } from "./feed-registry.js";
 import { applyPublicationPolicy } from "./publication-policy.js";
 import { assertSafeFetchUrl, assertSafeRedirect } from "./ssrf-protection.js";
 
+const PROVIDER_ENABLE_FLAGS = {
+  "security-rss": "SECURITY_RSS_ENABLED",
+  "weather-rss": "WEATHER_RSS_ENABLED",
+  "health-rss": "HEALTH_RSS_ENABLED",
+  "positive-rss": "POSITIVE_RSS_ENABLED",
+};
+
 function decodeEntities(value = "") {
   return String(value)
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
@@ -117,11 +124,25 @@ export function normalizeFeedItem(item, feed, now = new Date()) {
 }
 
 export async function fetchOfficialFeedEvents(context = {}) {
+  const flag = PROVIDER_ENABLE_FLAGS[context.provider?.id];
+  if (flag && String(globalThis?.process?.env?.[flag] || "").toLowerCase() !== "true") {
+    return {
+      events: [],
+      rejected: [],
+      status: "configuration-required",
+      warnings: [`${flag}=true is required before ${context.provider.id} fetches run.`],
+      safeError: `${context.provider.name || context.provider.id} is implemented but disabled until ${flag}=true is configured.`,
+      requestAttempted: false,
+    };
+  }
   const now = new Date(context.now);
   const events = [];
   const rejected = [];
   let receivedCount = 0;
-  for (const feed of (context.feedRegistry || OFFICIAL_FEED_REGISTRY).slice(0, 6)) {
+  const registry = context.feedRegistry || OFFICIAL_FEED_REGISTRY;
+  const providerId = context.provider?.id || "official-rss";
+  const selectedFeeds = registry.filter((feed) => feed.providerId === providerId);
+  for (const feed of selectedFeeds.slice(0, 8)) {
     const xml = await fetchTextWithSafety(feed.url, {
       timeoutMs: context.provider?.timeoutMs || context.schedule?.requestTimeoutMs || 12000,
       userAgent: context.provider?.userAgent,

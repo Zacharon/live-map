@@ -14,6 +14,10 @@ export const PROVIDER_SCHEDULES = {
   eia: schedule("eia", { refreshIntervalMs: 60 * 60 * 1000, cacheTtlMs: 60 * 60 * 1000, staleAfterMs: 12 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 72 }),
   gdelt: schedule("gdelt", { refreshIntervalMs: 15 * 60 * 1000, cacheTtlMs: 15 * 60 * 1000, staleAfterMs: 2 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 96 }),
   "official-rss": schedule("official-rss", { refreshIntervalMs: 20 * 60 * 1000, cacheTtlMs: 20 * 60 * 1000, staleAfterMs: 4 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 96 }),
+  "security-rss": schedule("security-rss", { refreshIntervalMs: 30 * 60 * 1000, cacheTtlMs: 30 * 60 * 1000, staleAfterMs: 6 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 72 }),
+  "weather-rss": schedule("weather-rss", { refreshIntervalMs: 15 * 60 * 1000, cacheTtlMs: 15 * 60 * 1000, staleAfterMs: 2 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 96 }),
+  "health-rss": schedule("health-rss", { refreshIntervalMs: 60 * 60 * 1000, cacheTtlMs: 60 * 60 * 1000, staleAfterMs: 12 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 48 }),
+  "positive-rss": schedule("positive-rss", { refreshIntervalMs: 6 * 60 * 60 * 1000, cacheTtlMs: 6 * 60 * 60 * 1000, staleAfterMs: 48 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 24 }),
   statuspage: schedule("statuspage", { refreshIntervalMs: 5 * 60 * 1000, cacheTtlMs: 5 * 60 * 1000, staleAfterMs: 60 * 60 * 1000, requestTimeoutMs: 12000, maximumRetries: 1, dailyRequestBudget: 180 }),
   ripestat: schedule("ripestat", { refreshIntervalMs: 30 * 60 * 1000, cacheTtlMs: 30 * 60 * 1000, staleAfterMs: 6 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 72 }),
 };

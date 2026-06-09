@@ -33,6 +33,10 @@ const ADAPTERS = {
   eia: fetchEiaEvents,
   gdelt: fetchGdeltDiscoveryLeads,
   "official-rss": fetchOfficialFeedEvents,
+  "security-rss": fetchOfficialFeedEvents,
+  "weather-rss": fetchOfficialFeedEvents,
+  "health-rss": fetchOfficialFeedEvents,
+  "positive-rss": fetchOfficialFeedEvents,
   statuspage: fetchStatuspageEvents,
   ripestat: fetchRipestatEvents,
 };

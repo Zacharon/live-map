@@ -1,6 +1,7 @@
 import { EVENT_PROVIDERS } from "../../src/data/providers/registry.js";
 import { orchestrateProviders } from "../../src/data/providers/orchestrator.js";
 import { DOMAIN_SOURCE_STATUS, PROVIDER_SOURCE_REGISTRY } from "../../src/data/providers/source-registry.js";
+import { countryByCode, countryForEvent } from "../../src/data/countries.js";
 
 const headers = {
   "content-type": "application/json; charset=utf-8",
@@ -61,6 +62,7 @@ function parseApiFilters(request) {
     recordKind: url.searchParams.get("recordKind") || null,
     verification: url.searchParams.get("verification") || null,
     domain: url.searchParams.get("domain") || null,
+    country: url.searchParams.get("country") || null,
   };
 }
 
@@ -73,6 +75,11 @@ function applyApiFilters(events, filters) {
     if (filters.recordKind && event.recordKind !== filters.recordKind) return false;
     if (filters.domain && event.domain !== filters.domain) return false;
     if (filters.verification && eventVerification(event) !== filters.verification) return false;
+    if (filters.country) {
+      const requested = countryByCode(filters.country);
+      const eventCountry = countryForEvent(event);
+      if (!requested || eventCountry?.iso3 !== requested.iso3) return false;
+    }
     return true;
   });
 }

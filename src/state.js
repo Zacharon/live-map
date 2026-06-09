@@ -43,6 +43,7 @@ export const state = {
   mapMode: "2d",
   ciiVisible: false,
   selectedEventId: null,
+  selectedCountryIso3: urlValue("country", "").toUpperCase() || null,
   sessionAlertHistory: [],
   collapsedGroups: new Set(JSON.parse(localStorage.getItem("live-map-collapsed-groups-v1") || "[]")),
   incidents: [],
@@ -81,6 +82,8 @@ export function syncUrlState() {
   else url.searchParams.delete("q");
   if (filters.domains.size) url.searchParams.set("domains", [...filters.domains].join(","));
   else url.searchParams.delete("domains");
+  if (state.selectedCountryIso3) url.searchParams.set("country", state.selectedCountryIso3);
+  else url.searchParams.delete("country");
   window.history.replaceState({}, "", url);
 }
 

@@ -20,6 +20,7 @@
 - GDELT DOC API: discovery-lead adapter is implemented, but live queries require `GDELT_ENABLED=true`. It stores metadata and links only.
 - RIPEstat: Internet-routing observation adapter is implemented, but live queries require `RIPESTAT_SOURCEAPP` and `RIPESTAT_RESOURCES`.
 - Cloudflare Radar: authenticated integration boundary is documented for future work. It does not run API queries in this phase.
+- Security, weather, health/humanitarian, and positive-development RSS groups: implemented as independently controlled allowlists but disabled until `SECURITY_RSS_ENABLED`, `WEATHER_RSS_ENABLED`, `HEALTH_RSS_ENABLED`, or `POSITIVE_RSS_ENABLED` is set to `true`.
 
 ## Registry or development fixture
 
@@ -60,4 +61,6 @@ See also:
 - `docs/SEC_EDGAR_PROVIDER.md`
 - `docs/FRED_PROVIDER.md`
 - `docs/EIA_PROVIDER.md`
+- `docs/OPEN_PROVIDER_EXPANSION.md`
+- `docs/DIAGNOSTICS_UI.md`
 
