@@ -59,12 +59,14 @@ Current adapters:
 - EIA energy observations through `src/data/providers/eia.js`; configuration-required until `EIA_API_KEY` is configured and datasets remain allowlisted.
 - GDELT discovery leads through `src/data/providers/gdelt.js`; configuration-required until `GDELT_ENABLED=true`, metadata-only, and never auto-promoted to confirmed events.
 - Official RSS/Atom feeds through `src/data/providers/rss-feed.js`; allowlisted feeds only, SSRF-protected fetches, metadata-only excerpts, and original source links.
+- Security, weather, health/humanitarian, and positive-development RSS groups use the same adapter but separate provider IDs and opt-in environment flags. They default to `configuration-required` and do not fetch upstream until explicitly enabled.
 - Official Statuspage incidents through `src/data/providers/statuspage.js`; active unresolved incidents only, non-geographic by default.
 - RIPEstat observations through `src/data/providers/ripestat.js`; configuration-required until `RIPESTAT_SOURCEAPP` and `RIPESTAT_RESOURCES` are configured, with anomaly rules in `src/data/providers/internet-anomaly-rules.js`.
 - Cloudflare Radar boundary is documented in the source registry only; no adapter runs until a future authenticated implementation is reviewed.
 - Development finance fixture in `src/finance/finance-adapter.js`
 - Disabled AI brief endpoint in `netlify/functions/briefs.mjs`
 - Source registry endpoint in `netlify/functions/sources.mjs`
+- Sanitized provider diagnostics endpoint in `netlify/functions/provider-health.mjs`
 
 Shared provider infrastructure:
 
@@ -72,7 +74,13 @@ Shared provider infrastructure:
 - `src/data/providers/scheduling.js` defines conservative refresh guidance, cache TTLs, stale windows, request budgets, and retry policies.
 - `src/data/providers/request-budget.js` tracks in-memory request budgets so providers can fail visibly instead of silently over-polling.
 - `src/data/providers/provider-state.js` tracks incremental provider state for filings, observations, revisions, and duplicate prevention.
+- `src/data/providers/capability-registry.js` documents provider capability boundaries, geography support, credential state, record kinds, and implementation notes.
 - `src/data/providers/provider-state.js` also exposes durable-provider-state interface methods for provider state, cache entries, request budgets, and refresh locks. The current implementation is safe in-memory storage with a future Netlify Blobs boundary.
 - `src/events/normalized-event.js` supports explicit non-geographic events with `geographic: false`, `mapDisplayStatus`, and `nonGeographicReason`.
 - `src/events/normalized-event.js` supports `recordKind` values: `event`, `observation`, `discovery-lead`, and `moving-object`.
+
+Scaffolding:
+
+- `scripts/create-provider.mjs` creates a disabled provider adapter stub, fixture README, and provider doc skeleton. It does not register or enable the provider.
+- See `docs/PROVIDER_ADAPTER_TEMPLATE.md`.
 

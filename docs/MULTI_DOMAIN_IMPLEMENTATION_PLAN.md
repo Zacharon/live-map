@@ -40,3 +40,13 @@ Global Fishing Watch, AISHub, and licensed AIS adapters require access review, a
 ## Phase 4 - AI, Alerts, And Investigations
 
 AI briefs, user accounts, alerts, entity graph, cases, and compliance audit trails require citation enforcement, audit logs, permissions, and privacy review before release.
+
+## Phase 2D Operating Rules
+
+- Keep detailed provider diagnostics out of the public map dashboard.
+- Keep provider groups independently controlled so one experimental domain cannot silently activate another.
+- Do not label configuration-required providers as live.
+- Do not invent coordinates for non-geographic records.
+- Keep source attribution, source status, and freshness visible.
+
+After country navigation and CII v2 are stable, add providers in this order: NOAA/NWS and GDACS improvements, ReliefWeb, GDELT, CISA/NVD, SEC EDGAR, EIA, ACLED, aircraft tracking, and maritime tracking.

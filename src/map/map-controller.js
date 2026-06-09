@@ -114,6 +114,7 @@ export function createMapController(options = {}) {
     ? L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 44, spiderfyOnMaxZoom: true, disableClusteringAtZoom: 7 }).addTo(map)
     : L.layerGroup().addTo(map);
   const ciiLayer = L.layerGroup().addTo(map);
+  const countryLayer = L.layerGroup().addTo(map);
 
   function switchBase(name) {
     Object.values(basemaps).forEach((layer) => map.hasLayer(layer) && map.removeLayer(layer));
@@ -150,6 +151,34 @@ export function createMapController(options = {}) {
     });
   }
 
+  function renderCountryBoundaries(countries = [], scores = [], selectedIso3 = null, onSelect = null) {
+    countryLayer.clearLayers();
+    const scoreByIso3 = Object.fromEntries(scores.map((score) => [score.iso3, score]));
+    countries.forEach((country) => {
+      if (!country.bounds) return;
+      const score = scoreByIso3[country.iso3];
+      const selected = selectedIso3 === country.iso3;
+      const bounds = [[country.bounds.south, country.bounds.west], [country.bounds.north, country.bounds.east]];
+      const rectangle = L.rectangle(bounds, {
+        color: selected ? "#38e0a3" : score?.color || "#8fb3c7",
+        weight: selected ? 3 : 1,
+        opacity: selected ? 0.9 : 0.32,
+        fillColor: score?.color || "#8fb3c7",
+        fillOpacity: selected ? 0.12 : 0.025,
+        interactive: true,
+      });
+      rectangle.bindTooltip(`<strong>${country.name}</strong><br>CII ${score?.score ?? "-"} - ${score?.levelLabel || "unknown"}`);
+      rectangle.on("click", () => onSelect?.(country));
+      rectangle.addTo(countryLayer);
+    });
+    markerLayer.bringToFront();
+  }
+
+  function selectCountry(country) {
+    if (!country?.bounds) return;
+    map.fitBounds([[country.bounds.south, country.bounds.west], [country.bounds.north, country.bounds.east]], { padding: [42, 42], maxZoom: 6 });
+  }
+
   const resizeObserver = "ResizeObserver" in window ? new ResizeObserver(invalidateMapSize) : null;
   resizeObserver?.observe(mapElement);
   window.addEventListener("resize", invalidateMapSize, { passive: true });
@@ -164,6 +193,8 @@ export function createMapController(options = {}) {
     fitWorld: () => map.setView([22, 10], 2.35),
     fitEvents,
     renderCountryRisk,
+    renderCountryBoundaries,
+    selectCountry,
     invalidateMapSize,
     health: () => ({ ...health }),
     activeBase: () => activeBase,

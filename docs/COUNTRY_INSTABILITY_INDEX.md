@@ -12,15 +12,21 @@ It is not an official government, travel, insurance, legal, credit, or financial
 - 60-79: High
 - 80-100: Critical
 
-## Prototype factors
+## CII v2 factors
 
-- Recent event activity
-- Event severity
-- Natural hazard activity
-- Data freshness
-- Source confidence
+- Structural baseline
+- Recent pressure
+- Economic and infrastructure pressure
+- Cross-domain escalation
+- Event decay and freshness
+- Verification state
+- Source tier
+- Incident deduplication
+- Provider coverage
 
-Weights are stored in `src/config.js`.
+Severity, confidence, impact, freshness, corroboration, and completeness are reported separately.
 
-The app shows score, level, confidence, source list, factor contribution, calculation time, and limitations. Confidence is reduced when data is incomplete or stale.
+The app shows score, level, confidence, completeness, source coverage, factor contribution, calculation time, trend, and limitations. Confidence is reduced when data is incomplete or stale.
+
+See `docs/CII_V2_METHODOLOGY.md` and `docs/CII_SCORE_DISTRIBUTION.md`.
 

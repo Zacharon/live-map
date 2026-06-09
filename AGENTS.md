@@ -21,6 +21,9 @@ These instructions apply to the whole repository.
 - Never mark a master source registry entry `live` unless an adapter exists, terms are reviewed, attribution is implemented, and cache/retention policies are documented.
 - Do not fabricate missing event data.
 - Do not fabricate geography for non-geographic cyber, finance, or reference records.
+- Do not present simplified country bounds as legal or precise boundaries.
+- Keep detailed provider diagnostics on `/diagnostics`; the public dashboard should show only compact data-status summaries.
+- Keep CII severity, confidence, impact, freshness, corroboration, and completeness separate. Do not collapse them into an unexplained number.
 - Do not map SEC issuers to headquarters merely to create event markers.
 - Do not claim causality between official economic, filing, energy, or market records and price movements unless verified by sources.
 - Sensitive humanitarian locations must be generalized or suppressed when precise display could increase risk.
@@ -38,6 +41,7 @@ These instructions apply to the whole repository.
 - Keep taxonomy, grouping, sorting, incident clustering, and provider-health behavior documented when changed.
 - Keep non-geographic event behavior, request budgets, and provider scheduling documented when changed.
 - Keep finance/commodity event classification, observation-vs-event rules, and provider-state behavior documented when changed.
+- Keep country navigation, country-score methodology, diagnostics separation, provider capabilities, and opt-in provider gating documented when changed.
 
 ## Workflow
 

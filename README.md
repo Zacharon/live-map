@@ -29,13 +29,13 @@ Happy
 Dashboard state preserved through ?dashboard=...
 Configuration-driven catalog of more than 45 layers
 Stable 2D map with a documented 3D beta boundary
-Prototype Country Instability Index
+Country Instability Index v2 with country navigation and `/countries`
 Registry of 92 global stock exchanges
 Clearly labeled delayed or fixture market cards
 No fabricated live market prices
 Event-to-market correlation prototype using cautious language
 Local browser-stored alert-rule previews
-Source-health interface
+Compact public data-status interface and detailed `/diagnostics` provider-health page
 API scaffolding for layers, countries, country risk, markets, infrastructure, source status, briefs, and alert testing
 Security and privacy documentation
 Environment-variable template
@@ -118,6 +118,7 @@ GET  /api/sources
 GET  /api/layers
 GET  /api/countries
 GET  /api/country-risk
+GET  /api/provider-health
 GET  /api/markets
 GET  /api/infrastructure
 GET  /api/source-status
@@ -247,6 +248,10 @@ DATABASE_URL=
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+SECURITY_RSS_ENABLED=
+WEATHER_RSS_ENABLED=
+HEALTH_RSS_ENABLED=
+POSITIVE_RSS_ENABLED=
 
 Do not add real credentials to .env.example.
 
@@ -605,3 +610,19 @@ Safety rules:
 - Keep discovery leads visually and structurally separate from confirmed events.
 - Keep provider credentials server-side in Netlify environment variables.
 - Treat unavailable configured providers as visible source-health warnings.
+
+Phase 2D country intelligence and diagnostics separation
+
+Phase 2D adds country navigation, the `/countries` score page, CII v2, sanitized `/diagnostics`, `/api/provider-health`, a provider capability registry, a provider scaffold generator, and independently gated official/open RSS groups.
+
+Read:
+
+docs/CII_V2_METHODOLOGY.md
+docs/CII_SCORE_DISTRIBUTION.md
+docs/COUNTRY_NAVIGATION.md
+docs/COUNTRY_SCORES_PAGE.md
+docs/DIAGNOSTICS_UI.md
+docs/OPEN_PROVIDER_EXPANSION.md
+docs/PROVIDER_ADAPTER_TEMPLATE.md
+
+The selectable country layer uses simplified rectangular bounds from the local country registry. It is for navigation and filtering only, not legal border display.

@@ -19,7 +19,8 @@
 - Completed foundation: USGS, NASA EONET, NOAA/NWS, GDACS, Source Explorer, provider health diagnostics, taxonomy, grouping, saved views, URL filters, incident clustering, synchronized map layers, and mobile-friendly feed controls.
 - Phase 2A implemented: ReliefWeb humanitarian adapter foundation, CISA KEV non-geographic cyber events, NVD focused CVE enrichment, provider schedules, request budgets, and non-geographic event handling.
 - Phase 2B implemented foundation: SEC EDGAR material filing classification, FRED macro observations, EIA energy observations, provider incremental state, and finance/commodity dashboard scaffolding.
-- Phase 2C next: official status/RSS feeds, GDELT discovery leads, deeper durable provider state, and expanded source-health views after preview validation.
+- Phase 2C implemented: official status/RSS feeds, GDELT discovery leads, deeper provider state boundaries, and open news/infrastructure foundations.
+- Phase 2D implemented foundation: country navigation, `/countries`, CII v2 distribution controls, diagnostics separation, provider capability registry, provider scaffold generator, and independently gated open RSS provider groups.
 - Later provider waves: ACLED, aircraft tracking, maritime tracking, and licensed finance/OSINT feeds after credentials, licensing, rate limits, and safety reviews are complete.
 - Cyber and infrastructure provider adapters beyond CISA KEV/NVD remain planned until each source has a registry entry, budget, cache policy, and safety notes.
 - Static infrastructure GeoJSON with attribution

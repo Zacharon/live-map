@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="description" content="Technical diagnostics for Live Map provider health." />
+  <title>Diagnostics - Live Map</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="source-explorer.css" />
+</head>
+<body class="source-explorer-page diagnostics-page">
+  <div class="source-shell">
+    <header class="source-header">
+      <a class="brand source-brand" href="/"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Technical diagnostics</span></div></a>
+      <nav class="source-links" aria-label="Diagnostics navigation">
+        <a href="/">Back to map</a>
+        <a href="/sources">Sources</a>
+      </nav>
+    </header>
+    <main class="source-workspace">
+      <section class="source-controls">
+        <div class="source-status-row">
+          <div id="diagnosticsStatus" class="source-load-status" role="status" aria-live="polite"><strong>Loading diagnostics...</strong></div>
+          <button id="diagnosticsRefresh" type="button">Refresh</button>
+        </div>
+        <p class="panel-help">Technical diagnostics are sanitized and are not an authentication or security boundary. API keys, headers, stack traces, raw upstream payloads, and private environment values are never displayed.</p>
+      </section>
+      <section id="diagnosticsSummary" class="source-summary"></section>
+      <section id="diagnosticsList" class="diagnostics-list"></section>
+    </main>
+  </div>
+  <script type="module" src="src/diagnostics-app.js"></script>
+</body>
+</html>

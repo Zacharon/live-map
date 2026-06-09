@@ -4,6 +4,7 @@ import { LAYER_CATALOG } from "../src/data/layers.js";
 import { DASHBOARDS } from "../src/data/dashboards.js";
 import { EXCHANGES } from "../src/data/exchanges.js";
 import { computeCountryRiskScores, ciiLevel } from "../src/risk/country-risk.js";
+import { COUNTRIES, countryBoundsArray, countryByCode, countryForEvent } from "../src/data/countries.js";
 import { validateAlertRule } from "../src/alerts/alert-rules.js";
 import { escapeHtml } from "../src/events/event-normalizer.js";
 import { distanceKm, correlateEventsToMarkets } from "../src/events/event-correlation.js";
@@ -26,7 +27,7 @@ import { PROVIDER_SCHEDULES, validateProviderSchedule } from "../src/data/provid
 import { createMemoryRequestBudgetStore, retryAfterMs } from "../src/data/providers/request-budget.js";
 import { createMemoryProviderStateStore } from "../src/data/providers/provider-state.js";
 import { normalizeGdeltArticle } from "../src/data/providers/gdelt.js";
-import { parseFeedItems, normalizeFeedItem } from "../src/data/providers/rss-feed.js";
+import { fetchOfficialFeedEvents, parseFeedItems, normalizeFeedItem } from "../src/data/providers/rss-feed.js";
 import { normalizeStatuspageIncident } from "../src/data/providers/statuspage.js";
 import { normalizeRipestatObservation } from "../src/data/providers/ripestat.js";
 import { assertSafeFetchUrl } from "../src/data/providers/ssrf-protection.js";
@@ -34,6 +35,7 @@ import { applyPublicationPolicy } from "../src/data/providers/publication-policy
 import { createCompanyIdentity, sameCompany } from "../src/data/providers/company-identity.js";
 import { createMemoryProviderCache } from "../src/data/providers/cache.js";
 import { PROVIDER_SOURCE_REGISTRY, providersForDomain, DOMAIN_SOURCE_STATUS } from "../src/data/providers/source-registry.js";
+import { providerCapability, validateProviderCapabilities } from "../src/data/providers/capability-registry.js";
 import { classifyEvent, domainOptions, TAXONOMY_REGISTRY } from "../src/events/taxonomy.js";
 import { sortEvents, groupEvents } from "../src/events/feed-organization.js";
 import { shouldCluster, buildIncidents } from "../src/events/incident-clustering.js";
@@ -42,6 +44,9 @@ import { providerState } from "../src/ui/provider-health-panel.js";
 import { serializeView } from "../src/ui/saved-views.js";
 import sourcesFunction from "../netlify/functions/sources.mjs";
 import eventsFunction from "../netlify/functions/events.mjs";
+import countriesFunction from "../netlify/functions/countries.mjs";
+import countryRiskFunction from "../netlify/functions/country-risk.mjs";
+import providerHealthFunction from "../netlify/functions/provider-health.mjs";
 import { validateProviderSourceLinks } from "../src/sources/provider-source-links.js";
 
 const pendingTests = [];
@@ -90,6 +95,60 @@ test("CII handles event data and keeps score in range", () => {
   assert.ok(japan);
   assert.ok(japan.score >= 0 && japan.score <= 100);
   assert.ok(japan.confidence > 40);
+});
+
+test("Country registry supports ISO lookups, bounds, and event matching", () => {
+  assert.ok(COUNTRIES.length >= 50);
+  const ukraine = countryByCode("UKR");
+  assert.equal(ukraine.iso2, "UA");
+  assert.deepEqual(countryBoundsArray(ukraine).length, 2);
+  assert.equal(countryForEvent({ country: "Ukraine" }).iso3, "UKR");
+  assert.equal(countryForEvent({ countryCode: "ua" }).iso3, "UKR");
+});
+
+test("CII v2 avoids duplicate saturation and keeps evidence dimensions separate", () => {
+  const now = Date.parse("2026-06-09T00:00:00Z");
+  const repeatedIncident = Array.from({ length: 12 }, (_, index) => ({
+    id: `repeat-${index}`,
+    provider: `provider-${index}`,
+    providerEventId: `same-${index}`,
+    incidentId: "incident-one",
+    country: "Ukraine",
+    domain: "conflict-security",
+    category: "armed-conflict",
+    type: "ground-engagement",
+    recordKind: "event",
+    severity: 98,
+    confidence: 94,
+    impact: 90,
+    occurredAt: now,
+    updatedAt: now,
+    sourceTier: "tier-1-primary-official",
+    verification: { state: "primary-confirmed", independentSourceCount: 3 },
+  }));
+  const scores = computeCountryRiskScores(repeatedIncident, now, null, {
+    usgs: { ok: true },
+    gdacs: { ok: true },
+    "security-rss": { ok: false },
+  });
+  const ukraine = scores.find((score) => score.iso3 === "UKR");
+  assert.ok(ukraine.score < 95);
+  assert.ok(Number.isFinite(ukraine.confidence));
+  assert.ok(Number.isFinite(ukraine.completeness));
+  assert.ok(Array.isArray(ukraine.topFactors));
+  assert.ok(Array.isArray(scores.distributionWarnings));
+});
+
+test("CII v2 ignores retracted records and downweights discovery leads", () => {
+  const now = Date.parse("2026-06-09T00:00:00Z");
+  const confirmed = computeCountryRiskScores([
+    { id: "confirmed", country: "Japan", domain: "natural-disaster", category: "earthquake", recordKind: "event", severity: 90, occurredAt: now, updatedAt: now, verification: { state: "primary-confirmed" } },
+  ], now);
+  const weak = computeCountryRiskScores([
+    { id: "lead", country: "Japan", domain: "natural-disaster", category: "earthquake", recordKind: "discovery-lead", severity: 90, occurredAt: now, updatedAt: now, verification: { state: "unverified" } },
+    { id: "retracted", country: "Japan", domain: "natural-disaster", category: "earthquake", recordKind: "event", severity: 100, occurredAt: now, updatedAt: now, verification: { state: "retracted" } },
+  ], now);
+  assert.ok(confirmed.find((score) => score.iso3 === "JPN").score > weak.find((score) => score.iso3 === "JPN").score);
 });
 
 test("Layer registry has at least 45 valid definitions", () => {
@@ -321,6 +380,29 @@ test("Runtime providers map to master source registry entries", () => {
   }
 });
 
+test("Provider capability registry covers runtime providers and controlled RSS groups", () => {
+  const validation = validateProviderCapabilities();
+  assert.deepEqual(validation.errors, []);
+  assert.equal(validation.valid, true);
+  assert.deepEqual(providerCapability("security-rss").supportedRecordKinds, ["discovery-lead"]);
+  assert.ok(providerCapability("weather-rss").supportedDomains.includes("weather"));
+  assert.equal(providerCapability("cloudflare-radar").defaultEnabled, false);
+});
+
+test("Controlled RSS provider groups stay disabled until explicitly configured", async () => {
+  const previous = globalThis.process.env.SECURITY_RSS_ENABLED;
+  delete globalThis.process.env.SECURITY_RSS_ENABLED;
+  const result = await fetchOfficialFeedEvents({
+    now: Date.parse("2026-06-09T00:00:00Z"),
+    provider: { id: "security-rss", name: "Security RSS" },
+    feedRegistry: [{ providerId: "security-rss", url: "https://example.com/feed.xml" }],
+  });
+  assert.equal(result.status, "configuration-required");
+  assert.equal(result.requestAttempted, false);
+  assert.equal(result.events.length, 0);
+  if (previous !== undefined) globalThis.process.env.SECURITY_RSS_ENABLED = previous;
+});
+
 test("Provider schedules and request budgets protect upstream services", async () => {
   assert.equal(validateProviderSchedule(PROVIDER_SCHEDULES.reliefweb).valid, true);
   assert.equal(validateProviderSchedule({ providerId: "bad", refreshIntervalMs: 1000, cacheTtlMs: 1000, staleAfterMs: 1000, dailyRequestBudget: 1000 }).valid, false);
@@ -352,6 +434,67 @@ test("Source API returns JSON envelope, filters, and invalid source warnings", a
   assert.equal(gdacsBody.data.selectedSource.adapterId, "gdacs");
 });
 
+test("Country APIs support lookup, filtering, and distribution metadata", async () => {
+  const lookup = await countriesFunction(new Request("https://liveworldmap.netlify.app/api/countries?country=UKR"));
+  assert.equal(lookup.status, 200);
+  const lookupBody = await lookup.json();
+  assert.equal(lookupBody.data.iso3, "UKR");
+
+  const missing = await countriesFunction(new Request("https://liveworldmap.netlify.app/api/countries?country=NOPE"));
+  assert.equal(missing.status, 404);
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("earthquake.usgs.gov")) {
+      return new Response(JSON.stringify({
+        features: [{
+          id: "country-risk-api",
+          properties: { mag: 5.2, time: Date.now(), updated: Date.now(), url: "https://earthquake.usgs.gov/earthquakes/eventpage/country-risk-api", place: "Japan" },
+          geometry: { type: "Point", coordinates: [140, 35, 5] },
+        }],
+      }), { status: 200 });
+    }
+    return new Response("unavailable", { status: 503 });
+  };
+  try {
+    const risk = await countryRiskFunction(new Request("https://liveworldmap.netlify.app/api/country-risk?country=JPN"));
+    assert.equal(risk.status, 200);
+    const body = await risk.json();
+    assert.equal(body.data.scores.length, 1);
+    assert.equal(body.data.scores[0].iso3, "JPN");
+    assert.ok(Array.isArray(body.data.distributionWarnings));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("Provider health API returns sanitized diagnostics outside public dashboard", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("earthquake.usgs.gov")) {
+      return new Response(JSON.stringify({
+        features: [{
+          id: "provider-health-api",
+          properties: { mag: 4.9, time: Date.now(), updated: Date.now(), url: "https://earthquake.usgs.gov/earthquakes/eventpage/provider-health-api", place: "Test" },
+          geometry: { type: "Point", coordinates: [100, 10, 5] },
+        }],
+      }), { status: 200 });
+    }
+    return new Response("unavailable token=should-not-leak", { status: 503 });
+  };
+  try {
+    const response = await providerHealthFunction(new Request("https://liveworldmap.netlify.app/api/provider-health"));
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    const body = await response.json();
+    assert.ok(body.data.providers.length > 0);
+    assert.doesNotMatch(JSON.stringify(body), /should-not-leak/);
+    assert.ok(body.data.providers.every((provider) => !Object.hasOwn(provider, "rawPayload")));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("Events API preserves recordKind/domain filters", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url) => {
@@ -373,6 +516,32 @@ test("Events API preserves recordKind/domain filters", async () => {
     assert.equal(body.filters.recordKind, "event");
     assert.ok(body.events.length >= 1);
     assert.ok(body.events.every((event) => event.recordKind === "event" && event.domain === "natural-disaster"));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("Events API preserves country filters", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("earthquake.usgs.gov")) {
+      return new Response(JSON.stringify({
+        features: [{
+          id: "api-country-filtered",
+          properties: { mag: 4.8, time: Date.now(), updated: Date.now(), url: "https://earthquake.usgs.gov/earthquakes/eventpage/api-country-filtered", place: "Japan" },
+          geometry: { type: "Point", coordinates: [140, 35, 5] },
+        }],
+      }), { status: 200 });
+    }
+    return new Response("unavailable", { status: 503 });
+  };
+  try {
+    const response = await eventsFunction(new Request("https://liveworldmap.netlify.app/api/events?country=JPN"));
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.filters.country, "JPN");
+    assert.ok(body.events.length >= 1);
+    assert.ok(body.events.every((event) => countryForEvent(event)?.iso3 === "JPN"));
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -482,6 +651,15 @@ test("Layout CSS declares stable map and independently scrolling panels", () => 
   assert.match(css, /\.right-panel\{overflow:hidden/);
   assert.match(css, /\.map-stage #map,.globe-stage\{grid-area:1\/1;min-width:0;min-height:360px/);
   assert.match(css, /\.globe-stage\[hidden\]\{display:none!important\}/);
+});
+
+test("Detailed diagnostics are separated from the public dashboard", () => {
+  const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const diagnostics = fs.readFileSync(new URL("../diagnostics.html", import.meta.url), "utf8");
+  assert.doesNotMatch(index, /providerHealthPanel/);
+  assert.match(index, /publicDataStatus/);
+  assert.match(diagnostics, /noindex,\s*nofollow/);
+  assert.match(diagnostics, /diagnostics-app\.js/);
 });
 
 test("NWS severity and polygon normalization map to weather taxonomy", () => {

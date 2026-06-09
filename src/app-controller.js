@@ -2,6 +2,7 @@ import { CONFIG, CATEGORIES, SEVERITIES } from "./config.js";
 import { DASHBOARDS, getDashboard } from "./data/dashboards.js";
 import { LAYER_CATALOG, layersForDashboard } from "./data/layers.js";
 import { EXCHANGES } from "./data/exchanges.js";
+import { COUNTRIES, countryByCode, countryForEvent, countryFlag } from "./data/countries.js";
 import { state, dashboardFilters, resetDashboardFilters, setDashboard, syncUrlState } from "./state.js";
 import { normalizeEvent, escapeHtml, relativeTime } from "./events/event-normalizer.js";
 import { filteredEvents } from "./events/event-filters.js";
@@ -16,7 +17,6 @@ import { createMapController } from "./map/map-controller.js";
 import { renderMarkers } from "./map/marker-renderer.js";
 import { setGlobeMode } from "./map/globe-controller.js";
 import { renderSourceHealth } from "./ui/source-health.js";
-import { renderProviderHealthPanel } from "./ui/provider-health-panel.js";
 import { renderSourcesStatusPanel, emptyDomainMessage } from "./ui/sources-status-panel.js";
 import { loadSavedViews, saveView, serializeView } from "./ui/saved-views.js";
 import { openEventDialog, openMethodologyDialog } from "./ui/dialogs.js";
@@ -153,6 +153,10 @@ function sourceButton(event) {
   return `<a class="mini-source-link" href="${escapeHtml(event.sourceUrl)}" target="_blank" rel="noopener noreferrer">Source</a>`;
 }
 
+function countryForDisplay(event) {
+  return countryForEvent(event);
+}
+
 function qualityBadges(event) {
   const kind = (event.recordKind || "event").replace(/-/g, " ");
   return `<div class="quality-row"><span>Kind: ${escapeHtml(kind)}</span><span>Severity: ${escapeHtml(event.severity)}</span><span>Confidence: ${Math.round(event.confidence || 0)}%</span><span>Verification: ${escapeHtml(event.verificationStatus)}</span><span>Sources: ${escapeHtml(event.independentSourceCount || 1)} independent</span><span>Freshness: ${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>`;
@@ -160,9 +164,11 @@ function qualityBadges(event) {
 
 function renderEventCard(event) {
   const expanded = state.cardMode === "expanded";
+  const country = countryForDisplay(event);
+  const countryLabel = country ? `<button type="button" class="country-badge" data-country-select="${country.iso3}">${escapeHtml(country.shortName || country.name)}</button>` : `<span>${escapeHtml(event.country)}</span>`;
   const summary = expanded ? `<p>${escapeHtml(event.summary)}</p>` : "";
   const details = expanded ? `<div class="event-facts"><span class="fact-chip">Occurred: ${escapeHtml(new Date(event.occurredAt).toLocaleString())}</span><span class="fact-chip">Reported: ${escapeHtml(new Date(event.firstReportedAt || event.occurredAt).toLocaleString())}</span><span class="fact-chip">Updated: ${escapeHtml(new Date(event.updatedAt || event.occurredAt).toLocaleString())}</span>${event.geographic === false ? `<span class="fact-chip">Not mapped: ${escapeHtml(event.nonGeographicReason || "no supported geography")}</span>` : ""}${event.incidentSize > 1 ? `<span class="fact-chip">Incident: ${escapeHtml(event.incidentSize)} linked events</span>` : ""}</div>` : "";
-  return `<article class="event-card ${expanded ? "expanded" : "compact"} record-${escapeHtml(event.recordKind || "event")}" data-id="${escapeHtml(event.id)}"><div class="event-meta"><span class="category-pill" style="--cat:${event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color}">${escapeHtml(event.domainLabel || CATEGORIES[event.category]?.label || "Other")}</span><span>${escapeHtml(event.typeLabel || event.category)}</span><span>${escapeHtml(event.country)}</span><span class="record-kind">${escapeHtml(event.recordKind || "event")}</span><span class="severity-tag" style="--sev:${SEVERITIES[event.severity].color}">${SEVERITIES[event.severity].label}</span></div><h2>${escapeHtml(event.title)}</h2>${summary}${qualityBadges(event)}${details}<div class="source-row"><span>${escapeHtml(event.sourceName)}</span><span>${escapeHtml(event.verificationStatus)}</span>${event.incidentSize > 1 ? `<span>${escapeHtml(event.incidentTitle || "Incident cluster")}</span>` : ""}${sourceButton(event)}</div><div class="event-foot"><span>${relativeTime(event.occurredAt)} occurred - ${escapeHtml(event.sourceType)}</span><span class="confidence">${event.confidence}% confidence</span></div></article>`;
+  return `<article class="event-card ${expanded ? "expanded" : "compact"} record-${escapeHtml(event.recordKind || "event")}" data-id="${escapeHtml(event.id)}"><div class="event-meta"><span class="category-pill" style="--cat:${event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color}">${escapeHtml(event.domainLabel || CATEGORIES[event.category]?.label || "Other")}</span><span>${escapeHtml(event.typeLabel || event.category)}</span>${countryLabel}<span class="record-kind">${escapeHtml(event.recordKind || "event")}</span><span class="severity-tag" style="--sev:${SEVERITIES[event.severity].color}">${SEVERITIES[event.severity].label}</span></div><h2>${escapeHtml(event.title)}</h2>${summary}${qualityBadges(event)}${details}<div class="source-row"><span>${escapeHtml(event.sourceName)}</span><span>${escapeHtml(event.verificationStatus)}</span>${event.incidentSize > 1 ? `<span>${escapeHtml(event.incidentTitle || "Incident cluster")}</span>` : ""}${sourceButton(event)}</div><div class="event-foot"><span>${relativeTime(event.occurredAt)} occurred - ${escapeHtml(event.sourceType)}</span><span class="confidence">${event.confidence}% confidence</span></div></article>`;
 }
 
 function renderList(els, events) {
@@ -256,8 +262,45 @@ function renderLayerSummary(layers) {
   return `<div class="layer-summary"><span>${layers.length} dashboard layers</span><span>${implemented} implemented</span><span>${credentialed} need credentials</span></div>`;
 }
 
+function updateCountriesLink(element) {
+  if (!element) return;
+  const params = new URLSearchParams();
+  if (state.selectedCountryIso3) params.set("country", state.selectedCountryIso3);
+  element.href = `/countries${params.toString() ? `?${params}` : ""}`;
+}
+
+function renderPublicDataStatus() {
+  const statuses = Object.values(state.sourceStatus || {});
+  const available = statuses.filter((status) => status.ok).length;
+  const stale = statuses.filter((status) => status.stale || status.status === "degraded").length;
+  const label = state.systemStatus === "operational" ? "Operational" : state.systemStatus === "partial-data" ? "Partial" : state.systemStatus === "major-provider-outage" ? "Offline" : "Degraded";
+  return `<strong>Data status</strong><p>${escapeHtml(label)}. Last refreshed ${state.lastLoaded ? escapeHtml(relativeTime(state.lastLoaded)) : "never"}. ${available} of ${statuses.length || state.sources.length || 0} sources available. ${stale} stale or degraded.</p><p><a href="/diagnostics">Technical diagnostics</a></p>`;
+}
+
 function renderRiskTable(scores) {
-  return `<div class="risk-table">${scores.slice(0, 8).map((score) => `<button class="risk-row" type="button" title="${escapeHtml(score.limitations.join(" "))}"><span>${escapeHtml(score.countryName)}</span><strong style="color:${score.color}">${score.score}</strong><small>${score.levelLabel} / ${score.confidence}%</small></button>`).join("")}</div>`;
+  return `<div class="risk-table">${scores.slice(0, 8).map((score) => `<button class="risk-row" type="button" data-country-select="${escapeHtml(score.iso3)}" title="${escapeHtml(score.limitations.join(" "))}"><span>${escapeHtml(score.countryName)}</span><strong style="color:${score.color}">${score.score}</strong><small>${score.levelLabel} / ${score.confidence}%</small></button>`).join("")}</div>`;
+}
+
+function renderCountrySummary(scores, events) {
+  const country = state.selectedCountryIso3 ? countryByCode(state.selectedCountryIso3) : null;
+  if (!country) return "";
+  const score = scores.find((item) => item.iso3 === country.iso3);
+  const countryEvents = events.filter((event) => countryForEvent(event)?.iso3 === country.iso3);
+  const newest = countryEvents.reduce((max, event) => Math.max(max, Number(event.updatedAt || event.occurredAt || 0)), 0);
+  const domains = countryEvents.reduce((acc, event) => {
+    const key = event.domainLabel || event.domain || "Other";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const domainText = Object.entries(domains).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([key, count]) => `${key}: ${count}`).join(", ") || "No current events";
+  const factors = (score?.topFactors || []).map((factor) => `<li>${escapeHtml(factor.id)}: ${escapeHtml(factor.contribution)} pts</li>`).join("");
+  return `<article class="country-summary-card">
+    <div class="section-title"><span>${escapeHtml(countryFlag(country))} ${escapeHtml(country.name)}</span><button type="button" data-country-clear>Clear</button></div>
+    <div class="mini-grid"><span>CII ${escapeHtml(score?.score ?? "-")}</span><span>${escapeHtml(score?.levelLabel || "Unknown")}</span><span>${escapeHtml(score?.confidence ?? 0)}% confidence</span><span>${escapeHtml(score?.completeness ?? 0)}% complete</span></div>
+    <p>${escapeHtml(country.region)} / ${escapeHtml(country.subregion)}. Active events: ${countryEvents.length}. Domains: ${escapeHtml(domainText)}. Freshness: ${newest ? escapeHtml(relativeTime(newest)) : "no recent event"}.</p>
+    <ul class="factor-list">${factors}</ul>
+    <div class="dialog-actions"><button type="button" data-country-events="${escapeHtml(country.iso3)}">View Country Events</button><a class="source-link secondary" href="/countries?country=${escapeHtml(country.iso3)}">Open Country Scores</a></div>
+  </article>`;
 }
 
 function renderAlerts(events) {
@@ -274,7 +317,7 @@ function renderAlerts(events) {
 }
 
 export function bootLiveMap() {
-  const els = ids(["dashboardNav", "domainFilters", "layerFilters", "severityFilters", "eventList", "visibleCount", "highCount", "countryCount", "updatedAt", "search", "clearDomains", "clearFilters", "timeWindow", "sortOrder", "groupBy", "cardMode", "savedViews", "saveView", "fitWorld", "fitEvents", "themeToggle", "eventDialog", "dialogContent", "closeDialog", "methodologyDialog", "methodologyContent", "closeMethodology", "mapLegend", "systemStatus", "feedAge", "baseMap", "refreshNow", "sourceHealth", "providerHealthPanel", "sourcesStatusPanel", "dashboardPanel", "dashboardEyebrow", "dashboardTitle", "mapMode", "mapHealth", "feedError", "ciiToggle", "sourcesLink"]);
+  const els = ids(["dashboardNav", "domainFilters", "layerFilters", "severityFilters", "eventList", "visibleCount", "highCount", "countryCount", "updatedAt", "search", "clearDomains", "clearFilters", "timeWindow", "sortOrder", "groupBy", "cardMode", "savedViews", "saveView", "fitWorld", "fitEvents", "themeToggle", "eventDialog", "dialogContent", "closeDialog", "methodologyDialog", "methodologyContent", "closeMethodology", "mapLegend", "systemStatus", "feedAge", "baseMap", "refreshNow", "sourceHealth", "publicDataStatus", "countrySummaryPanel", "sourcesStatusPanel", "dashboardPanel", "dashboardEyebrow", "dashboardTitle", "mapMode", "mapHealth", "feedError", "ciiToggle", "sourcesLink", "countriesLink"]);
   const mapController = createMapController({ onHealthChange: (health) => { state.mapHealth = health; renderMapHealth(els.mapHealth, health); } });
   let refreshTimer = null;
   let retryAttempts = 0;
@@ -284,7 +327,17 @@ export function bootLiveMap() {
     const dashboard = getDashboard(state.dashboard);
     const source = state.dashboard === "finance" ? [...state.events, ...exchangeMarkers().map(normalizeEvent)] : state.events;
     const byDashboard = source.filter((event) => dashboard.categories.includes(event.category) || state.dashboard === "primary");
-    return filteredEvents(byDashboard, filters, state.hours, state.sort);
+    const byCountry = state.selectedCountryIso3 ? byDashboard.filter((event) => countryForEvent(event)?.iso3 === state.selectedCountryIso3) : byDashboard;
+    return filteredEvents(byCountry, filters, state.hours, state.sort);
+  }
+
+  function selectCountry(value, zoom = true) {
+    const country = countryByCode(value);
+    if (!country) return;
+    state.selectedCountryIso3 = country.iso3;
+    syncUrlState();
+    if (zoom) mapController.selectCountry(country);
+    render();
   }
 
   function render() {
@@ -296,6 +349,7 @@ export function bootLiveMap() {
     renderFilters(els);
     renderMarkers(mapController.markerLayer, events, (event) => openEventDialog(event, els.eventDialog, els.dialogContent, mapController.map));
     mapController.renderCountryRisk(riskScores, state.ciiVisible);
+    mapController.renderCountryBoundaries(COUNTRIES, riskScores, state.selectedCountryIso3, (country) => selectCountry(country.iso3, false));
     setGlobeMode(state.mapMode, events);
     mapController.invalidateMapSize();
     renderList(els, events);
@@ -303,7 +357,9 @@ export function bootLiveMap() {
     renderFeedError(els.feedError);
     renderMapHealth(els.mapHealth, state.mapHealth || mapController.health());
     updateSourcesLink(els.sourcesLink);
-    els.providerHealthPanel.innerHTML = renderProviderHealthPanel(state.sourceStatus, state.providerResults);
+    updateCountriesLink(els.countriesLink);
+    els.publicDataStatus.innerHTML = renderPublicDataStatus();
+    els.countrySummaryPanel.innerHTML = renderCountrySummary(riskScores, state.events);
     els.sourcesStatusPanel.innerHTML = renderSourcesStatusPanel(state.events, state.sourceStatus);
     applyDashboardTitle(state.dashboard, els.dashboardEyebrow, els.dashboardTitle);
     els.dashboardPanel.innerHTML = renderDashboardPanel(state.dashboard, { riskScores, correlations, events, sourceStatus: state.sourceStatus, providerResults: state.providerResults }) + renderLayerSummary(layers) + renderRiskTable(riskScores) + renderAlerts(events) + renderCountDebug();
@@ -403,6 +459,27 @@ export function bootLiveMap() {
   els.search.value = dashboardFilters().query;
   document.addEventListener("click", (event) => {
     if (event.target.closest("a")) return;
+    const countrySelect = event.target.closest("[data-country-select]");
+    if (countrySelect) {
+      selectCountry(countrySelect.dataset.countrySelect);
+      return;
+    }
+    if (event.target.closest("[data-country-clear]")) {
+      state.selectedCountryIso3 = null;
+      syncUrlState();
+      render();
+      return;
+    }
+    const countryEvents = event.target.closest("[data-country-events]");
+    if (countryEvents) {
+      const country = countryByCode(countryEvents.dataset.countryEvents);
+      if (country) {
+        state.selectedCountryIso3 = country.iso3;
+        syncUrlState();
+        render();
+      }
+      return;
+    }
     const dash = event.target.closest("[data-dashboard]");
     if (dash) {
       setDashboard(dash.dataset.dashboard);
