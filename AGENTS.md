@@ -27,6 +27,7 @@ These instructions apply to the whole repository.
 - Every live event source must include attribution, source URL, provider freshness, and source status.
 - Provider failures must be visible in `sourceStatus` and must not be hidden behind a successful-looking workflow result.
 - If freshness, source status, or attribution changes, update the relevant docs and validator checks.
+- Keep taxonomy, grouping, sorting, incident clustering, and provider-health behavior documented when changed.
 
 ## Workflow
 

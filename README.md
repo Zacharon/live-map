@@ -476,3 +476,35 @@ Do not run Netlify deploy commands while developing.
 Do not call Netlify build hooks or deployment APIs.
 Work on feature branches and merge only after review.
 Use Netlify builds only for the final approved release.
+
+Phase 1C event taxonomy and feed UI
+
+Phase 1C adds event taxonomy, stronger sorting and grouping, detailed provider-health UI, incident clustering, saved local views, compact/expanded event cards, and URL-preserved feed state.
+
+Read:
+
+docs/EVENT_TAXONOMY.md
+docs/FEED_SORTING_AND_GROUPING.md
+docs/INCIDENT_CLUSTERING.md
+docs/SOURCE_HEALTH_UI.md
+docs/FRONTEND_STABILITY_AND_CSP.md
+docs/PROVIDER_SOURCE_PLAN.md
+
+The feed keeps these concepts separate:
+
+Domain - broad top-level area such as weather, natural disasters, finance, aviation, or humanitarian.
+Category - compatibility event layer used by the existing map and filters.
+Type - specific event type such as earthquake, weather warning, cloud outage, or port disruption.
+Severity - potential or observed seriousness.
+Confidence - reliability of the event record.
+Impact - potential affected people, assets, markets or regions.
+Verification - source/record verification state.
+Incident - a conservative cluster linking related events while preserving each individual source event.
+
+Phase 1C stability hardening
+
+Leaflet and Leaflet MarkerCluster are self-hosted in `vendor/` and loaded from same-origin paths. The Content Security Policy no longer permits `unpkg.com` and does not include `unsafe-eval`.
+
+The map uses a stable three-column desktop layout with independently scrolling left and right panels. The map controller tracks tile health, resizes with `ResizeObserver`, and keeps the map visible when API, DNS, tile, or provider requests fail.
+
+NOAA/NWS active alerts are implemented server-side through the provider orchestration. Weather alerts are U.S.-coverage only, use a configured User-Agent placeholder, normalize polygons when present, and expose provider-health diagnostics.

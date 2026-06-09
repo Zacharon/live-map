@@ -1,5 +1,12 @@
+import { PROVIDER_SOURCE_REGISTRY } from "./source-registry.js";
+
+function sourceMetadata(id) {
+  return PROVIDER_SOURCE_REGISTRY.find((provider) => provider.id === id) || {};
+}
+
 export const EVENT_PROVIDERS = [
   {
+    ...sourceMetadata("usgs"),
     id: "usgs",
     name: "USGS Earthquake Hazards Program",
     description: "Official earthquake GeoJSON feed from the United States Geological Survey.",
@@ -13,6 +20,7 @@ export const EVENT_PROVIDERS = [
     freshnessMs: 15 * 60 * 1000,
   },
   {
+    ...sourceMetadata("eonet"),
     id: "eonet",
     name: "NASA EONET",
     description: "NASA Earth Observatory Natural Event Tracker open natural-hazard feed.",
@@ -24,6 +32,23 @@ export const EVENT_PROVIDERS = [
     timeoutMs: 15000,
     integrationType: "official-json",
     freshnessMs: 30 * 60 * 1000,
+  },
+  {
+    ...sourceMetadata("nws-alerts"),
+    id: "nws-alerts",
+    name: "NOAA/NWS Active Alerts",
+    description: "Official active weather alert GeoJSON feed from the National Weather Service.",
+    homepageUrl: "https://api.weather.gov/alerts/active",
+    attribution: "NOAA National Weather Service",
+    enabled: true,
+    categories: ["storm"],
+    refreshIntervalMs: 120000,
+    timeoutMs: 15000,
+    integrationType: "official-geojson",
+    freshnessMs: 10 * 60 * 1000,
+    userAgent:
+      globalThis?.process?.env?.NWS_USER_AGENT ||
+      "LiveWorldMap/1.0 (contact: configure NWS_USER_AGENT in Netlify environment)",
   },
 ];
 
