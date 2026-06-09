@@ -43,6 +43,8 @@ Provider keys must stay in Netlify Functions or another server-side runtime. Bro
 
 Before an adapter is enabled, the matching master source registry entry must document access classification, implementation status, source tier, attribution, terms URL, docs URL, cache policy, retention policy, review dates, and environment variable names.
 
+Runtime provider entries must include `sourceRegistryId`, pointing at exactly one master source registry entry. Live providers must map to implemented live master sources. Planned sources may exist without adapters, but link-only sources cannot have runtime adapters.
+
 Current adapters:
 
 - USGS events in `netlify/functions/events.mjs`

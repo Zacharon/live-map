@@ -1,3 +1,6 @@
+import { computeQualityDimensions } from "./event-quality.js";
+import { classifyEvent } from "./taxonomy.js";
+
 const SEVERITY_LABELS = ["low", "moderate", "high", "critical"];
 const VALID_STATUS = new Set(["active", "monitoring", "resolved", "unknown"]);
 
@@ -91,6 +94,7 @@ export function createNormalizedEvent(input) {
   const startedAt = toIsoString(input.startedAt ?? input.occurredAt ?? input.sourcePublishedAt, nowIso);
   const updatedAt = toIsoString(input.updatedAt, startedAt);
   const sourcePublishedAt = toIsoString(input.sourcePublishedAt, startedAt);
+  const lastVerifiedAt = toIsoString(input.lastVerifiedAt, updatedAt);
   const severity =
     typeof input.severity === "number"
       ? clamp(input.severity, 0, 100)
@@ -100,6 +104,7 @@ export function createNormalizedEvent(input) {
     : severityLabelFromScore(severity);
   const providerEventId = input.providerEventId ?? input.providerId ?? null;
   const stableId = input.id || `${input.provider}:${providerEventId || stableStringHash(`${input.title}:${startedAt}:${input.latitude}:${input.longitude}`)}`;
+  const taxonomy = classifyEvent(input);
   const event = {
     id: stableId,
     provider: input.provider,
@@ -107,6 +112,14 @@ export function createNormalizedEvent(input) {
     title: String(input.title || "Untitled event"),
     description: input.description ?? input.summary ?? null,
     category: String(input.category || "other"),
+    domain: taxonomy.domain,
+    taxonomyCategory: taxonomy.category,
+    type: input.type || taxonomy.type,
+    subtype: input.subtype || taxonomy.subtype,
+    domainLabel: taxonomy.domainLabel,
+    categoryLabel: taxonomy.categoryLabel,
+    typeLabel: taxonomy.typeLabel,
+    taxonomyColor: taxonomy.color,
     subcategory: input.subcategory ?? null,
     latitude: Number(input.latitude ?? input.lat),
     longitude: Number(input.longitude ?? input.lon),
@@ -125,10 +138,12 @@ export function createNormalizedEvent(input) {
     sourceUrl: input.sourceUrl || input.providerUrl,
     sourceType: input.sourceType || "Official",
     sourcePublishedAt,
+    lastVerifiedAt,
     geometry: input.geometry || null,
     tags: Array.isArray(input.tags) ? [...new Set(input.tags.filter(Boolean).map(String))] : [],
     metadata: input.metadata && typeof input.metadata === "object" ? input.metadata : {},
   };
+  Object.assign(event, computeQualityDimensions(event));
   const validation = validateNormalizedEvent(event);
   return { event, errors: validation.errors, valid: validation.valid };
 }
@@ -152,6 +167,8 @@ export function toLegacyEvent(event) {
     occurredAt,
     updatedAt,
     firstReportedAt: event.sourcePublishedAt ? new Date(event.sourcePublishedAt).getTime() : occurredAt,
+    ingestedAt: event.ingestedAt ? new Date(event.ingestedAt).getTime() : updatedAt,
+    lastVerifiedAt: event.lastVerifiedAt ? new Date(event.lastVerifiedAt).getTime() : updatedAt,
     summary: event.description || "",
     source: event.sourceName,
     providerName: event.sourceName,
@@ -159,5 +176,10 @@ export function toLegacyEvent(event) {
     severityReason: event.metadata?.severityReason || "Severity is platform-derived from provider data.",
     coordinateMethod: event.metadata?.coordinateMethod || "provider coordinates",
     details: event.metadata?.details || {},
+    impactScore: event.impactScore,
+    freshnessScore: event.freshnessScore,
+    corroborationScore: event.corroborationScore,
+    independentSourceCount: event.independentSourceCount,
+    qualityReasons: event.qualityReasons,
   };
 }

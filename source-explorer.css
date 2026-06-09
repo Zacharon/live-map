@@ -74,6 +74,36 @@ body.source-explorer-page {
   border-bottom: 1px solid var(--line);
 }
 
+.source-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--panel2);
+}
+
+.source-load-status {
+  display: grid;
+  gap: 3px;
+}
+
+.source-load-status span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#sourceRetry {
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  color: var(--accent);
+  background: transparent;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
 .source-control-row {
   display: grid;
   gap: 6px;
@@ -151,14 +181,29 @@ body.source-explorer-page {
 }
 
 .source-card {
+  appearance: none;
+  text-align: left;
+  color: var(--text);
   padding: 14px;
   cursor: pointer;
   transition: border-color 140ms ease, transform 140ms ease;
 }
 
 .source-card:hover,
-.source-card.active {
+.source-card.active,
+.source-card:focus-visible,
+.source-links a:focus-visible,
+.source-actions a:focus-visible,
+#sourceRetry:focus-visible,
+.source-control-row input:focus-visible,
+.source-filter-grid select:focus-visible {
   border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.source-card:hover,
+.source-card.active {
   transform: translateY(-1px);
 }
 
@@ -169,18 +214,21 @@ body.source-explorer-page {
   gap: 12px;
 }
 
-.source-card h2 {
+.source-title {
+  display: block;
   font-size: 16px;
+  font-weight: 800;
   margin: 0;
 }
 
-.source-card p,
+.source-description,
 .source-detail p {
+  display: block;
   color: var(--muted);
   line-height: 1.5;
 }
 
-.source-card p {
+.source-description {
   margin: 9px 0 0;
 }
 
@@ -242,7 +290,7 @@ body.source-explorer-page {
 .source-detail-grid dd {
   margin: 0;
   line-height: 1.45;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .source-actions {

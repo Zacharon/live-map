@@ -13,7 +13,7 @@
     <header class="source-header">
       <a class="brand source-brand" href="/"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Source Explorer</span></div></a>
       <nav class="source-links" aria-label="Source explorer navigation">
-        <a href="/">Map</a>
+        <a id="backToMap" href="/">Back to map</a>
         <a href="/docs/MASTER_SOURCE_REGISTRY.md">Registry docs</a>
         <a href="/docs/SOURCE_ACCESS_CLASSIFICATIONS.md">Access</a>
       </nav>
@@ -21,23 +21,27 @@
 
     <main class="source-workspace">
       <section class="source-controls" aria-label="Source filters">
+        <div class="source-status-row">
+          <div id="sourceExplorerStatus" class="source-load-status" role="status" aria-live="polite"><strong>Loading source registry...</strong></div>
+          <button id="sourceRetry" type="button" hidden>Retry</button>
+        </div>
         <div class="source-control-row">
           <label for="sourceSearch">Search</label>
           <input id="sourceSearch" type="search" placeholder="NOAA, ACLED, aviation, RSS..." />
         </div>
         <div class="source-filter-grid">
-          <label>Domain<select id="domainFilter"></select></label>
-          <label>Access<select id="accessFilter"></select></label>
-          <label>Status<select id="statusFilter"></select></label>
-          <label>Quality tier<select id="tierFilter"></select></label>
-          <label>Official<select id="officialFilter"><option value="">Any</option><option value="true">Official only</option></select></label>
-          <label>Implemented<select id="implementedFilter"><option value="">Any</option><option value="true">Implemented only</option></select></label>
+          <label for="domainFilter">Domain<select id="domainFilter"></select></label>
+          <label for="accessFilter">Access<select id="accessFilter"></select></label>
+          <label for="statusFilter">Status<select id="statusFilter"></select></label>
+          <label for="tierFilter">Quality tier<select id="tierFilter"></select></label>
+          <label for="officialFilter">Official<select id="officialFilter"><option value="">Any</option><option value="true">Official only</option></select></label>
+          <label for="implementedFilter">Implemented<select id="implementedFilter"><option value="">Any</option><option value="true">Implemented only</option></select></label>
         </div>
       </section>
 
       <section class="source-summary" id="sourceSummary" aria-live="polite"></section>
       <section class="source-layout">
-        <div id="sourceList" class="source-list"></div>
+        <div id="sourceList" class="source-list" role="listbox" aria-label="Source results"></div>
         <aside id="sourceDetail" class="source-detail"></aside>
       </section>
     </main>

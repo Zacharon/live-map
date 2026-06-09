@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Live Map - a source-transparent global event, risk, finance, and OSINT dashboard." />
   <title>Live Map - Intelligence Platform</title>
-  <link rel="preconnect" href="https://unpkg.com" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="" />
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+  <link rel="stylesheet" href="vendor/leaflet-markercluster/MarkerCluster.css" />
+  <link rel="stylesheet" href="vendor/leaflet-markercluster/MarkerCluster.Default.css" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="source-explorer.css" />
 </head>
@@ -18,20 +17,26 @@
       <div class="brand"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Intelligence platform</span></div></div>
       <nav id="dashboardNav" class="dashboard-nav" aria-label="Dashboards"></nav>
       <div class="topbar-actions">
-        <a class="topbar-link" href="/sources">Sources</a>
+        <a id="sourcesLink" class="topbar-link" href="/sources">Sources</a>
         <span id="systemStatus" class="status" aria-live="polite"><i></i> Connecting</span>
         <span id="feedAge" class="feed-age">-</span>
         <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">T</button>
       </div>
     </header>
 
-    <aside class="sidebar">
-      <section class="search-wrap"><label for="search">Search events, countries, or sources</label><input id="search" type="search" placeholder="Japan, M6.2, wildfire..." /></section>
+    <aside class="sidebar left-panel">
+      <section class="panel-sticky">
+        <div class="section-title"><span>Controls</span></div>
+        <p class="panel-help">Domains organize events by intelligence category. Layers control which concrete event types appear on the map.</p>
+      </section>
+      <section><div class="section-title"><span>Domains</span><button id="clearDomains">All</button></div><div id="domainFilters" class="filter-list"></div></section>
       <section><div class="section-title"><span>Event layers</span><button id="clearFilters">Reset</button></div><div id="layerFilters" class="filter-list"></div></section>
       <section><div class="section-title"><span>Severity</span></div><div id="severityFilters" class="severity-row"></div></section>
       <section class="stats-grid"><article><span>Visible</span><strong id="visibleCount">0</strong></article><article><span>High / critical</span><strong id="highCount">0</strong></article><article><span>Countries</span><strong id="countryCount">0</strong></article><article><span>Last refresh</span><strong id="updatedAt">-</strong></article></section>
+      <section id="sourcesStatusPanel" class="sources-status-panel"></section>
       <section class="method-note"><strong>Source-aware reporting</strong><p>Near-real-time means frequent polling. Provider reporting delays still apply. Planned layers are never labeled live.</p></section>
       <section class="method-note source-note"><strong>Source health</strong><p id="sourceHealth">Waiting for live feeds...</p></section>
+      <section id="providerHealthPanel" class="provider-health-panel"></section>
       <section id="dashboardPanel" class="dashboard-panel"></section>
     </aside>
 
@@ -46,19 +51,31 @@
         <button id="refreshNow">Refresh</button>
       </div>
       <div id="mapLegend" class="legend"></div>
+      <div id="mapHealth" class="map-health" hidden></div>
+      <div id="feedError" class="feed-error" hidden></div>
       <button id="ciiToggle" class="map-toggle" type="button">CII countries</button>
     </main>
 
-    <aside class="event-panel">
-      <div class="panel-head"><div><span id="dashboardEyebrow" class="eyebrow">PRIMARY</span><h1 id="dashboardTitle">Global events</h1></div><select id="sortOrder" aria-label="Sort events"><option value="severity">Priority</option><option value="newest">Newest</option></select></div>
+    <aside class="event-panel right-panel">
+      <div class="panel-head">
+        <div><span id="dashboardEyebrow" class="eyebrow">PRIMARY</span><h1 id="dashboardTitle">Global events</h1></div>
+        <div class="feed-controls">
+          <select id="sortOrder" aria-label="Sort events"></select>
+          <select id="groupBy" aria-label="Group events"></select>
+          <select id="cardMode" aria-label="Card density"><option value="compact">Compact</option><option value="expanded">Expanded</option></select>
+          <select id="savedViews" aria-label="Saved views"></select>
+          <button id="saveView" type="button">Save view</button>
+        </div>
+      </div>
+      <section class="search-wrap event-search"><label for="search">Search events, countries, or sources</label><input id="search" type="search" placeholder="Japan, M6.2, wildfire..." /></section>
       <div id="eventList" class="event-list"></div>
     </aside>
   </div>
 
   <dialog id="eventDialog"><button id="closeDialog" class="dialog-close" aria-label="Close">x</button><div id="dialogContent"></div></dialog>
   <dialog id="methodologyDialog"><button id="closeMethodology" class="dialog-close" aria-label="Close">x</button><div id="methodologyContent"></div></dialog>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="vendor/leaflet-markercluster/leaflet.markercluster.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

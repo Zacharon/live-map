@@ -12,7 +12,7 @@ function paramsFromUrl(url) {
     q: search.get("q") || "",
     domain: search.get("domain") || "",
     category: search.get("category") || "",
-    accessMode: search.get("accessMode") || "",
+    accessMode: search.get("accessMode") || search.get("access") || "",
     status: search.get("status") || "",
     sourceTier: search.get("sourceTier") || "",
     official: search.get("official") || "",
@@ -29,16 +29,34 @@ export default async (request) => {
 
   const filters = paramsFromUrl(request.url);
   const validation = validateSourceRegistry();
-  const sources = filterSources(MASTER_SOURCE_REGISTRY, filters);
+  let sources = filterSources(MASTER_SOURCE_REGISTRY, filters);
   const selectedSource = filters.source ? sourceById(filters.source) : null;
+  const warnings = [];
+  if (filters.source && !selectedSource) warnings.push(`Unknown source id: ${filters.source}`);
+  if (selectedSource && !sources.some((source) => source.id === selectedSource.id)) {
+    sources = [selectedSource, ...sources];
+    warnings.push("Selected source is shown even though it is outside the current filters.");
+  }
+  const statistics = sourceRegistryStats(MASTER_SOURCE_REGISTRY);
+  const generatedAt = Date.now();
+  const requestId = `sources-${generatedAt.toString(36)}`;
 
   return new Response(
     JSON.stringify({
-      generatedAt: Date.now(),
+      data: {
+        sources,
+        statistics,
+        registryVersion: "1",
+        selectedSource,
+        domainLabels: DOMAIN_LABELS,
+      },
+      generatedAt,
+      warnings,
+      requestId,
       mode: "source-registry",
       valid: validation.valid,
       errors: validation.errors,
-      stats: sourceRegistryStats(MASTER_SOURCE_REGISTRY),
+      stats: statistics,
       filters,
       domainLabels: DOMAIN_LABELS,
       sources,

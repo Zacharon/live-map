@@ -16,15 +16,17 @@ The registry is not a promise that every source is live. It separates useful res
 
 `/api/sources` returns:
 
+- `data.sources`
+- `data.statistics`
+- `data.registryVersion`
+- `data.selectedSource`
 - `generatedAt`
-- `mode`
-- `valid`
+- `warnings`
 - `errors`
+- `requestId`
 - `stats`
 - `filters`
-- `domainLabels`
-- `sources`
-- `selectedSource`
 
 Supported filters are `q`, `domain`, `category`, `accessMode`, `status`, `sourceTier`, `official`, `implemented`, `credentialRequired`, `legalReviewRequired`, and `source`.
 
+`access` is accepted as a URL-friendly alias for `accessMode`.

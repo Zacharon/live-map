@@ -30,6 +30,7 @@ These instructions apply to the whole repository.
 - Every registry source must include access classification, implementation status, source tier, verification state, source URL, attribution, review dates, cache guidance, retention guidance, and limitations.
 - Provider failures must be visible in `sourceStatus` and must not be hidden behind a successful-looking workflow result.
 - If freshness, source status, or attribution changes, update the relevant docs and validator checks.
+- Keep taxonomy, grouping, sorting, incident clustering, and provider-health behavior documented when changed.
 
 ## Workflow
 
