@@ -25,8 +25,8 @@ Live Map keeps provider status in code at `src/data/providers/source-registry.js
 
 - Weather: NWS is live for U.S. active alerts. GDACS tropical cyclone alerts are live as global disaster alerts. NHC, SPC, SWPC, MeteoAlarm, ECCC, Australia BOM, and national meteorological agencies are planned.
 - Natural disasters: USGS, EONET, and GDACS are live. FIRMS, NOAA tsunami alerts, and Copernicus EMS are planned.
-- Humanitarian: ReliefWeb V2 is planned and requires a pre-approved `appname`. UN OCHA HDX, UNHCR, WHO, UNICEF, and IFRC are planned.
-- Technology and cyber: NVD, CISA KEV, CISA advisories, GitHub Status, Cloudflare Status/Radar, AWS, Azure, Google Cloud, RIPEstat, and IODA are planned. CVEs are not mapped as geographic incidents by default.
+- Humanitarian: ReliefWeb V2 is implemented as configuration-required and requires a pre-approved `RELIEFWEB_APPNAME`. UN OCHA HDX, UNHCR, WHO, UNICEF, and IFRC are planned.
+- Technology and cyber: CISA KEV is implemented as a non-geographic feed. NVD enrichment is implemented conservatively for focused CVE lookups. CISA advisories, GitHub Status, Cloudflare Status/Radar, AWS, Azure, Google Cloud, RIPEstat, and IODA are planned. CVEs are not mapped as geographic incidents by default.
 - Finance and markets: SEC EDGAR, central-bank releases, FRED, World Bank, IMF, official exchange notices, and licensed market-price adapters are planned. SEC EDGAR is a primary filings source, not a stock-price feed.
 - Commodities and supply chain: EIA, USDA, FAOSTAT, World Bank commodity data, USGS minerals, official port authority alerts, and operator notices are planned.
 - Major news: GDELT is discovery-only and remains single-source/unverified until corroborated.

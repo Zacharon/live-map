@@ -1,6 +1,8 @@
 import { PROVIDER_SOURCE_REGISTRY } from "../data/providers/source-registry.js";
 import { MASTER_SOURCE_REGISTRY, sourceById } from "./master-source-registry.js";
 
+const IMPLEMENTED_SOURCE_STATUSES = new Set(["live", "configuration-required", "enrichment", "degraded", "partial"]);
+
 export function validateProviderSourceLinks({
   providers = PROVIDER_SOURCE_REGISTRY,
   sources = MASTER_SOURCE_REGISTRY,
@@ -17,7 +19,7 @@ export function validateProviderSourceLinks({
       errors.push(`${provider.id} maps to missing source ${provider.sourceRegistryId}`);
       continue;
     }
-    if (source.status !== "live" || !source.implemented) {
+    if (!IMPLEMENTED_SOURCE_STATUSES.has(source.status) || !source.implemented) {
       errors.push(`${provider.id} maps to non-live source ${source.id}`);
     }
     if (source.status === "link-only") {
@@ -26,7 +28,7 @@ export function validateProviderSourceLinks({
   }
 
   const providerSourceIds = new Set(liveProviders.map((provider) => provider.sourceRegistryId).filter(Boolean));
-  for (const source of sources.filter((sourceRecord) => sourceRecord.implemented || sourceRecord.status === "live")) {
+  for (const source of sources.filter((sourceRecord) => sourceRecord.implemented || IMPLEMENTED_SOURCE_STATUSES.has(sourceRecord.status))) {
     if (!source.adapterId) errors.push(`${source.id} is implemented without adapterId`);
     if (!providerSourceIds.has(source.id)) errors.push(`${source.id} is implemented without runtime provider mapping`);
   }

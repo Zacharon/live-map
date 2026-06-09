@@ -123,6 +123,11 @@ function row(label, value) {
   return `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value || "Not set")}</dd>`;
 }
 
+function selectedSourceFor(value, sources = state.sources) {
+  if (!value) return null;
+  return sourceById(value, sources) || sources.find((sourceRecord) => sourceRecord.adapterId === value) || null;
+}
+
 function renderDetail(sourceRecord) {
   if (!sourceRecord) {
     els.detail.innerHTML = '<div class="empty" role="status">No source selected. Choose a source to inspect access, licensing, freshness, and implementation status.</div>';
@@ -165,7 +170,7 @@ function renderDetail(sourceRecord) {
 
 function filteredSources() {
   let filtered = filterSources(state.sources, readFilters());
-  const selected = state.selectedId ? sourceById(state.selectedId, state.sources) : null;
+  const selected = selectedSourceFor(state.selectedId, state.sources);
   if (selected && !filtered.some((sourceRecord) => sourceRecord.id === selected.id)) filtered = [selected, ...filtered];
   return { filtered, selected: selected || filtered[0] || null };
 }
@@ -205,6 +210,7 @@ async function loadSources() {
     state.registryVersion = data.registryVersion || "1";
     state.warnings = body.warnings || [];
     state.errors = body.errors || [];
+    if (body.selectedSource?.id) state.selectedId = body.selectedSource.id;
     state.lastSuccessfulLoadAt = Date.now();
     state.apiFailed = false;
   } catch (error) {

@@ -188,7 +188,8 @@ export function validateSourceStatus(sourceStatus, reporter, label, requireHealt
     return;
   }
 
-  const failed = entries.filter(([, status]) => status?.ok !== true);
+  const allowedNotOk = new Set(["configuration-required", "disabled"]);
+  const failed = entries.filter(([, status]) => status?.ok !== true && !allowedNotOk.has(status?.status));
   if (requireHealthySources && failed.length) {
     reporter.fail(
       `${label} source status`,
@@ -204,6 +205,7 @@ export function validateCoordinates(events, reporter, label) {
   for (const event of events || []) {
     const lat = Number(event.lat ?? event.latitude);
     const lon = Number(event.lon ?? event.longitude);
+    if (event?.geographic === false) continue;
     if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
       invalid.push(event.id || event.title || "unknown event");
     }

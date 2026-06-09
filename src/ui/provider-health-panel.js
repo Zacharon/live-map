@@ -2,6 +2,8 @@ import { escapeHtml, relativeTime } from "../events/event-normalizer.js";
 
 export function providerState(status = {}) {
   if (status.disabled) return "disabled";
+  if (status.status === "configuration-required" || /configuration required|appname/i.test(status.message || "")) return "configuration-required";
+  if (status.status === "rate-limited" || /rate/i.test(status.message || "")) return "rate-limited";
   if (status.message && /rate/i.test(status.message)) return "rate-limited";
   if (status.message && /auth|credential/i.test(status.message)) return "authentication-required";
   if (!status.ok) return "unavailable";

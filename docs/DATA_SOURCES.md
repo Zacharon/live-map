@@ -4,6 +4,14 @@
 
 - USGS Earthquake Hazards Program: public earthquake GeoJSON feeds.
 - NASA EONET: public natural hazard event feed. Provider availability can be intermittent.
+- NOAA/NWS Alerts: public U.S. weather alert API.
+- GDACS: public global disaster RSS feeds for earthquakes, tropical cyclones, floods, volcanoes, and drought.
+- CISA Known Exploited Vulnerabilities: official non-geographic technology/cyber feed.
+
+## Configuration-required or enrichment sources
+
+- ReliefWeb V2: humanitarian reports adapter is implemented, but live queries require a pre-approved `RELIEFWEB_APPNAME`. The provider uses source attribution, limited excerpts, and country-level or suppressed locations for sensitive records.
+- NIST NVD CVE API 2.0: focused CVE enrichment is implemented for selected CVE IDs. Bulk vulnerability ingestion is intentionally disabled. `NVD_API_KEY` is optional and should stay server-side.
 
 ## Registry or development fixture
 
@@ -20,6 +28,7 @@
 - AIS providers
 - Finance providers
 - NASA FIRMS
+- ReliefWeb appname for live humanitarian reports
 - Groq
 - OpenRouter
 - Supabase or Neon
@@ -32,4 +41,6 @@ See also:
 - `docs/SOURCE_ACCESS_CLASSIFICATIONS.md`
 - `docs/SOURCE_QUALITY_AND_VERIFICATION.md`
 - `docs/LICENSING_AND_REDISTRIBUTION.md`
+- `docs/MULTI_DOMAIN_IMPLEMENTATION_PLAN.md`
+- `docs/NON_GEOGRAPHIC_EVENTS.md`
 

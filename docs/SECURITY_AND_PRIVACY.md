@@ -19,3 +19,7 @@ Licensed or sensitive sources must include access controls, redaction, audit log
 
 Browsers should call Live Map APIs rather than upstream providers. Provider adapters must sanitize errors, hide credentials, obey cache and retention limits, and surface provider failure in source status.
 
+Humanitarian providers must not display sensitive camps, shelters, medical facilities, children, trafficking survivors, conflict victims, persecuted groups, or aid-worker movement locations at harmful precision.
+
+Cyber providers must not include exploit instructions, proof-of-concept retrieval, malware retrieval, or fabricated geographic locations.
+

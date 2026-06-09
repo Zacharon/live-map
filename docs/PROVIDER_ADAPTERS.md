@@ -47,9 +47,21 @@ Runtime provider entries must include `sourceRegistryId`, pointing at exactly on
 
 Current adapters:
 
-- USGS events in `netlify/functions/events.mjs`
-- NASA EONET events in `netlify/functions/events.mjs`
+- USGS events through the provider orchestrator and `src/data/providers/usgs.js`
+- NASA EONET events through the provider orchestrator and `src/data/providers/eonet.js`
+- NOAA/NWS alerts through `src/data/providers/nws-alerts.js`
+- GDACS global disasters through `src/data/providers/gdacs.js`
+- ReliefWeb humanitarian reports through `src/data/providers/reliefweb.js`; this is configuration-required until `RELIEFWEB_APPNAME` is set server-side.
+- CISA Known Exploited Vulnerabilities through `src/data/providers/cisa-kev.js`; this produces non-geographic technology/cyber events.
+- NIST NVD CVE API enrichment through `src/data/providers/nvd.js`; this only performs focused CVE lookups and does not bulk-ingest the CVE catalog.
 - Development finance fixture in `src/finance/finance-adapter.js`
 - Disabled AI brief endpoint in `netlify/functions/briefs.mjs`
 - Source registry endpoint in `netlify/functions/sources.mjs`
+
+Shared provider infrastructure:
+
+- `src/data/providers/orchestrator.js` preserves Phase 1B provider orchestration, diagnostics, caching, deduplication, and provider health.
+- `src/data/providers/scheduling.js` defines conservative refresh guidance, cache TTLs, stale windows, request budgets, and retry policies.
+- `src/data/providers/request-budget.js` tracks in-memory request budgets so providers can fail visibly instead of silently over-polling.
+- `src/events/normalized-event.js` supports explicit non-geographic events with `geographic: false`, `mapDisplayStatus`, and `nonGeographicReason`.
 

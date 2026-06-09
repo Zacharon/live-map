@@ -20,6 +20,9 @@ These instructions apply to the whole repository.
 - Never label fixtures, placeholder data, unavailable providers, or planned integrations as live.
 - Never mark a master source registry entry `live` unless an adapter exists, terms are reviewed, attribution is implemented, and cache/retention policies are documented.
 - Do not fabricate missing event data.
+- Do not fabricate geography for non-geographic cyber, finance, or reference records.
+- Sensitive humanitarian locations must be generalized or suppressed when precise display could increase risk.
+- Do not mirror full copyrighted reports, PDFs, photos, exploit code, or malware samples.
 - Do not add paid services without explicit approval.
 - Keep public-information and risk claims explainable.
 - Treat this application as informational, not emergency dispatch or operational guidance.
@@ -31,6 +34,7 @@ These instructions apply to the whole repository.
 - Provider failures must be visible in `sourceStatus` and must not be hidden behind a successful-looking workflow result.
 - If freshness, source status, or attribution changes, update the relevant docs and validator checks.
 - Keep taxonomy, grouping, sorting, incident clustering, and provider-health behavior documented when changed.
+- Keep non-geographic event behavior, request budgets, and provider scheduling documented when changed.
 
 ## Workflow
 

@@ -16,7 +16,7 @@ export const CATEGORIES = {
   finance: { label: "Finance", color: "#59d28f" },
   cyber: { label: "Cyber", color: "#72b7ff" },
   infrastructure: { label: "Infrastructure", color: "#c0d2ff" },
-  humanitarian: { label: "Positive", color: "#7ee6d2" },
+  humanitarian: { label: "Humanitarian", color: "#ff9fc1" },
   other: { label: "Other hazard", color: "#68d6b7" },
 };
 

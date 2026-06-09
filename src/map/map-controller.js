@@ -130,7 +130,8 @@ export function createMapController(options = {}) {
   }
 
   function fitEvents(events) {
-    if (events.length) map.fitBounds(events.map((event) => [event.lat, event.lon]), { padding: [40, 40], maxZoom: 7 });
+    const geographicEvents = events.filter((event) => event.geographic !== false && Number.isFinite(event.lat) && Number.isFinite(event.lon));
+    if (geographicEvents.length) map.fitBounds(geographicEvents.map((event) => [event.lat, event.lon]), { padding: [40, 40], maxZoom: 7 });
   }
 
   function renderCountryRisk(scores, visible) {

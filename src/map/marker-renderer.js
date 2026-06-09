@@ -13,7 +13,7 @@ export function markerIcon(event) {
 
 export function renderMarkers(markerLayer, events, onSelect) {
   markerLayer.clearLayers();
-  events.forEach((event) => {
+  events.filter((event) => event.geographic !== false && Number.isFinite(event.lat) && Number.isFinite(event.lon)).forEach((event) => {
     const markerColor = event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color;
     if (event.geometry && event.geometry.type && event.geometry.type !== "Point") {
       const geometryLayer = L.geoJSON(event.geometry, {
