@@ -35,4 +35,4 @@ Each budget tracks:
 }
 ```
 
-Initial budgets are conservative: ReliefWeb 144 calls/day, CISA KEV 48 calls/day, NVD 40 calls/day. ReliefWeb's documented maximum is 1000 calls/day, so the default plan leaves substantial headroom.
+Initial budgets are conservative: ReliefWeb 144 calls/day, CISA KEV 48 calls/day, NVD 40 calls/day, SEC EDGAR 180 calls/day, FRED 48 calls/day, and EIA 72 calls/day. ReliefWeb's documented maximum is 1000 calls/day, and SEC fair access is higher than this app's default polling plan, so defaults leave substantial headroom.

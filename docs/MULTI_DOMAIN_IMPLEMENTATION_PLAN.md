@@ -9,6 +9,9 @@ Live Map expands providers in phases so the interface, source health, rate limit
 | ReliefWeb | `https://api.reliefweb.int/v2/reports`, `/disasters` | Pre-approved appname required; 1000 calls/day; 1000 entries/request | `RELIEFWEB_APPNAME` | 15-20 min | Humanitarian | 100-250 recent records | Sensitive locations, original-source copyright | Configuration-required without appname; metadata/excerpts only; country-centroid or suppressed coordinates |
 | CISA KEV | `https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json` | Public official JSON | none | 60 min | Technology & Cyber | ~1600 records, capped in feed | No geography; exploit detail risk | Non-geographic KEV feed, no exploit instructions, source health |
 | NVD | `https://services.nvd.nist.gov/rest/json/cves/2.0` | Public API; API key optional; 5/30s unauthenticated, 50/30s with key | `NVD_API_KEY` | 2 hours | Technology & Cyber | Focused CVE enrichment only | No geography; reference links | Focused enrichment helpers; no bulk downloads |
+| SEC EDGAR | `https://data.sec.gov/submissions/CIK##########.json` | Public official API with fair-access/User-Agent rules | `SEC_CONTACT_EMAIL`, optional `SEC_CIKS` | 5 min active windows | Finance & Markets | Controlled CIK allowlist | Non-geographic filings | Material filing classification; no stock prices |
+| FRED | `https://api.stlouisfed.org/fred/series/observations` | Official API key | `FRED_API_KEY` | 30-60 min near releases | Finance & Markets | Allowlisted series | Observation/event distinction | Macro threshold/revision signals only |
+| EIA | `https://api.eia.gov/v2/` | Official API key | `EIA_API_KEY` | Hourly or dataset-specific | Commodities & Supply Chain | Allowlisted datasets | Observation/event distinction | Energy thresholds only; no causality claims |
 
 ## Phase 2B - Finance And Commodities
 

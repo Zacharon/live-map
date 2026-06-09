@@ -302,7 +302,7 @@ export function bootLiveMap() {
     els.providerHealthPanel.innerHTML = renderProviderHealthPanel(state.sourceStatus, state.providerResults);
     els.sourcesStatusPanel.innerHTML = renderSourcesStatusPanel(state.events, state.sourceStatus);
     applyDashboardTitle(state.dashboard, els.dashboardEyebrow, els.dashboardTitle);
-    els.dashboardPanel.innerHTML = renderDashboardPanel(state.dashboard, { riskScores, correlations }) + renderLayerSummary(layers) + renderRiskTable(riskScores) + renderAlerts(events) + renderCountDebug();
+    els.dashboardPanel.innerHTML = renderDashboardPanel(state.dashboard, { riskScores, correlations, events, sourceStatus: state.sourceStatus, providerResults: state.providerResults }) + renderLayerSummary(layers) + renderRiskTable(riskScores) + renderAlerts(events) + renderCountDebug();
   }
 
   function renderNav() {

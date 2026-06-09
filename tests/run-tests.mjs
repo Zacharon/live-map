@@ -19,8 +19,13 @@ import { gdacsSeverityScore, gdacsUrl, normalizeGdacsFeature, representativeGdac
 import { normalizeCisaKevItem } from "../src/data/providers/cisa-kev.js";
 import { normalizeNvdCve } from "../src/data/providers/nvd.js";
 import { fetchReliefWebEvents, normalizeReliefWebRecord } from "../src/data/providers/reliefweb.js";
+import { classifySecFiling, compliantSecContact, normalizeSecFiling } from "../src/data/providers/sec-edgar.js";
+import { classifyFredObservation, fetchFredEvents, normalizeFredObservation } from "../src/data/providers/fred.js";
+import { classifyEiaRecord, fetchEiaEvents, normalizeEiaRecord } from "../src/data/providers/eia.js";
 import { PROVIDER_SCHEDULES, validateProviderSchedule } from "../src/data/providers/scheduling.js";
 import { createMemoryRequestBudgetStore, retryAfterMs } from "../src/data/providers/request-budget.js";
+import { createMemoryProviderStateStore } from "../src/data/providers/provider-state.js";
+import { createCompanyIdentity, sameCompany } from "../src/data/providers/company-identity.js";
 import { createMemoryProviderCache } from "../src/data/providers/cache.js";
 import { PROVIDER_SOURCE_REGISTRY, providersForDomain, DOMAIN_SOURCE_STATUS } from "../src/data/providers/source-registry.js";
 import { classifyEvent, domainOptions, TAXONOMY_REGISTRY } from "../src/events/taxonomy.js";
@@ -32,10 +37,23 @@ import { serializeView } from "../src/ui/saved-views.js";
 import sourcesFunction from "../netlify/functions/sources.mjs";
 import { validateProviderSourceLinks } from "../src/sources/provider-source-links.js";
 
+const pendingTests = [];
+
 function test(name, fn) {
   try {
-    fn();
-    console.log(`ok - ${name}`);
+    const result = fn();
+    if (result && typeof result.then === "function") {
+      pendingTests.push(
+        result
+          .then(() => console.log(`ok - ${name}`))
+          .catch((error) => {
+            console.error(`not ok - ${name}`);
+            throw error;
+          })
+      );
+    } else {
+      console.log(`ok - ${name}`);
+    }
   } catch (error) {
     console.error(`not ok - ${name}`);
     throw error;
@@ -535,6 +553,88 @@ test("ReliefWeb stays configuration-required without appname and limits report b
   assert.notEqual(result.event.description, longBody);
 });
 
+test("SEC EDGAR classifies material filings without inventing geography", async () => {
+  assert.equal(compliantSecContact("ops@example.com"), true);
+  assert.equal(compliantSecContact("not-an-email"), false);
+  assert.equal(classifySecFiling({ form: "8-K", items: "Item 1.05" }).eventType, "cybersecurity-disclosure");
+  assert.equal(classifySecFiling({ form: "8-K", items: "Item 5.02" }).eventType, "executive-change");
+  assert.equal(classifySecFiling({ form: "8-K", items: "Item 2.01" }).eventType, "acquisition-disposition");
+  assert.equal(classifySecFiling({ form: "8-K", items: "Item 4.02" }).eventType, "non-reliance-restatement");
+  const result = normalizeSecFiling(
+    { form: "8-K", items: "Item 1.05", accessionNumber: "0000320193-26-000001", filingDate: "2026-06-08", reportDate: "2026-06-07", primaryDocument: "aapl-20260608.htm" },
+    { cik: "0000320193", companyName: "Apple Inc.", tickerSymbols: ["AAPL", "AAPL.MX"], exchange: "XNAS" },
+    new Date("2026-06-09T00:00:00Z")
+  );
+  assert.ok(result.event);
+  assert.equal(result.event.geographic, false);
+  assert.equal(result.event.domain, "finance-markets");
+  assert.equal(result.event.type, "cybersecurity-disclosure");
+  assert.equal(result.event.metadata.accessionNumber, "0000320193-26-000001");
+  assert.match(result.event.metadata.primaryDocumentUrl, /aapl-20260608\.htm$/);
+  assert.ok(result.event.metadata.companyIdentity.tickerSymbols.includes("AAPL.MX"));
+  assert.equal(normalizeSecFiling({ form: "S-8", accessionNumber: "x" }, { cik: "1", companyName: "X" }).event, null);
+});
+
+test("Company identity prefers CIK and does not merge on similar names alone", () => {
+  const a = createCompanyIdentity({ cik: "0000320193", legalName: "Apple Inc.", tickerSymbols: ["AAPL"] });
+  const b = createCompanyIdentity({ cik: "0320193", legalName: "Apple Incorporated", tickerSymbols: ["AAPL.MX"] });
+  const c = createCompanyIdentity({ legalName: "Apple Holdings" });
+  assert.equal(a.id, "cik:320193");
+  assert.equal(sameCompany(a, b), true);
+  assert.equal(sameCompany(a, c), false);
+});
+
+test("FRED observations distinguish unchanged, revised, and material records", async () => {
+  const series = { id: "FEDFUNDS", releaseId: "18", releaseName: "H.15 Selected Interest Rates", materialChange: 0.25 };
+  const latest = { date: "2026-05-01", value: "5.50", realtime_start: "2026-06-01", realtime_end: "2026-06-01" };
+  const previous = { date: "2026-04-01", value: "5.00", realtime_start: "2026-05-01", realtime_end: "2026-05-01" };
+  const classification = classifyFredObservation(series, latest, previous, { title: "Federal Funds Effective Rate", units: "Percent" });
+  assert.equal(classification.eventType, "macro-threshold-crossing");
+  const normalized = normalizeFredObservation(series, latest, previous, { title: "Federal Funds Effective Rate", units: "Percent" }, new Date("2026-06-09T00:00:00Z"));
+  assert.ok(normalized.event);
+  assert.equal(normalized.event.geographic, false);
+  assert.equal(normalized.observation.recordKind, "observation");
+  const unchanged = normalizeFredObservation(series, { ...latest, value: "5.01" }, previous, {}, new Date("2026-06-09T00:00:00Z"));
+  assert.equal(unchanged.event, null);
+  const missing = normalizeFredObservation(series, { ...latest, value: "." }, previous, {}, new Date("2026-06-09T00:00:00Z"));
+  assert.equal(missing.observation.value, null);
+  const previousKey = globalThis.process.env.FRED_API_KEY;
+  delete globalThis.process.env.FRED_API_KEY;
+  const status = await fetchFredEvents({ now: Date.now() });
+  assert.equal(status.status, "configuration-required");
+  if (previousKey !== undefined) globalThis.process.env.FRED_API_KEY = previousKey;
+});
+
+test("EIA records create commodity signals only for configured thresholds", async () => {
+  const dataset = { id: "weekly-crude-stocks", route: "petroleum/stoc/wstk/data", seriesId: "WCESTUS1", commodity: "crude-oil", type: "inventory-release", units: "thousand barrels", materialChange: 5000 };
+  const latest = { period: "2026-06-05", value: "455000", series: "WCESTUS1", units: "thousand barrels", updated: "2026-06-06T14:00:00Z" };
+  const previous = { period: "2026-05-29", value: "448500", series: "WCESTUS1", units: "thousand barrels", updated: "2026-05-30T14:00:00Z" };
+  const signal = classifyEiaRecord(dataset, latest, previous);
+  assert.equal(signal.type, "inventory-release");
+  assert.ok(signal.material);
+  const normalized = normalizeEiaRecord(dataset, latest, previous, new Date("2026-06-09T00:00:00Z"));
+  assert.ok(normalized.event);
+  assert.equal(normalized.event.domain, "commodity-supply-chain");
+  assert.equal(normalized.event.geographic, false);
+  assert.equal(normalized.observation.recordKind, "observation");
+  const unchanged = normalizeEiaRecord(dataset, { ...latest, value: "448750", updated: previous.updated }, previous, new Date("2026-06-09T00:00:00Z"));
+  assert.equal(unchanged.event, null);
+  const previousKey = globalThis.process.env.EIA_API_KEY;
+  delete globalThis.process.env.EIA_API_KEY;
+  const status = await fetchEiaEvents({ now: Date.now() });
+  assert.equal(status.status, "configuration-required");
+  if (previousKey !== undefined) globalThis.process.env.EIA_API_KEY = previousKey;
+});
+
+test("Provider state prevents duplicate finance records after restart-like reuse", async () => {
+  const store = createMemoryProviderStateStore();
+  assert.equal(await store.hasProcessed("sec-edgar", "320193", "0000320193-26-000001"), false);
+  await store.markProcessed("sec-edgar", "320193", "0000320193-26-000001", { lastAccessionNumber: "0000320193-26-000001" });
+  assert.equal(await store.hasProcessed("sec-edgar", "320193", "0000320193-26-000001"), true);
+  const state = await store.get("sec-edgar", "320193");
+  assert.equal(state.lastAccessionNumber, "0000320193-26-000001");
+});
+
 test("Non-geographic normalized events remain valid", () => {
   const result = createNormalizedEvent({
     provider: "test",
@@ -666,4 +766,5 @@ test("Source registry covers every top-level domain with non-live planned states
   assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "acled" && provider.credentialRequired));
 });
 
+await Promise.all(pendingTests);
 console.log("All tests passed.");

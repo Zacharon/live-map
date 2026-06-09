@@ -27,6 +27,7 @@ Live Map keeps provider status in code at `src/data/providers/source-registry.js
 - Natural disasters: USGS, EONET, and GDACS are live. FIRMS, NOAA tsunami alerts, and Copernicus EMS are planned.
 - Humanitarian: ReliefWeb V2 is implemented as configuration-required and requires a pre-approved `RELIEFWEB_APPNAME`. UN OCHA HDX, UNHCR, WHO, UNICEF, and IFRC are planned.
 - Technology and cyber: CISA KEV is implemented as a non-geographic feed. NVD enrichment is implemented conservatively for focused CVE lookups. CISA advisories, GitHub Status, Cloudflare Status/Radar, AWS, Azure, Google Cloud, RIPEstat, and IODA are planned. CVEs are not mapped as geographic incidents by default.
+- Finance and commodities: SEC EDGAR, FRED, and EIA foundations are implemented as configuration-required official-source adapters. SEC filings, macro series, and energy observations are non-geographic by default and do not claim market causality.
 - Finance and markets: SEC EDGAR, central-bank releases, FRED, World Bank, IMF, official exchange notices, and licensed market-price adapters are planned. SEC EDGAR is a primary filings source, not a stock-price feed.
 - Commodities and supply chain: EIA, USDA, FAOSTAT, World Bank commodity data, USGS minerals, official port authority alerts, and operator notices are planned.
 - Major news: GDELT is discovery-only and remains single-source/unverified until corroborated.

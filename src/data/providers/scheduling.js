@@ -9,6 +9,9 @@ export const PROVIDER_SCHEDULES = {
   reliefweb: schedule("reliefweb", { refreshIntervalMs: 20 * 60 * 1000, cacheTtlMs: 15 * 60 * 1000, staleAfterMs: 4 * 60 * 60 * 1000, requestTimeoutMs: 15000, dailyRequestBudget: 144 }),
   "cisa-kev": schedule("cisa-kev", { refreshIntervalMs: 60 * 60 * 1000, cacheTtlMs: 60 * 60 * 1000, staleAfterMs: 24 * 60 * 60 * 1000, requestTimeoutMs: 15000, dailyRequestBudget: 48 }),
   nvd: schedule("nvd", { refreshIntervalMs: 2 * 60 * 60 * 1000, cacheTtlMs: 2 * 60 * 60 * 1000, staleAfterMs: 24 * 60 * 60 * 1000, requestTimeoutMs: 15000, dailyRequestBudget: 40 }),
+  "sec-edgar": schedule("sec-edgar", { refreshIntervalMs: 5 * 60 * 1000, cacheTtlMs: 5 * 60 * 1000, staleAfterMs: 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 180 }),
+  fred: schedule("fred", { refreshIntervalMs: 60 * 60 * 1000, cacheTtlMs: 60 * 60 * 1000, staleAfterMs: 24 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 48 }),
+  eia: schedule("eia", { refreshIntervalMs: 60 * 60 * 1000, cacheTtlMs: 60 * 60 * 1000, staleAfterMs: 12 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 72 }),
 };
 
 export function schedule(providerId, overrides = {}) {
