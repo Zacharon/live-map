@@ -233,7 +233,9 @@ export function validateAttribution(events, reporter, label) {
 
 export function collectSourceUrls(payload, limit = 20) {
   const urls = new Set();
-  for (const source of Object.values(payload?.sourceRegistry || {})) {
+  for (const [providerId, source] of Object.entries(payload?.sourceRegistry || {})) {
+    const status = payload?.sourceStatus?.[providerId];
+    if (status && status.ok !== true) continue;
     if (assertValidUrl(source?.url)) urls.add(source.url);
   }
   for (const event of payload?.events || []) {

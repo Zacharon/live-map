@@ -9,8 +9,12 @@ import { fetchGdacsEvents } from "./gdacs.js";
 import { fetchReliefWebEvents } from "./reliefweb.js";
 import { fetchCisaKevEvents } from "./cisa-kev.js";
 import { fetchNvdEvents } from "./nvd.js";
+import { fetchSecEdgarEvents } from "./sec-edgar.js";
+import { fetchFredEvents } from "./fred.js";
+import { fetchEiaEvents } from "./eia.js";
 import { scheduleForProvider } from "./scheduling.js";
 import { createRequestBudgetStore } from "./request-budget.js";
+import { createProviderStateStore } from "./provider-state.js";
 
 const ADAPTERS = {
   usgs: fetchUsgsEvents,
@@ -20,6 +24,9 @@ const ADAPTERS = {
   reliefweb: fetchReliefWebEvents,
   "cisa-kev": fetchCisaKevEvents,
   nvd: fetchNvdEvents,
+  "sec-edgar": fetchSecEdgarEvents,
+  fred: fetchFredEvents,
+  eia: fetchEiaEvents,
 };
 
 const lastSuccess = new Map();
@@ -74,6 +81,7 @@ function providerStatus(provider, result, now) {
     warnings: result.warnings || [],
     attachedReportCount: result.attachedReportCount || 0,
     standaloneEventCount: result.standaloneEventCount ?? result.events.length,
+    observationCount: result.observations?.length || 0,
     attribution: provider.attribution,
     url: provider.homepageUrl,
   };
@@ -147,6 +155,7 @@ export async function runProvider(provider, context) {
       requestBudget,
       attachedReportCount: result.attachedReportCount || 0,
       standaloneEventCount: result.standaloneEventCount ?? events.length,
+      observations: result.observations || [],
       cached: false,
       stale: false,
     };
@@ -175,8 +184,9 @@ export async function orchestrateProviders(options = {}) {
   const hours = options.hours || 168;
   const providerCache = options.providerCache || (await createProviderCache());
   const requestBudgetStore = options.requestBudgetStore || (await createRequestBudgetStore());
+  const providerStateStore = options.providerStateStore || (await createProviderStateStore());
   const enabledProviders = EVENT_PROVIDERS.filter((provider) => provider.enabled !== false);
-  const settled = await Promise.allSettled(enabledProviders.map((provider) => runProvider(provider, { now, hours, providerCache, requestBudgetStore })));
+  const settled = await Promise.allSettled(enabledProviders.map((provider) => runProvider(provider, { now, hours, providerCache, requestBudgetStore, providerStateStore })));
   const providerResults = settled.map((item, index) =>
     item.status === "fulfilled"
       ? item.value

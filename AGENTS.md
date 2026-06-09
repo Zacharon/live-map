@@ -21,6 +21,8 @@ These instructions apply to the whole repository.
 - Never mark a master source registry entry `live` unless an adapter exists, terms are reviewed, attribution is implemented, and cache/retention policies are documented.
 - Do not fabricate missing event data.
 - Do not fabricate geography for non-geographic cyber, finance, or reference records.
+- Do not map SEC issuers to headquarters merely to create event markers.
+- Do not claim causality between official economic, filing, energy, or market records and price movements unless verified by sources.
 - Sensitive humanitarian locations must be generalized or suppressed when precise display could increase risk.
 - Do not mirror full copyrighted reports, PDFs, photos, exploit code, or malware samples.
 - Do not add paid services without explicit approval.
@@ -35,6 +37,7 @@ These instructions apply to the whole repository.
 - If freshness, source status, or attribution changes, update the relevant docs and validator checks.
 - Keep taxonomy, grouping, sorting, incident clustering, and provider-health behavior documented when changed.
 - Keep non-geographic event behavior, request budgets, and provider scheduling documented when changed.
+- Keep finance/commodity event classification, observation-vs-event rules, and provider-state behavior documented when changed.
 
 ## Workflow
 

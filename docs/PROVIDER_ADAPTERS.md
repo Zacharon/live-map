@@ -54,6 +54,9 @@ Current adapters:
 - ReliefWeb humanitarian reports through `src/data/providers/reliefweb.js`; this is configuration-required until `RELIEFWEB_APPNAME` is set server-side.
 - CISA Known Exploited Vulnerabilities through `src/data/providers/cisa-kev.js`; this produces non-geographic technology/cyber events.
 - NIST NVD CVE API enrichment through `src/data/providers/nvd.js`; this only performs focused CVE lookups and does not bulk-ingest the CVE catalog.
+- SEC EDGAR filings through `src/data/providers/sec-edgar.js`; configuration-required until `SEC_CONTACT_EMAIL` and a controlled CIK allowlist are configured.
+- FRED macroeconomic observations through `src/data/providers/fred.js`; configuration-required until `FRED_API_KEY` is configured and series remain allowlisted.
+- EIA energy observations through `src/data/providers/eia.js`; configuration-required until `EIA_API_KEY` is configured and datasets remain allowlisted.
 - Development finance fixture in `src/finance/finance-adapter.js`
 - Disabled AI brief endpoint in `netlify/functions/briefs.mjs`
 - Source registry endpoint in `netlify/functions/sources.mjs`
@@ -63,5 +66,6 @@ Shared provider infrastructure:
 - `src/data/providers/orchestrator.js` preserves Phase 1B provider orchestration, diagnostics, caching, deduplication, and provider health.
 - `src/data/providers/scheduling.js` defines conservative refresh guidance, cache TTLs, stale windows, request budgets, and retry policies.
 - `src/data/providers/request-budget.js` tracks in-memory request budgets so providers can fail visibly instead of silently over-polling.
+- `src/data/providers/provider-state.js` tracks incremental provider state for filings, observations, revisions, and duplicate prevention.
 - `src/events/normalized-event.js` supports explicit non-geographic events with `geographic: false`, `mapDisplayStatus`, and `nonGeographicReason`.
 
