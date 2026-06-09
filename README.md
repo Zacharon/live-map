@@ -112,6 +112,7 @@ API routes
 Current and scaffolded routes include:
 
 GET  /api/events
+GET  /api/sources
 GET  /api/layers
 GET  /api/countries
 GET  /api/country-risk
@@ -133,6 +134,31 @@ New scaffold endpoints use a consistent response envelope:
 }
 
 The existing /api/events response remains compatible with the current frontend.
+
+Source Explorer and master registry
+
+Live Map now includes a governed master OSINT source registry and Source Explorer:
+
+Source Explorer: /sources
+Source API: /api/sources
+Registry module: src/sources/master-source-registry.js
+
+The registry separates useful sources from implemented providers. A source may be open, credentialed, licensed, link-only, planned, disabled, authentication-required, license-required, degraded, delayed, partial, provider-unavailable, or live.
+
+Only providers with implemented adapters, reviewed terms, attribution, cache policy, retention policy, and safe server-side credentials may be labeled live. On the current main-based branch, USGS and NASA EONET are the only live event providers.
+
+Read:
+
+docs/MASTER_SOURCE_REGISTRY.md
+docs/SOURCE_ACCESS_CLASSIFICATIONS.md
+docs/SOURCE_QUALITY_AND_VERIFICATION.md
+docs/LICENSING_AND_REDISTRIBUTION.md
+docs/COPYRIGHT_AND_NEWS_INGESTION.md
+docs/RATE_LIMIT_AND_CACHE_POLICY.md
+docs/DATA_RETENTION_AND_PRIVACY.md
+docs/TAKEDOWN_AND_CORRECTION_PROCESS.md
+docs/SOURCE_EXPLORER.md
+docs/PROVIDER_IMPLEMENTATION_ROADMAP.md
 
 Data-source limitations
 
@@ -383,6 +409,7 @@ Update all relevant areas together:
 
 Provider adapter
 Source registry
+Master source registry status, access classification, quality tier, review dates, and limitations
 Source attribution
 Freshness rules
 Failure handling

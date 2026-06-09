@@ -14,6 +14,8 @@
 
 ## Phase 2
 
+- Master OSINT source registry and Source Explorer governance foundation
+- Source access, licensing, quality, verification, cache, retention, and takedown policy docs
 - Aviation and maritime provider integrations
 - Cyber and infrastructure provider adapters
 - Static infrastructure GeoJSON with attribution
@@ -25,7 +27,7 @@
 
 ## Phase 4
 
-- OSINT resource directory by country
+- OSINT resource directory by country using the governed source registry rather than a copied third-party directory
 
 ## Phase 5
 

@@ -7,12 +7,13 @@
     "node": ">=20"
   },
   "scripts": {
-    "check": "node --check app.js && node --check netlify/functions/events.mjs",
-    "check:syntax": "node --check app.js && node --check netlify/functions/events.mjs && node --check scripts/live-map-validator.mjs && node --check scripts/production-smoke-test.mjs",
+    "check": "node --check app.js && node --check netlify/functions/events.mjs && node --check netlify/functions/sources.mjs && node --check src/source-explorer-app.js && node --check src/sources/master-source-registry.js && node --check src/sources/source-adapter-contract.js",
+    "check:syntax": "node --check app.js && node --check netlify/functions/events.mjs && node --check netlify/functions/sources.mjs && node --check src/source-explorer-app.js && node --check src/sources/master-source-registry.js && node --check src/sources/source-adapter-contract.js && node --check scripts/live-map-validator.mjs && node --check scripts/production-smoke-test.mjs && node --check scripts/source-explorer-smoke-test.mjs",
     "validate": "node scripts/live-map-validator.mjs",
     "security:scan": "node scripts/live-map-validator.mjs --security-only",
     "smoke:production": "node scripts/production-smoke-test.mjs",
     "test:platform": "node tests/run-tests.mjs",
-    "test": "npm run test:platform && npm run validate"
+    "test:e2e": "node scripts/source-explorer-smoke-test.mjs",
+    "test": "npm run test:platform && npm run validate && npm run test:e2e"
   }
 }
