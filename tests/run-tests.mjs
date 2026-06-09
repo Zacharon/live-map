@@ -15,6 +15,7 @@ import { orchestrateProviders } from "../src/data/providers/orchestrator.js";
 import { IMPLEMENTATION_STATUSES, MASTER_SOURCE_REGISTRY, SOURCE_ACCESS_CLASSIFICATIONS, SOURCE_DOMAINS, SOURCE_QUALITY_TIERS, VERIFICATION_STATES, filterSources, sourceRegistryStats, validateSourceRegistry } from "../src/sources/master-source-registry.js";
 import { classifyProviderError, createAdapterResult, nextRefreshWithBackoff, sanitizeProviderError, shouldOpenCircuitBreaker } from "../src/sources/source-adapter-contract.js";
 import { normalizeNwsAlert, nwsSeverityScore, representativeNwsPoint } from "../src/data/providers/nws.js";
+import { gdacsSeverityScore, gdacsUrl, normalizeGdacsFeature, representativeGdacsPoint } from "../src/data/providers/gdacs.js";
 import { createMemoryProviderCache } from "../src/data/providers/cache.js";
 import { PROVIDER_SOURCE_REGISTRY, providersForDomain, DOMAIN_SOURCE_STATUS } from "../src/data/providers/source-registry.js";
 import { classifyEvent, domainOptions, TAXONOMY_REGISTRY } from "../src/events/taxonomy.js";
@@ -210,7 +211,7 @@ test("Master source registry schema and enums stay valid", () => {
 
 test("Master source registry protects licensing and implementation state", () => {
   const live = MASTER_SOURCE_REGISTRY.filter((source) => source.status === "live");
-  assert.deepEqual(live.map((source) => source.adapterId).sort(), ["eonet", "nws-alerts", "usgs"]);
+  assert.deepEqual(live.map((source) => source.adapterId).sort(), ["eonet", "gdacs", "nws-alerts", "usgs"]);
   assert.ok(live.every((source) => source.implemented && !source.legalReviewRequired));
   assert.ok(MASTER_SOURCE_REGISTRY.every((source) => source.accessMode !== "prohibited-or-unclear" || source.status === "disabled"));
   assert.ok(MASTER_SOURCE_REGISTRY.every((source) => source.status !== "link-only" || !source.implemented));
@@ -285,6 +286,11 @@ test("Source API returns JSON envelope, filters, and invalid source warnings", a
   const invalidBody = await invalid.json();
   assert.equal(invalidBody.data.selectedSource, null);
   assert.ok(invalidBody.warnings.some((warning) => warning.includes("Unknown source id")));
+
+  const gdacs = await sourcesFunction(new Request("https://liveworldmap.netlify.app/api/sources?source=gdacs"));
+  const gdacsBody = await gdacs.json();
+  assert.equal(gdacsBody.data.selectedSource.id, "gdacs-alerts");
+  assert.equal(gdacsBody.data.selectedSource.adapterId, "gdacs");
 });
 
 test("Source Explorer markup supports routing, fallback state, and escaping-safe controls", () => {
@@ -443,6 +449,102 @@ test("NWS alerts without geometry use labeled coverage fallback", () => {
   assert.ok(result.event);
   assert.equal(result.event.domain, "weather");
   assert.match(result.event.metadata.coordinateMethod, /fallback/);
+});
+
+test("GDACS normalizes disaster alert taxonomy, severity, and source links", () => {
+  const result = normalizeGdacsFeature({
+    type: "Feature",
+    bbox: [125.0469, 5.5918, 125.0469, 5.5918],
+    geometry: { type: "Point", coordinates: [125.0469, 5.5918] },
+    properties: {
+      eventtype: "EQ",
+      eventid: 1544720,
+      episodeid: 1710268,
+      name: "Earthquake in Philippines",
+      description: "Earthquake in Philippines",
+      htmldescription: "Orange M 7.8 Earthquake in Philippines.",
+      alertlevel: "Orange",
+      episodealertlevel: "Orange",
+      episodealertscore: 1.8124,
+      iscurrent: "true",
+      country: "Philippines",
+      fromdate: "2026-06-07T23:37:40",
+      todate: "2026-06-07T23:37:40",
+      datemodified: "2026-06-09T00:12:24",
+      source: "NEIC",
+      url: {
+        geometry: "https://www.gdacs.org/gdacsapi/api/polygons/getgeometry?eventtype=EQ&eventid=1544720&episodeid=1710268",
+        report: "https://www.gdacs.org/report.aspx?eventid=1544720&episodeid=1710268&eventtype=EQ",
+        details: "https://www.gdacs.org/gdacsapi/api/events/geteventdata?eventtype=EQ&eventid=1544720",
+      },
+      affectedcountries: [{ iso2: "PH", iso3: "PHL", countryname: "Philippines" }],
+      severitydata: { severity: 7.8, severitytext: "Magnitude 7.8M, Depth:55.193km", severityunit: "M" },
+    },
+  }, new Date("2026-06-09T01:00:00Z"));
+  assert.ok(result.event);
+  assert.equal(result.event.provider, "gdacs");
+  assert.equal(result.event.domain, "natural-disaster");
+  assert.equal(result.event.category, "earthquake");
+  assert.equal(result.event.type, "earthquake");
+  assert.equal(result.event.severityLabel, "high");
+  assert.equal(result.event.metadata.verificationStatus, "reported");
+  assert.match(result.event.sourceUrl, /^https:\/\/www\.gdacs\.org\/report\.aspx/);
+  assert.equal(result.event.metadata.alertLevel, "Orange");
+});
+
+test("GDACS handles polygons, tropical cyclone weather mapping, and invalid geometry", () => {
+  const polygon = {
+    type: "Feature",
+    geometry: { type: "Polygon", coordinates: [[[-90, 10], [-88, 10], [-88, 12], [-90, 12], [-90, 10]]] },
+    properties: {
+      eventtype: "TC",
+      eventid: 1001275,
+      episodeid: 3,
+      name: "Tropical Cyclone CRISTINA-26",
+      alertlevel: "Red",
+      episodealertlevel: "Red",
+      episodealertscore: 3,
+      iscurrent: "true",
+      country: "Honduras, El Salvador, Nicaragua, Guatemala",
+      fromdate: "2026-06-08T15:00:00",
+      datemodified: "2026-06-09T02:06:04",
+      url: { report: "https://www.gdacs.org/report.aspx?eventid=1001275&episodeid=3&eventtype=TC" },
+      severitydata: { severitytext: "Tropical Storm" },
+    },
+  };
+  const point = representativeGdacsPoint(polygon.geometry);
+  assert.ok(point.latitude >= 10 && point.latitude <= 12);
+  assert.equal(gdacsSeverityScore(polygon.properties), 92);
+  const result = normalizeGdacsFeature(polygon, new Date("2026-06-09T02:30:00Z"));
+  assert.ok(result.event);
+  assert.equal(result.event.domain, "weather");
+  assert.equal(result.event.category, "storm");
+  assert.equal(result.event.type, "tropical-cyclone");
+  assert.equal(result.event.severityLabel, "critical");
+  assert.equal(result.event.geometry.type, "Polygon");
+  assert.equal(normalizeGdacsFeature({ properties: { eventtype: "FL", eventid: 1 } }).event, null);
+  assert.match(gdacsUrl(168, Date.UTC(2026, 5, 9)), /eventtypes=EQ%2CTC%2CFL%2CVO%2CDR%2CWF%2CTS/);
+});
+
+test("GDACS cross-provider earthquake reports can cluster without deleting source records", () => {
+  const usgs = {
+    id: "usgs:eq",
+    title: "Earthquake in Philippines",
+    type: "earthquake",
+    domain: "natural-disaster",
+    lat: 5.59,
+    lon: 125.04,
+    occurredAt: Date.parse("2026-06-07T23:37:40Z"),
+    updatedAt: Date.parse("2026-06-09T00:12:24Z"),
+    provider: "usgs",
+    providerId: "usgs-eq",
+    country: "Philippines",
+  };
+  const gdacs = { ...usgs, id: "gdacs:eq", provider: "gdacs", providerId: "EQ:1544720:1710268", title: "Orange earthquake in Philippines" };
+  assert.equal(shouldCluster(usgs, gdacs), true);
+  const incidents = buildIncidents([usgs, gdacs]);
+  assert.equal(incidents.length, 1);
+  assert.deepEqual(incidents[0].eventIds.sort(), ["gdacs:eq", "usgs:eq"]);
 });
 
 test("Provider cache stores normalized payloads without raw secrets", async () => {

@@ -11,6 +11,8 @@ Live Map is a near-real-time public-information aggregator. It is not an emergen
 Current working layers
 USGS Earthquake Hazards Program earthquake feeds
 NASA EONET natural-hazard events
+NOAA/NWS active weather alerts
+GDACS global disaster alerts
 Partial-data handling when a provider is temporarily unavailable
 Source-health reporting
 Marker clustering
@@ -145,7 +147,7 @@ Registry module: src/sources/master-source-registry.js
 
 The registry separates useful sources from implemented providers. A source may be open, credentialed, licensed, link-only, planned, disabled, authentication-required, license-required, degraded, delayed, partial, provider-unavailable, or live.
 
-Only providers with implemented adapters, reviewed terms, attribution, cache policy, retention policy, and safe server-side credentials may be labeled live. On the current main-based branch, USGS and NASA EONET are the only live event providers.
+Only providers with implemented adapters, reviewed terms, attribution, cache policy, retention policy, and safe server-side credentials may be labeled live. On this branch, USGS, NASA EONET, NOAA/NWS Active Alerts, and GDACS are live event providers.
 
 Read:
 
@@ -374,7 +376,7 @@ If the GitHub plan does not support CodeQL for this private repository, the Code
 Troubleshooting automation
 Validation fails on source status
 
-Check whether USGS or NASA EONET is unavailable or returning partial data.
+Check whether USGS, NASA EONET, NOAA/NWS, or GDACS is unavailable or returning partial data.
 
 Review:
 
@@ -475,7 +477,7 @@ Roadmap
 
 Phase 1B reliable event system
 
-Phase 1B adds a normalized event model, provider registry, provider adapters, partial-failure orchestration, conservative deduplication, provider diagnostics, and broader tests for the current USGS and NASA EONET feeds.
+Phase 1B adds a normalized event model, provider registry, provider adapters, partial-failure orchestration, conservative deduplication, provider diagnostics, and broader tests for live public feeds.
 
 Read:
 
@@ -535,3 +537,21 @@ Leaflet and Leaflet MarkerCluster are self-hosted in `vendor/` and loaded from s
 The map uses a stable three-column desktop layout with independently scrolling left and right panels. The map controller tracks tile health, resizes with `ResizeObserver`, and keeps the map visible when API, DNS, tile, or provider requests fail.
 
 NOAA/NWS active alerts are implemented server-side through the provider orchestration. Weather alerts are U.S.-coverage only, use a configured User-Agent placeholder, normalize polygons when present, and expose provider-health diagnostics.
+
+GDACS global disaster alerts
+
+GDACS is implemented server-side through the official GeoJSON event-list API at `https://data.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH`.
+
+The adapter covers:
+
+- `EQ` earthquake
+- `TC` tropical cyclone
+- `FL` flood
+- `VO` volcano
+- `DR` drought
+- `WF` wildfire
+- `TS` tsunami
+
+GDACS records preserve provider IDs, alert level and score, event type, affected countries, source/report/details URLs, event dates, severity metadata, and provider geometry when present. Alert levels are mapped conservatively: green is low, orange is high, and red is critical. GDACS events remain `reported` or single-provider unless independently corroborated by another source.
+
+Live Map polls GDACS server-side with bounded timeout/retry behavior and a 10-minute provider interval. Browser code must not call the GDACS upstream API directly.

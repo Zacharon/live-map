@@ -5,11 +5,13 @@ import { createProviderCache } from "./cache.js";
 import { fetchUsgsEvents } from "./usgs.js";
 import { fetchEonetEvents } from "./eonet.js";
 import { fetchNwsAlerts } from "./nws.js";
+import { fetchGdacsEvents } from "./gdacs.js";
 
 const ADAPTERS = {
   usgs: fetchUsgsEvents,
   eonet: fetchEonetEvents,
   "nws-alerts": fetchNwsAlerts,
+  gdacs: fetchGdacsEvents,
 };
 
 const lastSuccess = new Map();
@@ -88,7 +90,12 @@ export async function runProvider(provider, context) {
     const result = await adapter({
       ...context,
       provider,
-      fetchJson: (url, sourceName) => fetchJsonWithTimeout(url, sourceName, { timeoutMs: provider.timeoutMs, userAgent: provider.userAgent }),
+      fetchJson: (url, sourceName) =>
+        fetchJsonWithTimeout(url, sourceName, {
+          timeoutMs: provider.timeoutMs,
+          userAgent: provider.userAgent,
+          attempts: provider.fetchAttempts,
+        }),
     });
     const events = result.events || [];
     lastSuccess.set(provider.id, { events, fetchedAt, providerResult: result });

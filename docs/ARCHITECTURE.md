@@ -7,7 +7,7 @@ Live Map remains a Netlify-compatible static application with serverless functio
 - `index.html` provides the map-first shell.
 - `app.js` bootstraps native JavaScript modules.
 - `src/` contains frontend configuration, state, map, dashboard, event, risk, finance, alert, AI, and UI modules.
-- `netlify/functions/events.mjs` preserves the working USGS and NASA EONET event feed.
+- `netlify/functions/events.mjs` preserves the working event feed for USGS, NASA EONET, NOAA/NWS, and GDACS through server-side provider orchestration.
 - Additional Netlify Functions expose Phase 1 registry/scaffold APIs.
 - `data/` stores lightweight data pointers and development-fixture notes.
 

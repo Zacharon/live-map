@@ -23,6 +23,11 @@ function paramsFromUrl(url) {
   };
 }
 
+function selectedSourceFor(value) {
+  if (!value) return null;
+  return sourceById(value) || MASTER_SOURCE_REGISTRY.find((source) => source.adapterId === value) || null;
+}
+
 export default async (request) => {
   if (request.method === "OPTIONS") return new Response("", { status: 204, headers });
   if (request.method !== "GET") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
@@ -30,7 +35,7 @@ export default async (request) => {
   const filters = paramsFromUrl(request.url);
   const validation = validateSourceRegistry();
   let sources = filterSources(MASTER_SOURCE_REGISTRY, filters);
-  const selectedSource = filters.source ? sourceById(filters.source) : null;
+  const selectedSource = selectedSourceFor(filters.source);
   const warnings = [];
   if (filters.source && !selectedSource) warnings.push(`Unknown source id: ${filters.source}`);
   if (selectedSource && !sources.some((source) => source.id === selectedSource.id)) {
