@@ -25,6 +25,12 @@ import { classifyEiaRecord, fetchEiaEvents, normalizeEiaRecord } from "../src/da
 import { PROVIDER_SCHEDULES, validateProviderSchedule } from "../src/data/providers/scheduling.js";
 import { createMemoryRequestBudgetStore, retryAfterMs } from "../src/data/providers/request-budget.js";
 import { createMemoryProviderStateStore } from "../src/data/providers/provider-state.js";
+import { normalizeGdeltArticle } from "../src/data/providers/gdelt.js";
+import { parseFeedItems, normalizeFeedItem } from "../src/data/providers/rss-feed.js";
+import { normalizeStatuspageIncident } from "../src/data/providers/statuspage.js";
+import { normalizeRipestatObservation } from "../src/data/providers/ripestat.js";
+import { assertSafeFetchUrl } from "../src/data/providers/ssrf-protection.js";
+import { applyPublicationPolicy } from "../src/data/providers/publication-policy.js";
 import { createCompanyIdentity, sameCompany } from "../src/data/providers/company-identity.js";
 import { createMemoryProviderCache } from "../src/data/providers/cache.js";
 import { PROVIDER_SOURCE_REGISTRY, providersForDomain, DOMAIN_SOURCE_STATUS } from "../src/data/providers/source-registry.js";
@@ -35,6 +41,7 @@ import { computeQualityDimensions, normalizeVerificationStatus } from "../src/ev
 import { providerState } from "../src/ui/provider-health-panel.js";
 import { serializeView } from "../src/ui/saved-views.js";
 import sourcesFunction from "../netlify/functions/sources.mjs";
+import eventsFunction from "../netlify/functions/events.mjs";
 import { validateProviderSourceLinks } from "../src/sources/provider-source-links.js";
 
 const pendingTests = [];
@@ -142,6 +149,24 @@ test("Normalized event model validates bounds and timestamps", () => {
   assert.equal(validateNormalizedEvent({ ...result.event, latitude: 999 }).valid, false);
 });
 
+test("Record kinds and publication policy preserve weak-source boundaries", () => {
+  const lead = createNormalizedEvent({
+    provider: "test",
+    title: "Discovery lead",
+    category: "other",
+    recordKind: "discovery-lead",
+    geographic: false,
+    sourceName: "Test source",
+    sourceUrl: "https://example.com/lead",
+  });
+  assert.equal(lead.valid, true);
+  assert.equal(lead.event.recordKind, "discovery-lead");
+  assert.equal(validateNormalizedEvent({ ...lead.event, recordKind: "rumor" }).valid, false);
+  const excerpt = applyPublicationPolicy("<p>Hello</p>" + "x".repeat(500), { maxDescriptionChars: 10 });
+  assert.ok(excerpt.length <= 10);
+  assert.doesNotMatch(excerpt, /<p>/);
+});
+
 test("USGS normalization rejects invalid coordinates and maps severity", () => {
   const valid = normalizeUsgsFeature({
     id: "abc",
@@ -234,7 +259,7 @@ test("Master source registry schema and enums stay valid", () => {
 
 test("Master source registry protects licensing and implementation state", () => {
   const live = MASTER_SOURCE_REGISTRY.filter((source) => source.status === "live");
-  assert.deepEqual(live.map((source) => source.adapterId).sort(), ["cisa-kev", "eonet", "gdacs", "nws-alerts", "usgs"]);
+  assert.deepEqual(live.map((source) => source.adapterId).sort(), ["cisa-kev", "eonet", "gdacs", "nws-alerts", "official-rss", "statuspage", "usgs"]);
   assert.ok(live.every((source) => source.implemented && !source.legalReviewRequired));
   assert.ok(MASTER_SOURCE_REGISTRY.every((source) => source.accessMode !== "prohibited-or-unclear" || source.status === "disabled"));
   assert.ok(MASTER_SOURCE_REGISTRY.every((source) => source.status !== "link-only" || !source.implemented));
@@ -325,6 +350,32 @@ test("Source API returns JSON envelope, filters, and invalid source warnings", a
   const gdacsBody = await gdacs.json();
   assert.equal(gdacsBody.data.selectedSource.id, "gdacs-alerts");
   assert.equal(gdacsBody.data.selectedSource.adapterId, "gdacs");
+});
+
+test("Events API preserves recordKind/domain filters", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("earthquake.usgs.gov")) {
+      return new Response(JSON.stringify({
+        features: [{
+          id: "api-filtered",
+          properties: { mag: 4.8, time: Date.now(), updated: Date.now(), url: "https://earthquake.usgs.gov/earthquakes/eventpage/api-filtered", place: "Test" },
+          geometry: { type: "Point", coordinates: [100, 10, 5] },
+        }],
+      }), { status: 200 });
+    }
+    return new Response("unavailable", { status: 503 });
+  };
+  try {
+    const response = await eventsFunction(new Request("https://liveworldmap.netlify.app/api/events?recordKind=event&domain=natural-disaster"));
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.filters.recordKind, "event");
+    assert.ok(body.events.length >= 1);
+    assert.ok(body.events.every((event) => event.recordKind === "event" && event.domain === "natural-disaster"));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("Source Explorer markup supports routing, fallback state, and escaping-safe controls", () => {
@@ -633,6 +684,74 @@ test("Provider state prevents duplicate finance records after restart-like reuse
   assert.equal(await store.hasProcessed("sec-edgar", "320193", "0000320193-26-000001"), true);
   const state = await store.get("sec-edgar", "320193");
   assert.equal(state.lastAccessionNumber, "0000320193-26-000001");
+  await store.setCacheEntry("gdelt", "query-pack", [{ id: "lead" }], { fresh: true });
+  assert.equal((await store.getCacheEntry("gdelt", "query-pack")).payload[0].id, "lead");
+  const lock = await store.acquireLock("official-rss", "refresh", 5000);
+  assert.equal(lock.acquired, true);
+  assert.equal((await store.acquireLock("official-rss", "refresh", 5000)).acquired, false);
+  assert.equal(await store.releaseLock("official-rss", "refresh", lock.token), true);
+});
+
+test("GDELT discovery leads stay unverified and non-geographic", () => {
+  const result = normalizeGdeltArticle({
+    title: "Major port disruption reported",
+    url: "https://example.com/news/port?utm_source=test",
+    seendate: "2026-06-09T00:00:00Z",
+    domain: "example.com",
+    language: "English",
+  }, { id: "supply-chain", domain: "commodity-supply-chain", category: "commodity", type: "shipping-disruption" }, new Date("2026-06-09T01:00:00Z"));
+  assert.ok(result.event);
+  assert.equal(result.event.recordKind, "discovery-lead");
+  assert.equal(result.event.geographic, false);
+  assert.equal(result.event.metadata.verificationStatus, "unverified");
+  assert.equal(result.event.publicationPolicy.allowFullText, false);
+});
+
+test("Official feed parsing strips unsafe markup and rejects local feed URLs", () => {
+  const items = parseFeedItems(`<?xml version="1.0"?><rss><channel><item><title><![CDATA[Test alert]]></title><link>https://example.gov/a</link><pubDate>Tue, 09 Jun 2026 00:00:00 GMT</pubDate><description><![CDATA[<script>x</script><b>Official</b> update]]></description></item></channel></rss>`);
+  assert.equal(items.length, 1);
+  const result = normalizeFeedItem(items[0], {
+    id: "test-feed",
+    providerId: "official-rss",
+    name: "Test Feed",
+    domain: "technology-cyber",
+    category: "cyber",
+    type: "cyber-advisory",
+    sourceTier: "tier-1-primary-official",
+    verificationState: "primary-confirmed",
+    publicationPolicy: { maxDescriptionChars: 80, allowFullText: false },
+  }, new Date("2026-06-09T01:00:00Z"));
+  assert.ok(result.event);
+  assert.equal(result.event.recordKind, "discovery-lead");
+  assert.doesNotMatch(result.event.description, /script|<b>/i);
+  assert.throws(() => assertSafeFetchUrl("http://127.0.0.1/feed.xml"), /Blocked/);
+});
+
+test("Statuspage incidents normalize only active user-impacting events", () => {
+  const page = { id: "github-status", name: "GitHub Status", domain: "technology-cyber", category: "infrastructure", type: "service-outage", homepageUrl: "https://www.githubstatus.com/" };
+  const active = normalizeStatuspageIncident({
+    id: "abc",
+    name: "Actions degraded",
+    status: "investigating",
+    impact: "major",
+    created_at: "2026-06-09T00:00:00Z",
+    updated_at: "2026-06-09T00:10:00Z",
+    shortlink: "https://stspg.io/test",
+    incident_updates: [{ body: "We are investigating delays." }],
+  }, page, new Date("2026-06-09T01:00:00Z"));
+  assert.ok(active.event);
+  assert.equal(active.event.verification.state, "primary-confirmed");
+  assert.equal(normalizeStatuspageIncident({ id: "resolved", name: "Resolved", status: "resolved", impact: "major" }, page).event, null);
+});
+
+test("RIPEstat observations become events only on conservative anomaly rules", () => {
+  const anomaly = normalizeRipestatObservation("AS64496", { data: { visibility: 12 }, time: "2026-06-09T00:00:00Z" }, new Date("2026-06-09T01:00:00Z"));
+  assert.ok(anomaly.event);
+  assert.equal(anomaly.event.domain, "infrastructure");
+  assert.equal(anomaly.event.metadata.verificationStatus, "observed");
+  const normal = normalizeRipestatObservation("AS64496", { data: { visibility: 90 }, time: "2026-06-09T00:00:00Z" }, new Date("2026-06-09T01:00:00Z"));
+  assert.equal(normal.event, null);
+  assert.equal(normal.observation.recordKind, "observation");
 });
 
 test("Non-geographic normalized events remain valid", () => {
@@ -762,7 +881,10 @@ test("Source registry covers every top-level domain with non-live planned states
     assert.ok(providersForDomain(domain).length || domain === "other", `${domain} should have provider plan`);
   }
   assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "nws-alerts" && provider.implemented));
-  assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "gdelt" && provider.status === "planned-discovery"));
+  assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "gdelt" && provider.status === "configuration-required" && provider.implemented));
+  assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "official-rss" && provider.status === "live"));
+  assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "statuspage" && provider.status === "live"));
+  assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "ripestat" && provider.status === "configuration-required"));
   assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "acled" && provider.credentialRequired));
 });
 

@@ -24,6 +24,7 @@ export const GROUP_OPTIONS = [
   ["severity", "Severity"],
   ["verification-status", "Verification status"],
   ["provider", "Provider"],
+  ["record-kind", "Record kind"],
   ["hour", "Time period: hour"],
   ["day", "Time period: day"],
   ["incident", "Incident cluster"],
@@ -65,6 +66,7 @@ function keyFor(event, groupBy) {
   if (groupBy === "severity") return [event.severity, event.severity];
   if (groupBy === "verification-status") return [event.verificationStatus || "single-source", event.verificationStatus || "single-source"];
   if (groupBy === "provider") return [event.provider || event.sourceName || "unknown", event.sourceName || event.provider || "Unknown provider"];
+  if (groupBy === "record-kind") return [event.recordKind || "event", (event.recordKind || "event").replace(/-/g, " ")];
   if (groupBy === "incident") return [event.incidentId || "unclustered", event.incidentTitle || "Unclustered events"];
   if (groupBy === "hour") {
     const date = new Date(event.occurredAt);

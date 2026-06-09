@@ -3,9 +3,10 @@ import { escapeHtml, relativeTime } from "../events/event-normalizer.js";
 
 export function markerIcon(event) {
   const markerColor = event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color;
+  const recordClass = event.recordKind && event.recordKind !== "event" ? ` record-marker record-${event.recordKind}` : "";
   return L.divIcon({
     className: "",
-    html: `<div class="event-marker" style="--marker:${markerColor}"></div>`,
+    html: `<div class="event-marker${recordClass}" style="--marker:${markerColor}"></div>`,
     iconSize: [15, 15],
     iconAnchor: [7, 7],
   });

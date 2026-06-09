@@ -3,6 +3,7 @@ import { classifyEvent } from "./taxonomy.js";
 
 const SEVERITY_LABELS = ["low", "moderate", "high", "critical"];
 const VALID_STATUS = new Set(["active", "monitoring", "resolved", "unknown"]);
+export const RECORD_KINDS = ["event", "observation", "discovery-lead", "moving-object"];
 
 export function clamp(value, min, max) {
   const number = Number(value);
@@ -81,6 +82,7 @@ export function validateNormalizedEvent(event) {
   if (!toIsoString(event?.ingestedAt)) errors.push("ingestedAt must be a valid timestamp");
   if (!SEVERITY_LABELS.includes(event?.severityLabel)) errors.push("severityLabel is invalid");
   if (!VALID_STATUS.has(event?.status)) errors.push("status is invalid");
+  if (!RECORD_KINDS.includes(event?.recordKind)) errors.push("recordKind is invalid");
   try {
     new URL(event?.sourceUrl || "");
   } catch {
@@ -110,6 +112,7 @@ export function createNormalizedEvent(input) {
     id: stableId,
     provider: input.provider,
     providerEventId,
+    recordKind: RECORD_KINDS.includes(input.recordKind) ? input.recordKind : "event",
     title: String(input.title || "Untitled event"),
     description: input.description ?? input.summary ?? null,
     category: String(input.category || "other"),
@@ -141,6 +144,12 @@ export function createNormalizedEvent(input) {
     sourceName: input.sourceName || input.source || input.providerName || input.provider,
     sourceUrl: input.sourceUrl || input.providerUrl,
     sourceType: input.sourceType || "Official",
+    sourceTier: input.sourceTier || input.metadata?.sourceTier || null,
+    publisher: input.publisher || input.sourceName || input.provider,
+    language: input.language || null,
+    verification: input.verification && typeof input.verification === "object" ? input.verification : null,
+    publicationPolicy: input.publicationPolicy && typeof input.publicationPolicy === "object" ? input.publicationPolicy : null,
+    clusterId: input.clusterId || null,
     sourcePublishedAt,
     lastVerifiedAt,
     geometry: input.geometry || null,
@@ -180,6 +189,12 @@ export function toLegacyEvent(event) {
     source: event.sourceName,
     providerName: event.sourceName,
     verificationStatus: event.metadata?.verificationStatus || "single-source",
+    recordKind: event.recordKind,
+    sourceTier: event.sourceTier,
+    publisher: event.publisher,
+    verification: event.verification,
+    publicationPolicy: event.publicationPolicy,
+    clusterId: event.clusterId,
     severityReason: event.metadata?.severityReason || "Severity is platform-derived from provider data.",
     coordinateMethod: event.metadata?.coordinateMethod || "provider coordinates",
     details: event.metadata?.details || {},
