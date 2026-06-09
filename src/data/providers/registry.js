@@ -50,6 +50,21 @@ export const EVENT_PROVIDERS = [
       globalThis?.process?.env?.NWS_USER_AGENT ||
       "LiveWorldMap/1.0 (contact: configure NWS_USER_AGENT in Netlify environment)",
   },
+  {
+    ...sourceMetadata("gdacs"),
+    id: "gdacs",
+    name: "Global Disaster Alert and Coordination System",
+    description: "GDACS global disaster alert GeoJSON feed for earthquakes, tropical cyclones, floods, volcanoes, drought, wildfires, and tsunamis.",
+    homepageUrl: "https://www.gdacs.org/",
+    attribution: "Global Disaster Alert and Coordination System, GDACS",
+    enabled: true,
+    categories: ["earthquake", "storm", "flood", "volcano", "drought", "wildfire", "tsunami", "other"],
+    refreshIntervalMs: 10 * 60 * 1000,
+    timeoutMs: 15000,
+    fetchAttempts: 2,
+    integrationType: "official-geojson",
+    freshnessMs: 15 * 60 * 1000,
+  },
 ];
 
 export function providerById(id) {
