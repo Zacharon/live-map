@@ -34,6 +34,9 @@ export const PROVIDER_CAPABILITIES = {
   statuspage: capability({ supportedDomains: ["technology-cyber", "infrastructure"], supportedRecordKinds: ["event"], expectedVolume: "low" }),
   ripestat: capability({ supportedDomains: ["infrastructure"], supportedRecordKinds: ["observation", "event"], requiresRegistration: true, expectedVolume: "low" }),
   "cloudflare-radar": capability({ supportedDomains: ["infrastructure", "technology-cyber"], supportedRecordKinds: ["observation"], requiresKey: true, defaultEnabled: false, licenseClass: "api-token-required" }),
+  opensky: capability({ supportedDomains: ["aviation"], supportedRecordKinds: ["moving-object"], supportsGeometry: true, supportsIncrementalFetch: true, requiresKey: true, defaultEnabled: false, licenseClass: "oauth-client-credentials", expectedVolume: "high", sensitivityLevel: "medium" }),
+  "global-fishing-watch": capability({ supportedDomains: ["maritime"], supportedRecordKinds: ["moving-object", "observation"], supportsGeometry: true, requiresKey: true, defaultEnabled: false, licenseClass: "api-token-required", expectedVolume: "medium", sensitivityLevel: "medium" }),
+  aishub: capability({ supportedDomains: ["maritime"], supportedRecordKinds: ["moving-object"], supportsGeometry: true, requiresRegistration: true, defaultEnabled: false, licenseClass: "participation-required", expectedVolume: "high", sensitivityLevel: "medium" }),
 };
 
 function capability(overrides = {}) {

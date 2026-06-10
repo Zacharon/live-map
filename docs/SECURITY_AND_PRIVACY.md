@@ -23,6 +23,8 @@ Browsers should call Live Map APIs rather than upstream providers. Provider adap
 
 The `/api/provider-health` endpoint must never return raw upstream payloads, stack traces, environment variables, tokens, keys, private contact emails, or provider credentials.
 
+Moving-object providers must stay server-side. Do not expose OpenSky OAuth credentials, Global Fishing Watch tokens, AISHub credentials, ADS-B keys, or AIS keys to browser JavaScript. Do not poll globally, keep viewport limits, and present tracking coverage as incomplete and possibly delayed.
+
 Humanitarian providers must not display sensitive camps, shelters, medical facilities, children, trafficking survivors, conflict victims, persecuted groups, or aid-worker movement locations at harmful precision.
 
 Cyber providers must not include exploit instructions, proof-of-concept retrieval, malware retrieval, or fabricated geographic locations.

@@ -36,6 +36,9 @@ No fabricated live market prices
 Event-to-market correlation prototype using cautious language
 Local browser-stored alert-rule previews
 Compact public data-status interface and detailed `/diagnostics` provider-health page
+Consumer Explore, Live Feed, and Country Scores navigation
+Standard and Advanced interface modes
+Configuration-required aviation and maritime tracking prototypes
 API scaffolding for layers, countries, country risk, markets, infrastructure, source status, briefs, and alert testing
 Security and privacy documentation
 Environment-variable template
@@ -119,6 +122,7 @@ GET  /api/layers
 GET  /api/countries
 GET  /api/country-risk
 GET  /api/provider-health
+GET  /api/moving-objects
 GET  /api/markets
 GET  /api/infrastructure
 GET  /api/source-status
@@ -252,6 +256,13 @@ SECURITY_RSS_ENABLED=
 WEATHER_RSS_ENABLED=
 HEALTH_RSS_ENABLED=
 POSITIVE_RSS_ENABLED=
+OPENSKY_ENABLED=
+OPENSKY_CLIENT_ID=
+OPENSKY_CLIENT_SECRET=
+GFW_ENABLED=
+GFW_API_TOKEN=
+AISHUB_ENABLED=
+AISHUB_USERNAME=
 
 Do not add real credentials to .env.example.
 
@@ -610,6 +621,25 @@ Safety rules:
 - Keep discovery leads visually and structurally separate from confirmed events.
 - Keep provider credentials server-side in Netlify environment variables.
 - Treat unavailable configured providers as visible source-health warnings.
+
+Phase 3 consumer UX and aviation/maritime prototypes
+
+Phase 3 simplifies the public default into Explore, Live Feed, and Country Scores. Technical source diagnostics, raw observations, and provider status move behind Tools and Advanced mode.
+
+It also adds a bounded `/api/moving-objects` architecture for aircraft and vessels. OpenSky, Global Fishing Watch, and AISHub are server-side provider boundaries and remain configuration-required until credentials, authorization, attribution, and usage limits are configured.
+
+Read:
+
+docs/CONSUMER_UX.md
+docs/STANDARD_AND_ADVANCED_MODES.md
+docs/MOVING_OBJECTS.md
+docs/OPENSKY_PROVIDER.md
+docs/AVIATION_REFERENCE_DATA.md
+docs/GLOBAL_FISHING_WATCH_PROVIDER.md
+docs/AISHUB_PROVIDER_BOUNDARY.md
+docs/MARITIME_REFERENCE_DATA.md
+docs/MOVING_OBJECT_PERFORMANCE.md
+docs/TRACKING_PRIVACY_AND_LIMITATIONS.md
 
 Phase 2D country intelligence and diagnostics separation
 
