@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { SEVERITIES } from "../src/config.js";
 import { LAYER_CATALOG } from "../src/data/layers.js";
 import { DASHBOARDS } from "../src/data/dashboards.js";
 import { EXCHANGES } from "../src/data/exchanges.js";
@@ -36,6 +37,13 @@ import { createCompanyIdentity, sameCompany } from "../src/data/providers/compan
 import { createMemoryProviderCache } from "../src/data/providers/cache.js";
 import { PROVIDER_SOURCE_REGISTRY, providersForDomain, DOMAIN_SOURCE_STATUS } from "../src/data/providers/source-registry.js";
 import { providerCapability, validateProviderCapabilities } from "../src/data/providers/capability-registry.js";
+import { CONSUMER_PRESETS, severitySetFromMinimum } from "../src/consumer/presets.js";
+import { buildGlobalSearchResults } from "../src/search/global-search.js";
+import { AIRPORTS } from "../src/data/airports.js";
+import { PORTS } from "../src/data/ports.js";
+import { normalizeMovingObject, validateBbox } from "../src/moving-objects/schema.js";
+import { fetchOpenSkyAircraft, normalizeOpenSkyState, openskyAccessToken } from "../src/data/providers/opensky.js";
+import { fetchGfwVessels, normalizeGfwVessel } from "../src/data/providers/global-fishing-watch.js";
 import { classifyEvent, domainOptions, TAXONOMY_REGISTRY } from "../src/events/taxonomy.js";
 import { sortEvents, groupEvents } from "../src/events/feed-organization.js";
 import { shouldCluster, buildIncidents } from "../src/events/incident-clustering.js";
@@ -47,6 +55,7 @@ import eventsFunction from "../netlify/functions/events.mjs";
 import countriesFunction from "../netlify/functions/countries.mjs";
 import countryRiskFunction from "../netlify/functions/country-risk.mjs";
 import providerHealthFunction from "../netlify/functions/provider-health.mjs";
+import movingObjectsFunction from "../netlify/functions/moving-objects.mjs";
 import { validateProviderSourceLinks } from "../src/sources/provider-source-links.js";
 
 const pendingTests = [];
@@ -495,6 +504,24 @@ test("Provider health API returns sanitized diagnostics outside public dashboard
   }
 });
 
+test("Moving-object API rejects global requests and reports configuration-required providers", async () => {
+  const missing = await movingObjectsFunction(new Request("https://liveworldmap.netlify.app/api/moving-objects?type=aircraft"));
+  assert.equal(missing.status, 400);
+  const missingBody = await missing.json();
+  assert.match(missingBody.warnings.join(" "), /Zoom in|area/i);
+
+  const global = await movingObjectsFunction(new Request("https://liveworldmap.netlify.app/api/moving-objects?type=aircraft&bbox=-90,-180,90,180"));
+  assert.equal(global.status, 400);
+
+  const response = await movingObjectsFunction(new Request("https://liveworldmap.netlify.app/api/moving-objects?type=all&bbox=40,-74,41,-73&limit=5"));
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.ok(Array.isArray(body.data.data));
+  assert.equal(body.data.providerStatus.opensky.status, "configuration-required");
+  assert.equal(body.data.providerStatus["global-fishing-watch"].status, "configuration-required");
+  assert.equal(body.data.truncated, false);
+});
+
 test("Events API preserves recordKind/domain filters", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url) => {
@@ -660,6 +687,43 @@ test("Detailed diagnostics are separated from the public dashboard", () => {
   assert.match(index, /publicDataStatus/);
   assert.match(diagnostics, /noindex,\s*nofollow/);
   assert.match(diagnostics, /diagnostics-app\.js/);
+});
+
+test("Consumer shell exposes simple navigation, tools, onboarding, and drawers", () => {
+  const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  assert.match(index, /Explore/);
+  assert.match(index, /Live Feed/);
+  assert.match(index, /Country Scores/);
+  assert.match(index, /id="toolsMenu"/);
+  assert.match(index, /id="globalSearch"/);
+  assert.match(index, /id="onboardingDialog"/);
+  assert.match(index, /id="filterDrawer"/);
+  assert.match(index, /id="eventDrawer"/);
+  assert.match(index, /Live Tracking/);
+  assert.match(css, /\.drawer-left/);
+  assert.match(css, /\.drawer-right/);
+  assert.match(css, /\.standard-mode \.advanced-only/);
+  assert.match(css, /46dvh/);
+});
+
+test("Consumer presets define safe default and tracking views", () => {
+  assert.deepEqual(CONSUMER_PRESETS.explore.recordKinds, ["event"]);
+  assert.equal(CONSUMER_PRESETS.explore.timeWindow, 24);
+  assert.equal(CONSUMER_PRESETS.explore.aviationEnabled, false);
+  assert.equal(CONSUMER_PRESETS.flights.aviationEnabled, true);
+  assert.equal(CONSUMER_PRESETS.ships.maritimeEnabled, true);
+  assert.ok(severitySetFromMinimum(SEVERITIES, "high").has("critical"));
+  assert.equal(severitySetFromMinimum(SEVERITIES, "high").has("low"), false);
+});
+
+test("Global search covers countries, airports, ports, events, objects, and sources locally", () => {
+  const results = buildGlobalSearchResults("JFK", [], []);
+  assert.ok(results.some((item) => item.type === "Airports" && item.payload.icao === "KJFK"));
+  assert.ok(buildGlobalSearchResults("Ukraine", [], []).some((item) => item.type === "Countries" && item.payload.iso3 === "UKR"));
+  assert.ok(buildGlobalSearchResults("Rotterdam", [], []).some((item) => item.type === "Ports"));
+  assert.ok(buildGlobalSearchResults("OpenSky", [], []).some((item) => item.type === "Sources"));
+  assert.ok(buildGlobalSearchResults("TEST123", [], [{ objectType: "aircraft", displayName: "TEST123", identifiers: { icao24: "abc123" }, providerId: "opensky" }]).some((item) => item.type === "Aircraft"));
 });
 
 test("NWS severity and polygon normalization map to weather taxonomy", () => {
@@ -930,6 +994,67 @@ test("RIPEstat observations become events only on conservative anomaly rules", (
   const normal = normalizeRipestatObservation("AS64496", { data: { visibility: 90 }, time: "2026-06-09T00:00:00Z" }, new Date("2026-06-09T01:00:00Z"));
   assert.equal(normal.event, null);
   assert.equal(normal.observation.recordKind, "observation");
+});
+
+test("Moving-object schema validates bounded viewport and public object shape", () => {
+  assert.equal(validateBbox("0,0,10,10").valid, true);
+  assert.equal(validateBbox("-90,-180,90,180").valid, false);
+  assert.equal(validateBbox("10,170,20,-170").valid, true);
+  const result = normalizeMovingObject({
+    objectType: "aircraft",
+    providerId: "opensky",
+    latitude: 40,
+    longitude: -73,
+    identifiers: { icao24: "abc123", callsign: "TEST123" },
+    observedAt: Date.now() - 700000,
+    sourceName: "OpenSky Network",
+    sourceUrl: "https://opensky-network.org/",
+  });
+  assert.ok(result.object);
+  assert.equal(result.object.id, "aircraft:abc123");
+  assert.equal(result.object.stale, true);
+  assert.equal(normalizeMovingObject({ objectType: "aircraft", latitude: 999, longitude: 0 }).object, null);
+});
+
+test("OpenSky normalization and configuration boundary are safe", async () => {
+  const now = Date.parse("2026-06-09T00:00:00Z");
+  const normalized = normalizeOpenSkyState(["abc123", "TEST123 ", "United States", now / 1000 - 20, now / 1000 - 10, -73.8, 40.6, 1000, false, 230, 85, 1, null, 1200, null, false, 0, 3], now);
+  assert.ok(normalized.object);
+  assert.equal(normalized.object.objectType, "aircraft");
+  assert.equal(normalized.object.identifiers.callsign, "TEST123");
+  assert.equal(normalized.object.status, "airborne");
+
+  const previousEnabled = globalThis.process.env.OPENSKY_ENABLED;
+  const previousId = globalThis.process.env.OPENSKY_CLIENT_ID;
+  const previousSecret = globalThis.process.env.OPENSKY_CLIENT_SECRET;
+  delete globalThis.process.env.OPENSKY_ENABLED;
+  delete globalThis.process.env.OPENSKY_CLIENT_ID;
+  delete globalThis.process.env.OPENSKY_CLIENT_SECRET;
+  const result = await fetchOpenSkyAircraft({ bbox: { south: 40, west: -74, north: 41, east: -73 }, limit: 10, now });
+  assert.equal(result.status.status, "configuration-required");
+  assert.equal(result.objects.length, 0);
+  await assert.rejects(() => openskyAccessToken(async () => new Response("{}")), /not configured/i);
+  if (previousEnabled !== undefined) globalThis.process.env.OPENSKY_ENABLED = previousEnabled;
+  if (previousId !== undefined) globalThis.process.env.OPENSKY_CLIENT_ID = previousId;
+  if (previousSecret !== undefined) globalThis.process.env.OPENSKY_CLIENT_SECRET = previousSecret;
+});
+
+test("Global Fishing Watch vessel boundary normalizes but stays configuration-required", async () => {
+  const vessel = normalizeGfwVessel({ mmsi: "123456789", vesselName: "Test Vessel", lat: 1.2, lon: 103.8, speed: 8, course: 90, timestamp: "2026-06-09T00:00:00Z", destination: "SGSIN" }, Date.parse("2026-06-09T00:05:00Z"));
+  assert.ok(vessel.object);
+  assert.equal(vessel.object.objectType, "vessel");
+  assert.equal(vessel.object.identifiers.mmsi, "123456789");
+  assert.equal(vessel.object.providerMetadata.public.destination, "SGSIN");
+  assert.equal(normalizeGfwVessel({ lat: 1, lon: 2 }).object, null);
+  const previousEnabled = globalThis.process.env.GFW_ENABLED;
+  const previousToken = globalThis.process.env.GFW_API_TOKEN;
+  delete globalThis.process.env.GFW_ENABLED;
+  delete globalThis.process.env.GFW_API_TOKEN;
+  const result = await fetchGfwVessels();
+  assert.equal(result.status.status, "configuration-required");
+  assert.equal(result.objects.length, 0);
+  if (previousEnabled !== undefined) globalThis.process.env.GFW_ENABLED = previousEnabled;
+  if (previousToken !== undefined) globalThis.process.env.GFW_API_TOKEN = previousToken;
 });
 
 test("Non-geographic normalized events remain valid", () => {

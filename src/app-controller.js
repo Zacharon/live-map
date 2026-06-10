@@ -3,6 +3,8 @@ import { DASHBOARDS, getDashboard } from "./data/dashboards.js";
 import { LAYER_CATALOG, layersForDashboard } from "./data/layers.js";
 import { EXCHANGES } from "./data/exchanges.js";
 import { COUNTRIES, countryByCode, countryForEvent, countryFlag } from "./data/countries.js";
+import { AIRPORTS } from "./data/airports.js";
+import { PORTS } from "./data/ports.js";
 import { state, dashboardFilters, resetDashboardFilters, setDashboard, syncUrlState } from "./state.js";
 import { normalizeEvent, escapeHtml, relativeTime } from "./events/event-normalizer.js";
 import { filteredEvents } from "./events/event-filters.js";
@@ -21,6 +23,8 @@ import { renderSourcesStatusPanel, emptyDomainMessage } from "./ui/sources-statu
 import { loadSavedViews, saveView, serializeView } from "./ui/saved-views.js";
 import { openEventDialog, openMethodologyDialog } from "./ui/dialogs.js";
 import { renderDashboardPanel, applyDashboardTitle } from "./dashboards/dashboard-renderer.js";
+import { CONSUMER_PRESETS, PRESET_ORDER, presetById, severitySetFromMinimum } from "./consumer/presets.js";
+import { buildGlobalSearchResults, groupSearchResults } from "./search/global-search.js";
 
 function ids(names) {
   return Object.fromEntries(names.map((id) => [id, document.getElementById(id)]));
@@ -159,7 +163,17 @@ function countryForDisplay(event) {
 
 function qualityBadges(event) {
   const kind = (event.recordKind || "event").replace(/-/g, " ");
-  return `<div class="quality-row"><span>Kind: ${escapeHtml(kind)}</span><span>Severity: ${escapeHtml(event.severity)}</span><span>Confidence: ${Math.round(event.confidence || 0)}%</span><span>Verification: ${escapeHtml(event.verificationStatus)}</span><span>Sources: ${escapeHtml(event.independentSourceCount || 1)} independent</span><span>Freshness: ${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>`;
+  const verification = consumerVerificationLabel(event.verificationStatus || event.verification?.state || "reported");
+  return `<div class="quality-row"><span class="advanced-only">Content type: ${escapeHtml(kind)}</span><span>Severity: ${escapeHtml(event.severity)}</span><span class="advanced-only">Confidence: ${Math.round(event.confidence || 0)}%</span><span>${escapeHtml(verification)}</span><span>Sources: ${escapeHtml(event.independentSourceCount || 1)}</span><span>Last updated: ${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>`;
+}
+
+function consumerVerificationLabel(value = "") {
+  const normalized = String(value).toLowerCase();
+  if (normalized.includes("corroborated")) return "Confirmed by multiple sources";
+  if (normalized.includes("primary")) return "Official source";
+  if (normalized.includes("unverified")) return "Unverified report";
+  if (normalized.includes("single")) return "Single source";
+  return "Reported";
 }
 
 function renderEventCard(event) {
@@ -168,7 +182,8 @@ function renderEventCard(event) {
   const countryLabel = country ? `<button type="button" class="country-badge" data-country-select="${country.iso3}">${escapeHtml(country.shortName || country.name)}</button>` : `<span>${escapeHtml(event.country)}</span>`;
   const summary = expanded ? `<p>${escapeHtml(event.summary)}</p>` : "";
   const details = expanded ? `<div class="event-facts"><span class="fact-chip">Occurred: ${escapeHtml(new Date(event.occurredAt).toLocaleString())}</span><span class="fact-chip">Reported: ${escapeHtml(new Date(event.firstReportedAt || event.occurredAt).toLocaleString())}</span><span class="fact-chip">Updated: ${escapeHtml(new Date(event.updatedAt || event.occurredAt).toLocaleString())}</span>${event.geographic === false ? `<span class="fact-chip">Not mapped: ${escapeHtml(event.nonGeographicReason || "no supported geography")}</span>` : ""}${event.incidentSize > 1 ? `<span class="fact-chip">Incident: ${escapeHtml(event.incidentSize)} linked events</span>` : ""}</div>` : "";
-  return `<article class="event-card ${expanded ? "expanded" : "compact"} record-${escapeHtml(event.recordKind || "event")}" data-id="${escapeHtml(event.id)}"><div class="event-meta"><span class="category-pill" style="--cat:${event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color}">${escapeHtml(event.domainLabel || CATEGORIES[event.category]?.label || "Other")}</span><span>${escapeHtml(event.typeLabel || event.category)}</span>${countryLabel}<span class="record-kind">${escapeHtml(event.recordKind || "event")}</span><span class="severity-tag" style="--sev:${SEVERITIES[event.severity].color}">${SEVERITIES[event.severity].label}</span></div><h2>${escapeHtml(event.title)}</h2>${summary}${qualityBadges(event)}${details}<div class="source-row"><span>${escapeHtml(event.sourceName)}</span><span>${escapeHtml(event.verificationStatus)}</span>${event.incidentSize > 1 ? `<span>${escapeHtml(event.incidentTitle || "Incident cluster")}</span>` : ""}${sourceButton(event)}</div><div class="event-foot"><span>${relativeTime(event.occurredAt)} occurred - ${escapeHtml(event.sourceType)}</span><span class="confidence">${event.confidence}% confidence</span></div></article>`;
+  const location = event.geographic === false ? "No map location" : event.place || event.country || "Location pending";
+  return `<article class="event-card ${expanded ? "expanded" : "compact"} record-${escapeHtml(event.recordKind || "event")}" data-id="${escapeHtml(event.id)}"><div class="event-meta"><span class="category-pill" style="--cat:${event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color}">${escapeHtml(event.domainLabel || CATEGORIES[event.category]?.label || "Other")}</span><span>${escapeHtml(event.typeLabel || event.category)}</span>${countryLabel}<span class="record-kind advanced-only">${escapeHtml(event.recordKind || "event")}</span><span class="severity-tag" style="--sev:${SEVERITIES[event.severity]?.color || SEVERITIES.low.color}">${SEVERITIES[event.severity]?.label || event.severity}</span></div><h2>${escapeHtml(event.title)}</h2><div class="consumer-card-line"><span>${escapeHtml(location)}</span><span>${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>${summary}${qualityBadges(event)}${details}<div class="source-row ${state.interfaceMode === "standard" ? "standard-source-row" : ""}"><span>${escapeHtml(event.sourceName || "Source")}</span><span>${escapeHtml(consumerVerificationLabel(event.verificationStatus))}</span>${event.incidentSize > 1 ? `<span class="advanced-only">${escapeHtml(event.incidentTitle || "Incident cluster")}</span>` : ""}${sourceButton(event)}<button type="button" class="mini-source-link event-detail-button" data-event-detail="${escapeHtml(event.id)}">View details</button></div><div class="event-foot advanced-only"><span>${relativeTime(event.occurredAt)} occurred - ${escapeHtml(event.sourceType)}</span><span class="confidence">${event.confidence}% confidence</span></div></article>`;
 }
 
 function renderList(els, events) {
@@ -273,8 +288,9 @@ function renderPublicDataStatus() {
   const statuses = Object.values(state.sourceStatus || {});
   const available = statuses.filter((status) => status.ok).length;
   const stale = statuses.filter((status) => status.stale || status.status === "degraded").length;
-  const label = state.systemStatus === "operational" ? "Operational" : state.systemStatus === "partial-data" ? "Partial" : state.systemStatus === "major-provider-outage" ? "Offline" : "Degraded";
-  return `<strong>Data status</strong><p>${escapeHtml(label)}. Last refreshed ${state.lastLoaded ? escapeHtml(relativeTime(state.lastLoaded)) : "never"}. ${available} of ${statuses.length || state.sources.length || 0} sources available. ${stale} stale or degraded.</p><p><a href="/diagnostics">Technical diagnostics</a></p>`;
+  const label = state.systemStatus === "operational" ? "Operational" : state.systemStatus === "partial-data" ? "Some data delayed" : state.systemStatus === "major-provider-outage" ? "Offline" : "Some data delayed";
+  const tools = state.interfaceMode === "advanced" ? '<p><a href="/diagnostics">Technical diagnostics</a></p>' : "";
+  return `<strong>Data status</strong><p>${escapeHtml(label)}. Last refreshed ${state.lastLoaded ? escapeHtml(relativeTime(state.lastLoaded)) : "never"}. ${available} of ${statuses.length || state.sources.length || 0} sources available. ${stale} stale or delayed.</p>${tools}`;
 }
 
 function renderRiskTable(scores) {
@@ -296,11 +312,79 @@ function renderCountrySummary(scores, events) {
   const factors = (score?.topFactors || []).map((factor) => `<li>${escapeHtml(factor.id)}: ${escapeHtml(factor.contribution)} pts</li>`).join("");
   return `<article class="country-summary-card">
     <div class="section-title"><span>${escapeHtml(countryFlag(country))} ${escapeHtml(country.name)}</span><button type="button" data-country-clear>Clear</button></div>
-    <div class="mini-grid"><span>CII ${escapeHtml(score?.score ?? "-")}</span><span>${escapeHtml(score?.levelLabel || "Unknown")}</span><span>${escapeHtml(score?.confidence ?? 0)}% confidence</span><span>${escapeHtml(score?.completeness ?? 0)}% complete</span></div>
+    <div class="mini-grid"><span>Country Risk Score ${escapeHtml(score?.score ?? "-")}</span><span>${escapeHtml(score?.levelLabel || "Unknown")}</span><span>${escapeHtml(score?.confidence ?? 0)}% confidence</span><span>${escapeHtml(score?.completeness ?? 0)}% complete</span></div>
     <p>${escapeHtml(country.region)} / ${escapeHtml(country.subregion)}. Active events: ${countryEvents.length}. Domains: ${escapeHtml(domainText)}. Freshness: ${newest ? escapeHtml(relativeTime(newest)) : "no recent event"}.</p>
     <ul class="factor-list">${factors}</ul>
     <div class="dialog-actions"><button type="button" data-country-events="${escapeHtml(country.iso3)}">View Country Events</button><a class="source-link secondary" href="/countries?country=${escapeHtml(country.iso3)}">Open Country Scores</a></div>
   </article>`;
+}
+
+function applyPreset(presetId, renderAfter = true) {
+  const preset = presetById(presetId);
+  state.selectedPreset = preset.id;
+  state.dashboard = preset.dashboard;
+  state.hours = preset.timeWindow;
+  state.tracking.aircraft = Boolean(preset.aviationEnabled);
+  state.tracking.vessels = Boolean(preset.maritimeEnabled);
+  const filters = dashboardFilters(state.dashboard);
+  filters.domains = state.domainsByDashboard.get(state.dashboard);
+  filters.domains.clear();
+  preset.domains.forEach((domain) => filters.domains.add(domain));
+  filters.categories.clear();
+  const categories = preset.layers.length ? preset.layers : Object.keys(CATEGORIES);
+  categories.forEach((category) => filters.categories.add(category));
+  state.severitiesByDashboard.set(state.dashboard, severitySetFromMinimum(SEVERITIES, preset.minimumSeverity));
+  if (!state.recordKindsByDashboard) state.recordKindsByDashboard = new Map();
+  state.recordKindsByDashboard.set(state.dashboard, new Set(preset.recordKinds));
+  localStorage.setItem("live-map-preset-v1", preset.id);
+  syncUrlState();
+  if (renderAfter) window.dispatchEvent(new CustomEvent("live-map-render-request"));
+}
+
+function standardEventVisible(event) {
+  if (state.interfaceMode === "advanced") return true;
+  const recordKind = event.recordKind || "event";
+  if (recordKind === "discovery-lead" || recordKind === "observation") return false;
+  if (!["high", "critical"].includes(event.severity) && !["weather", "natural-disaster", "infrastructure", "technology-cyber", "major-news"].includes(event.domain)) return false;
+  if (event.category === "earthquake" && event.severity === "low") return false;
+  const verification = String(event.verificationStatus || event.verification?.state || "").toLowerCase();
+  if (verification.includes("unverified") || verification.includes("retracted")) return false;
+  return true;
+}
+
+function renderPresetList() {
+  return PRESET_ORDER.map((id) => {
+    const preset = CONSUMER_PRESETS[id];
+    return `<button type="button" class="preset-chip ${state.selectedPreset === id ? "active" : ""}" data-preset="${escapeHtml(id)}">${escapeHtml(preset.label)}</button>`;
+  }).join("");
+}
+
+function renderTrackingStatus() {
+  const statuses = state.movingObjectStatus || {};
+  const aircraft = statuses.opensky?.ok ? `Aircraft: ${statuses.opensky.count || 0}` : "Flight tracking is not configured";
+  const vessels = statuses["global-fishing-watch"]?.ok ? `Vessels: ${statuses["global-fishing-watch"].count || 0}` : "Vessel activity is not configured";
+  if (state.tracking.aircraft || state.tracking.vessels) return `${aircraft}. ${vessels}.`;
+  return "Zoom in to view aircraft or vessel activity.";
+}
+
+function applyShellState(els) {
+  document.body.classList.toggle("advanced-mode", state.interfaceMode === "advanced");
+  document.body.classList.toggle("standard-mode", state.interfaceMode !== "advanced");
+  document.body.classList.toggle("left-drawer-open", state.leftDrawerOpen);
+  document.body.classList.toggle("right-drawer-open", state.rightDrawerOpen);
+  els.filterDrawer?.classList.toggle("open", state.leftDrawerOpen);
+  els.eventDrawer?.classList.toggle("open", state.rightDrawerOpen);
+  if (els.advancedMode) els.advancedMode.checked = state.interfaceMode === "advanced";
+  if (els.aircraftToggle) els.aircraftToggle.checked = state.tracking.aircraft;
+  if (els.vesselToggle) els.vesselToggle.checked = state.tracking.vessels;
+  if (els.airportsToggle) els.airportsToggle.checked = state.tracking.airports;
+  if (els.portsToggle) els.portsToggle.checked = state.tracking.ports;
+  if (els.trackingStatus) els.trackingStatus.textContent = renderTrackingStatus();
+}
+
+function bboxParam(mapController) {
+  const bbox = mapController.currentBbox();
+  return [bbox.south, bbox.west, bbox.north, bbox.east].map((value) => value.toFixed(4)).join(",");
 }
 
 function renderAlerts(events) {
@@ -317,7 +401,7 @@ function renderAlerts(events) {
 }
 
 export function bootLiveMap() {
-  const els = ids(["dashboardNav", "domainFilters", "layerFilters", "severityFilters", "eventList", "visibleCount", "highCount", "countryCount", "updatedAt", "search", "clearDomains", "clearFilters", "timeWindow", "sortOrder", "groupBy", "cardMode", "savedViews", "saveView", "fitWorld", "fitEvents", "themeToggle", "eventDialog", "dialogContent", "closeDialog", "methodologyDialog", "methodologyContent", "closeMethodology", "mapLegend", "systemStatus", "feedAge", "baseMap", "refreshNow", "sourceHealth", "publicDataStatus", "countrySummaryPanel", "sourcesStatusPanel", "dashboardPanel", "dashboardEyebrow", "dashboardTitle", "mapMode", "mapHealth", "feedError", "ciiToggle", "sourcesLink", "countriesLink"]);
+  const els = ids(["dashboardNav", "domainFilters", "layerFilters", "severityFilters", "eventList", "visibleCount", "highCount", "countryCount", "updatedAt", "search", "globalSearch", "globalSearchResults", "clearDomains", "clearFilters", "timeWindow", "sortOrder", "groupBy", "cardMode", "savedViews", "saveView", "fitWorld", "fitEvents", "themeToggle", "eventDialog", "dialogContent", "closeDialog", "methodologyDialog", "methodologyContent", "closeMethodology", "onboardingDialog", "mapLegend", "systemStatus", "feedAge", "baseMap", "refreshNow", "sourceHealth", "publicDataStatus", "countrySummaryPanel", "sourcesStatusPanel", "dashboardPanel", "dashboardEyebrow", "dashboardTitle", "mapMode", "mapHealth", "feedError", "ciiToggle", "sourcesLink", "filterDrawer", "eventDrawer", "presetList", "advancedMode", "aircraftToggle", "vesselToggle", "airportsToggle", "portsToggle", "trackingStatus", "mapListToggle", "locateMap", "resetWorkspace"]);
   const mapController = createMapController({ onHealthChange: (health) => { state.mapHealth = health; renderMapHealth(els.mapHealth, health); } });
   let refreshTimer = null;
   let retryAttempts = 0;
@@ -328,7 +412,7 @@ export function bootLiveMap() {
     const source = state.dashboard === "finance" ? [...state.events, ...exchangeMarkers().map(normalizeEvent)] : state.events;
     const byDashboard = source.filter((event) => dashboard.categories.includes(event.category) || state.dashboard === "primary");
     const byCountry = state.selectedCountryIso3 ? byDashboard.filter((event) => countryForEvent(event)?.iso3 === state.selectedCountryIso3) : byDashboard;
-    return filteredEvents(byCountry, filters, state.hours, state.sort);
+    return filteredEvents(byCountry.filter(standardEventVisible), filters, state.hours, state.sort);
   }
 
   function selectCountry(value, zoom = true) {
@@ -350,6 +434,37 @@ export function bootLiveMap() {
     renderMarkers(mapController.markerLayer, events, (event) => openEventDialog(event, els.eventDialog, els.dialogContent, mapController.map));
     mapController.renderCountryRisk(riskScores, state.ciiVisible);
     mapController.renderCountryBoundaries(COUNTRIES, riskScores, state.selectedCountryIso3, (country) => selectCountry(country.iso3, false));
+    mapController.renderMovingObjects(state.movingObjects, (object) => {
+      state.selectedMovingObjectId = object.id;
+      syncUrlState();
+      openEventDialog({
+        id: object.id,
+        title: object.displayName,
+        summary: `${object.objectType === "aircraft" ? "Aircraft" : "Vessel"} ${object.status || "observed"} from ${object.sourceName || "tracking source"}.`,
+        category: "infrastructure",
+        severity: "low",
+        confidence: object.stale ? 45 : 70,
+        verificationStatus: object.stale ? "Some data delayed" : "Reported",
+        sourceName: object.sourceName,
+        sourceUrl: object.sourceUrl,
+        sourceType: "Moving object",
+        lat: object.latitude,
+        lon: object.longitude,
+        place: object.displayName,
+        country: "",
+        occurredAt: object.observedAt,
+        updatedAt: object.receivedAt,
+        details: {
+          Type: object.objectType,
+          Status: object.status,
+          Speed: object.speed ?? "-",
+          Heading: object.heading ?? "-",
+          Altitude: object.altitude ?? "-",
+          "Data age": `${object.dataAgeSeconds}s`,
+        },
+      }, els.eventDialog, els.dialogContent, mapController.map);
+    });
+    mapController.renderReferencePoints({ airports: state.tracking.airports ? AIRPORTS : [], ports: state.tracking.ports ? PORTS : [] });
     setGlobeMode(state.mapMode, events);
     mapController.invalidateMapSize();
     renderList(els, events);
@@ -357,7 +472,8 @@ export function bootLiveMap() {
     renderFeedError(els.feedError);
     renderMapHealth(els.mapHealth, state.mapHealth || mapController.health());
     updateSourcesLink(els.sourcesLink);
-    updateCountriesLink(els.countriesLink);
+    applyShellState(els);
+    if (els.presetList) els.presetList.innerHTML = renderPresetList();
     els.publicDataStatus.innerHTML = renderPublicDataStatus();
     els.countrySummaryPanel.innerHTML = renderCountrySummary(riskScores, state.events);
     els.sourcesStatusPanel.innerHTML = renderSourcesStatusPanel(state.events, state.sourceStatus);
@@ -366,7 +482,15 @@ export function bootLiveMap() {
   }
 
   function renderNav() {
-    els.dashboardNav.innerHTML = DASHBOARDS.map((dashboard) => `<button class="dashboard-tab ${dashboard.id === state.dashboard ? "active" : ""}" data-dashboard="${dashboard.id}" type="button">${dashboard.label}</button>`).join("");
+    const items = [
+      ["explore", "Explore"],
+      ["feed", "Live Feed"],
+      ["countries", "Country Scores"],
+    ];
+    els.dashboardNav.innerHTML = items.map(([id, label]) => {
+      if (id === "countries") return `<a class="dashboard-tab ${state.activeArea === id ? "active" : ""}" href="/countries">${label}</a>`;
+      return `<button class="dashboard-tab ${state.activeArea === id ? "active" : ""}" data-area="${id}" type="button">${label}</button>`;
+    }).join("");
   }
 
   function renderFeedControls() {
@@ -454,11 +578,105 @@ export function bootLiveMap() {
     }
   }
 
+  async function loadMovingObjects() {
+    if (!state.tracking.aircraft && !state.tracking.vessels) {
+      state.movingObjects = [];
+      state.movingObjectStatus = {};
+      render();
+      return;
+    }
+    if (document.hidden) return;
+    const type = state.tracking.aircraft && state.tracking.vessels ? "all" : state.tracking.aircraft ? "aircraft" : "vessel";
+    try {
+      const response = await fetch(`/api/moving-objects?type=${type}&bbox=${encodeURIComponent(bboxParam(mapController))}&limit=500&t=${Date.now()}`, { cache: "no-store" });
+      const body = await response.json();
+      state.movingObjects = Array.isArray(body.data?.data) ? body.data.data : Array.isArray(body.data) ? body.data : [];
+      state.movingObjectStatus = body.data?.providerStatus || body.sourceStatus || {};
+    } catch {
+      state.movingObjects = [];
+      state.movingObjectStatus = {
+        opensky: { ok: false, status: "provider-unavailable", message: "Aircraft data is temporarily delayed." },
+        "global-fishing-watch": { ok: false, status: "provider-unavailable", message: "Vessel activity is temporarily delayed." },
+      };
+    }
+    render();
+  }
+
+  let movingRefreshTimer = null;
+  function scheduleMovingRefresh(delay = 30000) {
+    if (movingRefreshTimer) window.clearTimeout(movingRefreshTimer);
+    movingRefreshTimer = window.setTimeout(async () => {
+      await loadMovingObjects();
+      scheduleMovingRefresh(document.hidden ? delay * 4 : delay);
+    }, delay);
+  }
+
   renderNav();
   renderFeedControls();
+  if (!state.onboardingComplete && els.onboardingDialog) els.onboardingDialog.showModal();
+  const startupParams = new URLSearchParams(window.location.search);
+  if (state.selectedPreset === "explore" && !startupParams.has("tracking")) applyPreset("explore", false);
+  if (els.timeWindow) els.timeWindow.value = String(state.hours);
   els.search.value = dashboardFilters().query;
+  if (els.globalSearch) els.globalSearch.value = dashboardFilters().query;
+  window.addEventListener("live-map-render-request", () => { renderNav(); renderFeedControls(); render(); loadMovingObjects(); });
   document.addEventListener("click", (event) => {
     if (event.target.closest("a")) return;
+    const area = event.target.closest("[data-area]");
+    if (area) {
+      state.activeArea = area.dataset.area;
+      state.rightDrawerOpen = state.activeArea === "feed" ? true : state.rightDrawerOpen;
+      localStorage.setItem("live-map-right-drawer-v1", state.rightDrawerOpen ? "open" : "closed");
+      syncUrlState();
+      renderNav();
+      render();
+      return;
+    }
+    const preset = event.target.closest("[data-preset]");
+    if (preset) {
+      applyPreset(preset.dataset.preset);
+      els.timeWindow.value = String(state.hours);
+      renderFeedControls();
+      return;
+    }
+    const openDrawer = event.target.closest("[data-open-drawer]");
+    if (openDrawer) {
+      const side = openDrawer.dataset.openDrawer;
+      if (side === "left") state.leftDrawerOpen = true;
+      if (side === "right") state.rightDrawerOpen = true;
+      localStorage.setItem("live-map-left-drawer-v1", state.leftDrawerOpen ? "open" : "closed");
+      localStorage.setItem("live-map-right-drawer-v1", state.rightDrawerOpen ? "open" : "closed");
+      render();
+      mapController.invalidateMapSize();
+      return;
+    }
+    const closeDrawer = event.target.closest("[data-close-drawer]");
+    if (closeDrawer) {
+      const side = closeDrawer.dataset.closeDrawer;
+      if (side === "left") state.leftDrawerOpen = false;
+      if (side === "right") state.rightDrawerOpen = false;
+      localStorage.setItem("live-map-left-drawer-v1", state.leftDrawerOpen ? "open" : "closed");
+      localStorage.setItem("live-map-right-drawer-v1", state.rightDrawerOpen ? "open" : "closed");
+      render();
+      mapController.invalidateMapSize();
+      return;
+    }
+    const onboardingPreset = event.target.closest("[data-onboarding-preset]");
+    if (onboardingPreset) {
+      const selected = onboardingPreset.dataset.onboardingPreset === "country" ? "explore" : onboardingPreset.dataset.onboardingPreset;
+      if (onboardingPreset.dataset.onboardingPreset === "country") window.location.href = "/countries";
+      applyPreset(selected);
+      localStorage.setItem("live-map-onboarding-v1", "done");
+      state.onboardingComplete = true;
+      els.onboardingDialog?.close();
+      return;
+    }
+    if (event.target.closest("[data-onboarding-skip]")) {
+      localStorage.setItem("live-map-onboarding-v1", "done");
+      state.onboardingComplete = true;
+      els.onboardingDialog?.close();
+      return;
+    }
     const countrySelect = event.target.closest("[data-country-select]");
     if (countrySelect) {
       selectCountry(countrySelect.dataset.countrySelect);
@@ -536,10 +754,41 @@ export function bootLiveMap() {
     }
   });
 
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      state.leftDrawerOpen = false;
+      localStorage.setItem("live-map-left-drawer-v1", "closed");
+      render();
+      mapController.invalidateMapSize();
+    }
+  });
+
   els.search.addEventListener("input", (event) => {
     state.queryByDashboard.set(state.dashboard, event.target.value);
     syncUrlState();
     render();
+  });
+  els.globalSearch?.addEventListener("input", (event) => {
+    const query = event.target.value;
+    const results = buildGlobalSearchResults(query, state.events, state.movingObjects);
+    const grouped = groupSearchResults(results);
+    els.globalSearchResults.hidden = !results.length;
+    els.globalSearchResults.innerHTML = Object.entries(grouped).map(([group, items]) => `<section><strong>${escapeHtml(group)}</strong>${items.map((item, index) => `<button type="button" data-search-result="${escapeHtml(group)}:${index}"><span>${escapeHtml(item.label)}</span><small>${escapeHtml(item.description || "")}</small></button>`).join("")}</section>`).join("");
+    els.globalSearchResults._results = grouped;
+  });
+  els.globalSearchResults?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-search-result]");
+    if (!button) return;
+    const [group, indexText] = button.dataset.searchResult.split(":");
+    const item = els.globalSearchResults._results?.[group]?.[Number(indexText)];
+    if (!item) return;
+    const payload = item.payload;
+    if (payload.action === "country") selectCountry(payload.iso3);
+    if (["airport", "port"].includes(payload.action)) mapController.map.setView([payload.latitude, payload.longitude], 8);
+    if (payload.action === "event" && Number.isFinite(payload.lat) && Number.isFinite(payload.lon)) mapController.map.setView([payload.lat, payload.lon], 7);
+    if (payload.action === "moving-object") mapController.map.setView([payload.latitude, payload.longitude], 8);
+    els.globalSearchResults.hidden = true;
+    syncUrlState();
   });
   els.timeWindow.addEventListener("change", (event) => { state.hours = Number(event.target.value); loadEvents(true); });
   els.sortOrder.addEventListener("change", (event) => { state.sort = event.target.value; syncUrlState(); render(); });
@@ -572,6 +821,44 @@ export function bootLiveMap() {
   els.baseMap.addEventListener("change", (event) => mapController.switchBase(event.target.value));
   els.mapMode.addEventListener("change", (event) => { state.mapMode = event.target.value; render(); mapController.invalidateMapSize(); });
   els.ciiToggle.addEventListener("click", () => { state.ciiVisible = !state.ciiVisible; els.ciiToggle.classList.toggle("active", state.ciiVisible); render(); });
+  els.advancedMode?.addEventListener("change", (event) => {
+    state.interfaceMode = event.target.checked ? "advanced" : "standard";
+    localStorage.setItem("live-map-interface-mode-v1", state.interfaceMode);
+    render();
+    mapController.invalidateMapSize();
+  });
+  els.aircraftToggle?.addEventListener("change", (event) => {
+    state.tracking.aircraft = event.target.checked;
+    syncUrlState();
+    loadMovingObjects();
+  });
+  els.vesselToggle?.addEventListener("change", (event) => {
+    state.tracking.vessels = event.target.checked;
+    syncUrlState();
+    loadMovingObjects();
+  });
+  els.airportsToggle?.addEventListener("change", (event) => { state.tracking.airports = event.target.checked; render(); });
+  els.portsToggle?.addEventListener("change", (event) => { state.tracking.ports = event.target.checked; render(); });
+  els.mapListToggle?.addEventListener("click", () => {
+    state.rightDrawerOpen = !state.rightDrawerOpen;
+    localStorage.setItem("live-map-right-drawer-v1", state.rightDrawerOpen ? "open" : "closed");
+    render();
+    mapController.invalidateMapSize();
+  });
+  els.locateMap?.addEventListener("click", () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition((position) => mapController.map.setView([position.coords.latitude, position.coords.longitude], 6));
+  });
+  els.resetWorkspace?.addEventListener("click", () => {
+    state.leftDrawerOpen = false;
+    state.rightDrawerOpen = true;
+    state.selectedCountryIso3 = null;
+    state.tracking.aircraft = false;
+    state.tracking.vessels = false;
+    localStorage.setItem("live-map-left-drawer-v1", "closed");
+    localStorage.setItem("live-map-right-drawer-v1", "open");
+    applyPreset("explore");
+  });
   els.refreshNow.addEventListener("click", () => loadEvents(true));
   els.themeToggle.addEventListener("click", () => document.documentElement.classList.toggle("light"));
   els.closeDialog.addEventListener("click", () => els.eventDialog.close());
@@ -580,5 +867,8 @@ export function bootLiveMap() {
   els.methodologyDialog.addEventListener("click", (event) => { if (event.target === els.methodologyDialog) els.methodologyDialog.close(); });
 
   loadEvents();
+  loadMovingObjects();
+  scheduleMovingRefresh();
+  document.addEventListener("visibilitychange", () => scheduleMovingRefresh(document.hidden ? 120000 : 30000));
   setInterval(() => renderStats(els, currentEvents()), 30000);
 }

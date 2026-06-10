@@ -21,6 +21,9 @@
 - RIPEstat: Internet-routing observation adapter is implemented, but live queries require `RIPESTAT_SOURCEAPP` and `RIPESTAT_RESOURCES`.
 - Cloudflare Radar: authenticated integration boundary is documented for future work. It does not run API queries in this phase.
 - Security, weather, health/humanitarian, and positive-development RSS groups: implemented as independently controlled allowlists but disabled until `SECURITY_RSS_ENABLED`, `WEATHER_RSS_ENABLED`, `HEALTH_RSS_ENABLED`, or `POSITIVE_RSS_ENABLED` is set to `true`.
+- OpenSky: viewport-limited aircraft tracking boundary is implemented but disabled until OAuth credentials are configured.
+- Global Fishing Watch: maritime activity boundary is implemented but disabled until API authorization and endpoint-specific terms are reviewed.
+- AISHub: AIS boundary is documented and configuration-required; participation/access requirements must be met before activation.
 
 ## Registry or development fixture
 
@@ -63,4 +66,8 @@ See also:
 - `docs/EIA_PROVIDER.md`
 - `docs/OPEN_PROVIDER_EXPANSION.md`
 - `docs/DIAGNOSTICS_UI.md`
+- `docs/OPENSKY_PROVIDER.md`
+- `docs/GLOBAL_FISHING_WATCH_PROVIDER.md`
+- `docs/AISHUB_PROVIDER_BOUNDARY.md`
+- `docs/TRACKING_PRIVACY_AND_LIMITATIONS.md`
 

@@ -51,6 +51,11 @@
   from = "/api/provider-health"
   to = "/.netlify/functions/provider-health"
   status = 200
+
+[[redirects]]
+  from = "/api/moving-objects"
+  to = "/.netlify/functions/moving-objects"
+  status = 200
   force = true
 
 [[redirects]]

@@ -50,3 +50,7 @@ AI briefs, user accounts, alerts, entity graph, cases, and compliance audit trai
 - Keep source attribution, source status, and freshness visible.
 
 After country navigation and CII v2 are stable, add providers in this order: NOAA/NWS and GDACS improvements, ReliefWeb, GDELT, CISA/NVD, SEC EDGAR, EIA, ACLED, aircraft tracking, and maritime tracking.
+
+## Phase 3 Tracking Order
+
+Use OpenSky first for a viewport-limited aircraft prototype. Use Global Fishing Watch for maritime activity analysis, not as a complete real-time AIS claim. Keep AISHub configuration-required until its access model is satisfied.

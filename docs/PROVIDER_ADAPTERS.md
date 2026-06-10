@@ -75,6 +75,10 @@ Shared provider infrastructure:
 - `src/data/providers/request-budget.js` tracks in-memory request budgets so providers can fail visibly instead of silently over-polling.
 - `src/data/providers/provider-state.js` tracks incremental provider state for filings, observations, revisions, and duplicate prevention.
 - `src/data/providers/capability-registry.js` documents provider capability boundaries, geography support, credential state, record kinds, and implementation notes.
+- `src/data/providers/opensky.js` normalizes aircraft state vectors and requires viewport-limited server-side OAuth credentials.
+- `src/data/providers/global-fishing-watch.js` normalizes vessel-style records but remains configuration-required until endpoint terms are reviewed.
+- `src/data/providers/aishub.js` documents the AIS participation/access boundary.
+- `netlify/functions/moving-objects.mjs` validates bounding boxes, caps results, and rejects global moving-object requests.
 - `src/data/providers/provider-state.js` also exposes durable-provider-state interface methods for provider state, cache entries, request budgets, and refresh locks. The current implementation is safe in-memory storage with a future Netlify Blobs boundary.
 - `src/events/normalized-event.js` supports explicit non-geographic events with `geographic: false`, `mapDisplayStatus`, and `nonGeographicReason`.
 - `src/events/normalized-event.js` supports `recordKind` values: `event`, `observation`, `discovery-lead`, and `moving-object`.

@@ -115,6 +115,8 @@ export function createMapController(options = {}) {
     : L.layerGroup().addTo(map);
   const ciiLayer = L.layerGroup().addTo(map);
   const countryLayer = L.layerGroup().addTo(map);
+  const movingObjectLayer = L.layerGroup().addTo(map);
+  const referenceLayer = L.layerGroup().addTo(map);
 
   function switchBase(name) {
     Object.values(basemaps).forEach((layer) => map.hasLayer(layer) && map.removeLayer(layer));
@@ -128,6 +130,16 @@ export function createMapController(options = {}) {
     }
     markerLayer.bringToFront();
     invalidateMapSize();
+  }
+
+  function currentBbox() {
+    const bounds = map.getBounds();
+    return {
+      south: bounds.getSouth(),
+      west: bounds.getWest(),
+      north: bounds.getNorth(),
+      east: bounds.getEast(),
+    };
   }
 
   function fitEvents(events) {
@@ -179,6 +191,36 @@ export function createMapController(options = {}) {
     map.fitBounds([[country.bounds.south, country.bounds.west], [country.bounds.north, country.bounds.east]], { padding: [42, 42], maxZoom: 6 });
   }
 
+  function renderMovingObjects(objects = [], onSelect = null) {
+    movingObjectLayer.clearLayers();
+    objects.forEach((object) => {
+      const color = object.objectType === "aircraft" ? "#7dd3fc" : "#38e0a3";
+      const marker = L.circleMarker([object.latitude, object.longitude], {
+        radius: object.objectType === "aircraft" ? 5 : 6,
+        color,
+        fillColor: color,
+        fillOpacity: object.stale ? 0.25 : 0.75,
+        opacity: object.stale ? 0.45 : 0.9,
+        weight: 2,
+      });
+      marker.bindTooltip(`<strong>${object.displayName}</strong><br>${object.objectType}<br>${object.status || "unknown"}`);
+      marker.on("click", () => onSelect?.(object));
+      marker.addTo(movingObjectLayer);
+    });
+  }
+
+  function renderReferencePoints({ airports = [], ports = [] } = {}) {
+    referenceLayer.clearLayers();
+    const zoom = map.getZoom();
+    if (zoom < 4) return;
+    airports.slice(0, 50).forEach((airport) => {
+      L.circleMarker([airport.latitude, airport.longitude], { radius: 4, color: "#93c5fd", fillOpacity: 0.35, weight: 1 }).bindTooltip(`<strong>${airport.iata || airport.icao}</strong><br>${airport.name}`).addTo(referenceLayer);
+    });
+    ports.slice(0, 50).forEach((port) => {
+      L.circleMarker([port.latitude, port.longitude], { radius: 4, color: "#2dd4bf", fillOpacity: 0.35, weight: 1 }).bindTooltip(`<strong>${port.unlocode}</strong><br>${port.name}`).addTo(referenceLayer);
+    });
+  }
+
   const resizeObserver = "ResizeObserver" in window ? new ResizeObserver(invalidateMapSize) : null;
   resizeObserver?.observe(mapElement);
   window.addEventListener("resize", invalidateMapSize, { passive: true });
@@ -195,6 +237,9 @@ export function createMapController(options = {}) {
     renderCountryRisk,
     renderCountryBoundaries,
     selectCountry,
+    renderMovingObjects,
+    renderReferencePoints,
+    currentBbox,
     invalidateMapSize,
     health: () => ({ ...health }),
     activeBase: () => activeBase,

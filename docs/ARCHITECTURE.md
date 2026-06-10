@@ -32,3 +32,10 @@ The platform is intentionally modular without adding a framework or build step. 
 - Provider capability metadata lives in `src/data/providers/capability-registry.js`.
 - New open RSS provider groups are independently gated by environment variables and default to `configuration-required`.
 
+## Phase 3 additions
+
+- The public shell uses Explore, Live Feed, Country Scores, global search, Tools, and Standard/Advanced modes.
+- The map workspace uses collapsible filter/feed drawers instead of permanent three-column density.
+- `/api/moving-objects` handles viewport-limited aircraft/vessel data with global request rejection.
+- OpenSky, Global Fishing Watch, and AISHub boundaries are server-side and configuration-required by default.
+

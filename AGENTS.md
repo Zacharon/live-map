@@ -26,6 +26,10 @@ These instructions apply to the whole repository.
 - Keep CII severity, confidence, impact, freshness, corroboration, and completeness separate. Do not collapse them into an unexplained number.
 - Do not map SEC issuers to headquarters merely to create event markers.
 - Do not claim causality between official economic, filing, energy, or market records and price movements unless verified by sources.
+- Do not poll aircraft or vessel providers globally. Moving-object requests must be viewport-limited, server-side, cached, and capped.
+- Do not expose OpenSky, Global Fishing Watch, AISHub, ADS-B, or AIS credentials in browser code.
+- Do not claim complete global flight or vessel coverage.
+- Do not identify private aircraft owners or infer vessel cargo/illegal behavior from position data.
 - Sensitive humanitarian locations must be generalized or suppressed when precise display could increase risk.
 - Do not mirror full copyrighted reports, PDFs, photos, exploit code, or malware samples.
 - Do not add paid services without explicit approval.
@@ -42,6 +46,7 @@ These instructions apply to the whole repository.
 - Keep non-geographic event behavior, request budgets, and provider scheduling documented when changed.
 - Keep finance/commodity event classification, observation-vs-event rules, and provider-state behavior documented when changed.
 - Keep country navigation, country-score methodology, diagnostics separation, provider capabilities, and opt-in provider gating documented when changed.
+- Keep consumer UX, Standard/Advanced mode, moving-object API limits, tracking privacy disclosures, and aviation/maritime provider boundaries documented when changed.
 
 ## Workflow
 
