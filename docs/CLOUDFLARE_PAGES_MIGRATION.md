@@ -39,6 +39,21 @@ Port these routes before considering Cloudflare Pages a functional backend targe
 
 Additional scaffolded Netlify routes such as `/api/layers`, `/api/markets`, `/api/infrastructure`, `/api/source-status`, `/api/briefs`, and `/api/alerts/test` can be ported after the core public routes above.
 
+## Cloudflare Workers Static Assets Plan
+
+The current workers.dev target is a Cloudflare Workers Static Assets deployment. That deployment does not use `functions/api/events.js` for routing. It uses `wrangler.toml` and the Worker entrypoint at `src/worker.js`.
+
+Workers routing:
+
+- `wrangler.toml` points `main` to `src/worker.js`.
+- `[assets]` publishes the repository root (`.`) through the `ASSETS` binding.
+- `run_worker_first = ["/api/*"]` makes API routes enter the Worker before static asset lookup.
+- `src/worker.js` handles `/api/events` by calling the shared `src/api/events-response.js` response builder with Cloudflare `env` bindings.
+- Other `/api/*` paths return a JSON 404 until those routes are intentionally ported.
+- Non-API requests fall through to `env.ASSETS.fetch(request)` so the static frontend continues to load.
+
+Do not run `wrangler deploy` unless deployment is explicitly approved.
+
 ## Cloudflare Pages Functions Plan
 
 The repository may add placeholder Cloudflare Pages documentation under `functions/`, but real provider code should not be duplicated into Cloudflare Pages Functions until the shared server-side module boundaries are clear.
@@ -47,20 +62,24 @@ Future implementation should prefer thin Cloudflare route handlers that call sha
 
 ## `/api/events` Compatibility
 
-Cloudflare Pages maps `functions/api/events.js` to `/api/events`.
+Cloudflare Workers Static Assets maps `/api/events` through `src/worker.js` when deployed with `wrangler.toml`.
+
+Cloudflare Pages maps `functions/api/events.js` to `/api/events` only for a Pages Functions deployment.
 
 Netlify keeps the existing redirect:
 
 - `/api/events` -> `/.netlify/functions/events`
 
-Both runtimes now call the shared `src/api/events-response.js` response builder. The Netlify file `netlify/functions/events.mjs` remains in place and continues to export the existing Netlify handler. The Cloudflare Pages Function installs `context.env` into the server-only runtime environment before dynamically loading the shared events response module so provider modules that initialize from environment data see Cloudflare bindings at import time. The shared response builder also passes the runtime environment into provider orchestration for request-time settings such as user agents.
+All runtimes now call the shared `src/api/events-response.js` response builder. The Netlify file `netlify/functions/events.mjs` remains in place and continues to export the existing Netlify handler. The Cloudflare Worker and Pages Function install Cloudflare runtime bindings into the server-only runtime environment before dynamically loading the shared events response module so provider modules that initialize from environment data see Cloudflare bindings at import time. The shared response builder also passes the runtime environment into provider orchestration for request-time settings such as user agents.
 
 Runtime differences to keep in mind:
 
 - Netlify Functions receive provider credentials through `process.env`.
+- Cloudflare Workers receive provider credentials through `env`.
 - Cloudflare Pages Functions receive provider credentials through `context.env`.
-- Cloudflare does not use `netlify.toml` redirects for Pages Functions; the route is file-system based.
+- Cloudflare does not use `netlify.toml` redirects for Workers or Pages Functions.
 - The public response envelope remains compatible with the existing frontend.
+- The `mode` field is runtime-specific for Cloudflare Workers and may report `cloudflare-workers` or `partial-cloudflare-workers`.
 - The `mode` field is runtime-specific for Cloudflare Pages and may report `cloudflare-pages-function` or `partial-cloudflare-pages-function`.
 
 Before a route is considered ported:
