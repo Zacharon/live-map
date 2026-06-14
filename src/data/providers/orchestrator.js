@@ -47,6 +47,19 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function envValue(context, name) {
+  if (!name) return "";
+  return context.env?.[name] || globalThis?.process?.env?.[name] || "";
+}
+
+function providerUserAgent(provider, context) {
+  if (provider.userAgent) return provider.userAgent;
+  const configured = envValue(context, provider.userAgentEnvVar);
+  if (provider.userAgentFormat === "sec-contact" && configured) return `LiveWorldMap/1.0 contact:${configured}`;
+  if (configured) return configured;
+  return provider.userAgentFallback || null;
+}
+
 export async function fetchJsonWithTimeout(url, sourceName, options = {}) {
   const attempts = options.attempts ?? 2;
   const timeoutMs = options.timeoutMs ?? 12000;
@@ -136,7 +149,7 @@ export async function runProvider(provider, context) {
       fetchJson: (url, sourceName) =>
         fetchJsonWithTimeout(url, sourceName, {
           timeoutMs: provider.timeoutMs || schedule.requestTimeoutMs,
-          userAgent: provider.userAgent,
+          userAgent: providerUserAgent(provider, context),
           attempts: provider.fetchAttempts || schedule.maximumRetries,
         }),
     });
@@ -208,11 +221,12 @@ export async function runProvider(provider, context) {
 export async function orchestrateProviders(options = {}) {
   const now = options.now || Date.now();
   const hours = options.hours || 168;
+  const env = options.env || globalThis?.process?.env || {};
   const providerCache = options.providerCache || (await createProviderCache());
   const requestBudgetStore = options.requestBudgetStore || (await createRequestBudgetStore());
   const providerStateStore = options.providerStateStore || (await createProviderStateStore());
   const enabledProviders = EVENT_PROVIDERS.filter((provider) => provider.enabled !== false);
-  const settled = await Promise.allSettled(enabledProviders.map((provider) => runProvider(provider, { now, hours, providerCache, requestBudgetStore, providerStateStore })));
+  const settled = await Promise.allSettled(enabledProviders.map((provider) => runProvider(provider, { now, hours, env, providerCache, requestBudgetStore, providerStateStore })));
   const providerResults = settled.map((item, index) =>
     item.status === "fulfilled"
       ? item.value
