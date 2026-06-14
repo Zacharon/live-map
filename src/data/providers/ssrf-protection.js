@@ -1,5 +1,3 @@
-import net from "node:net";
-
 const PRIVATE_IPV4_RANGES = [
   [/^10\./, "private-10"],
   [/^127\./, "loopback"],
@@ -9,11 +7,22 @@ const PRIVATE_IPV4_RANGES = [
   [/^0\./, "reserved-0"],
 ];
 
+function isIpv4Address(host = "") {
+  const parts = String(host).split(".");
+  if (parts.length !== 4) return false;
+  return parts.every((part) => {
+    if (!/^\d+$/.test(part)) return false;
+    if (part.length > 1 && part.startsWith("0")) return false;
+    const value = Number(part);
+    return Number.isInteger(value) && value >= 0 && value <= 255;
+  });
+}
+
 export function isPrivateHostname(hostname = "") {
   const host = String(hostname).toLowerCase().replace(/^\[|\]$/g, "");
   if (!host || host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local")) return true;
   if (host === "::1" || host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80:")) return true;
-  if (net.isIP(host) === 4) return PRIVATE_IPV4_RANGES.some(([pattern]) => pattern.test(host));
+  if (isIpv4Address(host)) return PRIVATE_IPV4_RANGES.some(([pattern]) => pattern.test(host));
   return false;
 }
 
