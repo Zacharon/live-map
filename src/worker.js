@@ -29,12 +29,34 @@ async function eventsResponse(request, env) {
   });
 }
 
+async function sourcesResponse(request) {
+  const { createSourcesResponse } = await import("./api/sources-response.js");
+  return createSourcesResponse(request);
+}
+
+async function providerHealthResponse(request, env) {
+  installCloudflareEnv(env);
+  const { createProviderHealthResponse } = await import("./api/provider-health-response.js");
+  return createProviderHealthResponse(request, {
+    env,
+    runtimeMode: "cloudflare-workers",
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/events") {
       return eventsResponse(request, env);
+    }
+
+    if (url.pathname === "/api/sources") {
+      return sourcesResponse(request);
+    }
+
+    if (url.pathname === "/api/provider-health") {
+      return providerHealthResponse(request, env);
     }
 
     if (url.pathname.startsWith("/api/")) {
