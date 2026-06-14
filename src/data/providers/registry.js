@@ -46,9 +46,8 @@ export const EVENT_PROVIDERS = [
     timeoutMs: 15000,
     integrationType: "official-geojson",
     freshnessMs: 10 * 60 * 1000,
-    userAgent:
-      globalThis?.process?.env?.NWS_USER_AGENT ||
-      "LiveWorldMap/1.0 (contact: configure NWS_USER_AGENT in Netlify environment)",
+    userAgentEnvVar: "NWS_USER_AGENT",
+    userAgentFallback: "LiveWorldMap/1.0 (contact: configure NWS_USER_AGENT in server environment)",
   },
   {
     ...sourceMetadata("gdacs"),
@@ -124,10 +123,9 @@ export const EVENT_PROVIDERS = [
     fetchAttempts: 1,
     integrationType: "official-api-configuration-required",
     freshnessMs: 60 * 60 * 1000,
-    userAgent:
-      globalThis?.process?.env?.SEC_CONTACT_EMAIL
-        ? `LiveWorldMap/1.0 contact:${globalThis.process.env.SEC_CONTACT_EMAIL}`
-        : "LiveWorldMap/1.0 (contact: configure SEC_CONTACT_EMAIL in Netlify environment)",
+    userAgentEnvVar: "SEC_CONTACT_EMAIL",
+    userAgentFormat: "sec-contact",
+    userAgentFallback: "LiveWorldMap/1.0 (contact: configure SEC_CONTACT_EMAIL in server environment)",
   },
   {
     ...sourceMetadata("fred"),
