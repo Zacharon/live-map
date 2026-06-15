@@ -7,7 +7,8 @@ import { EXCHANGES } from "../src/data/exchanges.js";
 import { computeCountryRiskScores, ciiLevel } from "../src/risk/country-risk.js";
 import { COUNTRIES, countryBoundsArray, countryByCode, countryForEvent } from "../src/data/countries.js";
 import { validateAlertRule } from "../src/alerts/alert-rules.js";
-import { escapeHtml } from "../src/events/event-normalizer.js";
+import { escapeHtml, normalizeEvent } from "../src/events/event-normalizer.js";
+import { filteredEvents } from "../src/events/event-filters.js";
 import { distanceKm, correlateEventsToMarkets } from "../src/events/event-correlation.js";
 import { createNormalizedEvent, severityLabelFromScore, validateNormalizedEvent } from "../src/events/normalized-event.js";
 import { arePotentialDuplicates, mergeDuplicateEvents } from "../src/events/event-deduplication.js";
@@ -49,6 +50,7 @@ import { sortEvents, groupEvents } from "../src/events/feed-organization.js";
 import { shouldCluster, buildIncidents } from "../src/events/incident-clustering.js";
 import { computeQualityDimensions, normalizeVerificationStatus } from "../src/events/event-quality.js";
 import { providerState } from "../src/ui/provider-health-panel.js";
+import { sourceStatusText } from "../src/ui/source-health.js";
 import { serializeView } from "../src/ui/saved-views.js";
 import sourcesFunction from "../netlify/functions/sources.mjs";
 import eventsFunction from "../netlify/functions/events.mjs";
@@ -569,6 +571,54 @@ test("Events API preserves country filters", async () => {
     assert.equal(body.filters.country, "JPN");
     assert.ok(body.events.length >= 1);
     assert.ok(body.events.every((event) => countryForEvent(event)?.iso3 === "JPN"));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("Events API output survives default Explore frontend filters", async () => {
+  const originalFetch = globalThis.fetch;
+  const now = Date.now();
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("earthquake.usgs.gov")) {
+      return new Response(JSON.stringify({
+        features: [{
+          id: "frontend-visible",
+          properties: {
+            mag: 6.2,
+            time: now - 60_000,
+            updated: now,
+            url: "https://earthquake.usgs.gov/earthquakes/eventpage/frontend-visible",
+            place: "10 km S of Test",
+          },
+          geometry: { type: "Point", coordinates: [140, 35, 5] },
+        }],
+      }), { status: 200 });
+    }
+    return new Response("unavailable", { status: 503 });
+  };
+  try {
+    const response = await eventsFunction(new Request("https://liveworldmap.netlify.app/api/events?hours=24"));
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.ok(Array.isArray(body.events));
+    assert.ok(body.events.length >= 1);
+    const events = body.events.map(normalizeEvent).filter((event) => event.geographic === false || (Number.isFinite(event.lat) && Number.isFinite(event.lon)));
+    const explore = CONSUMER_PRESETS.explore;
+    const filters = {
+      domains: new Set(explore.domains),
+      categories: new Set(explore.layers),
+      severities: severitySetFromMinimum(SEVERITIES, explore.minimumSeverity),
+      recordKinds: new Set(explore.recordKinds),
+      query: "",
+    };
+    const visible = filteredEvents(events, filters, explore.timeWindow, "highest-severity");
+    assert.ok(visible.length >= 1, "at least one API event should render under default Explore filters");
+    assert.equal(visible[0].domain, "natural-disaster");
+    assert.equal(visible[0].category, "earthquake");
+    assert.ok(Number.isFinite(visible[0].lat));
+    assert.ok(Number.isFinite(visible[0].lon));
+    assert.doesNotMatch(sourceStatusText(body), /waiting/i);
   } finally {
     globalThis.fetch = originalFetch;
   }
