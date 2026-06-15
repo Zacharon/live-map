@@ -49,6 +49,8 @@ Workers routing:
 - `[assets]` publishes the repository root (`.`) through the `ASSETS` binding.
 - `run_worker_first = ["/api/*"]` makes API routes enter the Worker before static asset lookup.
 - `src/worker.js` handles `/api/events` by calling the shared `src/api/events-response.js` response builder with Cloudflare `env` bindings.
+- `src/worker.js` handles `/api/sources` by calling the shared `src/api/sources-response.js` response builder.
+- `src/worker.js` handles `/api/provider-health` by calling the shared `src/api/provider-health-response.js` response builder with Cloudflare `env` bindings.
 - Other `/api/*` paths return a JSON 404 until those routes are intentionally ported.
 - Non-API requests fall through to `env.ASSETS.fetch(request)` so the static frontend continues to load.
 
@@ -81,6 +83,20 @@ Runtime differences to keep in mind:
 - The public response envelope remains compatible with the existing frontend.
 - The `mode` field is runtime-specific for Cloudflare Workers and may report `cloudflare-workers` or `partial-cloudflare-workers`.
 - The `mode` field is runtime-specific for Cloudflare Pages and may report `cloudflare-pages-function` or `partial-cloudflare-pages-function`.
+
+## `/api/sources` And `/api/provider-health` Compatibility
+
+Cloudflare Workers Static Assets maps `/api/sources` and `/api/provider-health` through `src/worker.js` when deployed with `wrangler.toml`.
+
+Netlify keeps the existing redirects:
+
+- `/api/sources` -> `/.netlify/functions/sources`
+- `/api/provider-health` -> `/.netlify/functions/provider-health`
+
+Both runtimes call shared response builders in `src/api/`:
+
+- `/api/sources` uses `src/api/sources-response.js` and returns the public source registry envelope used by Source Explorer.
+- `/api/provider-health` uses `src/api/provider-health-response.js` and returns sanitized provider diagnostics. Cloudflare passes Worker `env` bindings into provider orchestration so credential-gated providers remain server-side and disabled unless configured.
 
 Before a route is considered ported:
 
