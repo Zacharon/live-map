@@ -22,5 +22,8 @@ jobs:
         with:
           node-version: 20
 
+      - name: Run syntax and route export checks
+        run: npm run check
+
       - name: Run Live Map validator
         run: npm run validate
