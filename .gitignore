@@ -1,2 +1,17 @@
 # Local Netlify folder
 .netlify
+
+# Local environment and secrets
+.env
+.env.*
+*.local.env
+*.secrets
+*.secrets.*
+secrets/
+
+# Local Cloudflare/Wrangler state
+.wrangler/
+.dev.vars
+
+# Generated local artifacts
+artifacts/

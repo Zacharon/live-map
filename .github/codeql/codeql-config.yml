@@ -5,8 +5,10 @@ queries:
 
 paths:
   - app.js
+  - functions
   - netlify/functions
   - scripts
+  - src
 
 paths-ignore:
   - node_modules
