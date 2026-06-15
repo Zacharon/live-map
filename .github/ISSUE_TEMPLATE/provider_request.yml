@@ -1,0 +1,93 @@
+name: Public data source request
+description: Suggest a free/public data source for Live Map.
+title: "[Provider]: "
+labels:
+  - provider
+  - good-first-agent-task
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Request only free/public sources that can be used without paid access or licensed scraping. Do not include secrets, tokens, private API keys, or account credentials.
+  - type: input
+    id: source_name
+    attributes:
+      label: Source name
+      description: Official provider or dataset name.
+      placeholder: USGS Earthquakes
+    validations:
+      required: true
+  - type: input
+    id: official_url
+    attributes:
+      label: Official URL
+      description: Link to the official API, feed, dataset, or documentation.
+      placeholder: https://example.gov/api
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - Natural hazards
+        - Weather
+        - Cyber
+        - Infrastructure
+        - Markets and economics
+        - Humanitarian
+        - News discovery
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: access_model
+    attributes:
+      label: Access model
+      options:
+        - Open API with no key
+        - Public RSS/Atom feed
+        - Public bulk data
+        - Free API key required
+        - Registration required
+        - Commercial or paid access
+        - Unknown
+    validations:
+      required: true
+  - type: textarea
+    id: terms
+    attributes:
+      label: Terms, license, and reuse notes
+      description: Summarize terms, license, attribution, caching, redistribution, or rate-limit requirements.
+    validations:
+      required: true
+  - type: textarea
+    id: attribution
+    attributes:
+      label: Attribution requirements
+      description: How should Live Map credit the provider and link back to original records?
+    validations:
+      required: true
+  - type: textarea
+    id: usefulness
+    attributes:
+      label: Why this source helps
+      description: Explain the events or source-health information this provider would add.
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Safety, privacy, or reliability risks
+      description: Note incomplete coverage, sensitive content, privacy concerns, or high-risk claims.
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I did not include secrets, tokens, credentials, or private account details.
+          required: true
+        - label: I understand paid or licensed scraping requests may be rejected for the core app.
+          required: true
+        - label: I understand the source will not be labeled live until reviewed and tested.
+          required: true
