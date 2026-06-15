@@ -1,0 +1,86 @@
+name: Data source request
+description: Suggest a new OSINT or public-information source for review.
+title: "[Source]: "
+labels:
+  - provider
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Source requests are review requests, not approval to ingest. Live Map only labels providers live after access, terms, attribution, safety, caching, and implementation are reviewed.
+  - type: input
+    id: source-name
+    attributes:
+      label: Source name
+    validations:
+      required: true
+  - type: input
+    id: source-url
+    attributes:
+      label: Official source URL
+      placeholder: https://example.org/data
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - Natural disaster
+        - Weather
+        - Major news
+        - Technology / cyber
+        - Infrastructure
+        - Finance / markets
+        - Commodity / supply chain
+        - Aviation
+        - Maritime
+        - Humanitarian
+        - Positive development
+        - Health
+        - Conflict / security
+        - Geospatial reference
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: access
+    attributes:
+      label: Access model
+      options:
+        - Open API
+        - Public RSS/Atom
+        - Open bulk data
+        - Registration required
+        - Credential/API key required
+        - Commercial/license required
+        - Link-only
+        - Unknown
+    validations:
+      required: true
+  - type: textarea
+    id: terms
+    attributes:
+      label: Terms, licensing, and redistribution
+      description: Link terms of service, license, attribution requirements, redistribution limits, caching limits, and commercial-use limits if known.
+    validations:
+      required: true
+  - type: textarea
+    id: value
+    attributes:
+      label: Why this source helps
+      description: Explain what records it provides and how it should be shown without overclaiming.
+  - type: textarea
+    id: risks
+    attributes:
+      label: Safety/privacy risks
+      description: Note risks around personal data, sensitive locations, tactical tracking, copyrighted content, or misuse.
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I understand this source must not be labeled live until reviewed and implemented.
+          required: true
+        - label: I did not include credentials, tokens, or private access details.
+          required: true

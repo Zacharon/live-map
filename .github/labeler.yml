@@ -1,0 +1,67 @@
+cloudflare:
+  - changed-files:
+      - any-glob-to-any-file:
+          - wrangler.toml
+          - src/worker.js
+          - functions/**
+          - docs/CLOUDFLARE_PAGES_MIGRATION.md
+          - .github/workflows/cloudflare-validation.yml
+
+api-route:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/api/**
+          - netlify/functions/**
+          - src/worker.js
+          - functions/api/**
+
+provider:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/data/providers/**
+          - src/sources/**
+          - docs/*PROVIDER*.md
+          - docs/DATA_SOURCES.md
+          - docs/MASTER_SOURCE_REGISTRY.md
+
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - SECURITY.md
+          - DISCLAIMER.md
+          - docs/SECURITY_CONTROLS.md
+          - docs/RESPONSIBLE_USE.md
+          - docs/PR_SECURITY_CHECKLIST.md
+          - scripts/repo-secret-scan.mjs
+          - .github/workflows/security.yml
+          - .github/codeql/**
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+
+ui:
+  - changed-files:
+      - any-glob-to-any-file:
+          - index.html
+          - styles.css
+          - app.js
+          - src/**/*app.js
+          - src/ui/**
+          - src/consumer/**
+
+workflow:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/**
+          - scripts/**
+          - package.json
+
+good-first-agent-task:
+  - changed-files:
+      - any-glob-to-any-file:
+          - docs/AGENT_AUTOMATION.md
+          - docs/ROADMAP_BOARD.md
+          - .github/ISSUE_TEMPLATE/**
+          - .github/pull_request_template.md

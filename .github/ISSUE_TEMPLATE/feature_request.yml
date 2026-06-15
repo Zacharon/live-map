@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest a UI, API, platform, workflow, or documentation improvement.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - UI / map
+        - API route
+        - Cloudflare
+        - Netlify compatibility
+        - Provider integration
+        - Source Explorer
+        - Diagnostics
+        - Workflow / automation
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What should be easier, safer, clearer, or more useful?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: Describe the smallest useful version.
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety and compatibility considerations
+      description: Note API compatibility, source attribution, provider status, privacy, or public-claim concerns.
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: This request does not require exposing secrets in browser code.
+          required: true
+        - label: This request does not require a production deploy by an agent.
+          required: true

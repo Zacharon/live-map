@@ -1,0 +1,41 @@
+name: Cloudflare Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cloudflare-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Run repository checks
+        run: npm run check
+
+      - name: Wrangler deploy dry-run
+        shell: bash
+        run: |
+          set +e
+          output="$(npx --yes wrangler deploy --dry-run 2>&1)"
+          status=$?
+          printf '%s\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            exit 0
+          fi
+          if printf '%s\n' "$output" | grep -Eiq 'not authenticated|authentication|api token|oauth|login|CLOUDFLARE_API_TOKEN'; then
+            echo "::warning::Wrangler dry-run requires Cloudflare authentication in this environment; skipped without deploying."
+            exit 0
+          fi
+          exit "$status"
