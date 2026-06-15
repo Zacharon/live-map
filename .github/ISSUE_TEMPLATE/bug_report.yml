@@ -1,0 +1,64 @@
+name: Bug report
+description: Report an app bug, API failure, broken map UI, or provider issue.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a Live Map issue. Do not include secrets, private data, or screenshots containing credentials.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Frontend / map UI
+        - API route
+        - Cloudflare Worker
+        - Netlify compatibility
+        - Provider data
+        - Source Explorer
+        - Diagnostics
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL or route
+      placeholder: https://live-map.zacharyfavaron.workers.dev/api/events?hours=168
+  - type: textarea
+    id: provider-status
+    attributes:
+      label: Provider/source status
+      description: If relevant, note visible degraded, stale, fallback, partial-data, or configuration-required state.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Browser/device/context
+      placeholder: Desktop Chrome, mobile Safari, Cloudflare live site, local dev, etc.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: I did not include secrets, private data, or credentials.
+          required: true

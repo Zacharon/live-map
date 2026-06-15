@@ -1,0 +1,53 @@
+name: Provider outage or stale data
+description: Report stale, degraded, missing, duplicated, or incorrect provider data.
+title: "[Provider outage]: "
+labels:
+  - provider
+body:
+  - type: input
+    id: provider
+    attributes:
+      label: Provider or source
+      placeholder: USGS, NASA EONET, NOAA/NWS, GDACS, CISA KEV, etc.
+    validations:
+      required: true
+  - type: dropdown
+    id: symptom
+    attributes:
+      label: Symptom
+      options:
+        - Stale data
+        - Missing data
+        - Degraded provider status
+        - Duplicate records
+        - Incorrect record
+        - Attribution/source link issue
+        - API route failure
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: route
+    attributes:
+      label: Route or page
+      placeholder: /api/events?hours=168, /api/provider-health, /diagnostics
+  - type: textarea
+    id: observed
+    attributes:
+      label: What did you observe?
+      description: Include visible status messages, timestamps, and source links where safe.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I checked whether the UI showed degraded, partial, stale, fallback, or configuration-required status.
+          required: true
+        - label: I did not include private data, secrets, or credentials.
+          required: true
