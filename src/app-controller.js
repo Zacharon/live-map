@@ -81,7 +81,7 @@ function classifyFetchError(error) {
   if (error?.name === "AbortError") return "timeout";
   const message = String(error?.message || "");
   if (/JSON|Unexpected token/i.test(message)) return "non-json-response";
-  if (/API 5|Function/i.test(message)) return "netlify-function-unavailable";
+  if (/API 5|Function/i.test(message)) return "event-api-unavailable";
   if (/Failed to fetch|NetworkError|ERR_NAME_NOT_RESOLVED|Name not resolved|Load failed/i.test(message)) return "dns-network-failure";
   if (/API [4-5]\d\d|USGS [4-5]\d\d/i.test(message)) return "http-error";
   return "request-failure";
@@ -95,8 +95,8 @@ function safeFailureMessage(kind) {
       return "Event data request timed out. Existing map and filters are still usable.";
     case "non-json-response":
       return "Event API returned a non-JSON response.";
-    case "netlify-function-unavailable":
-      return "Netlify Function unavailable. Event data temporarily unavailable.";
+    case "event-api-unavailable":
+      return "Event API unavailable. Event data temporarily unavailable.";
     case "dns-network-failure":
       return "DNS or network request failed. Event data temporarily unavailable.";
     case "http-error":
@@ -147,7 +147,7 @@ async function directFallback() {
     generatedAt: Date.now(),
     sources: ["USGS direct fallback"],
     sourceStatus: { usgs: { ok: true, count: data.features.length, message: "Direct fallback" } },
-    errors: ["Netlify Function was unavailable, so the browser loaded USGS directly."],
+    errors: ["Event API was unavailable, so the browser loaded USGS directly."],
     mode: "fallback",
   };
 }
@@ -533,7 +533,7 @@ export function bootLiveMap() {
         if (!contentType.includes("json")) throw new Error("Non-JSON event API response");
         result = await response.json();
       } catch (apiError) {
-        console.warn("Netlify function unavailable; using direct USGS fallback.", apiError);
+        console.warn("Event API unavailable; using direct USGS fallback.", apiError);
         try {
           result = await directFallback();
         } catch (fallbackError) {
