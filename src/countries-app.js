@@ -1,4 +1,6 @@
 import { escapeHtml, relativeTime } from "./events/event-normalizer.js";
+import { countryByCode } from "./data/countries.js";
+import { allowedParam, countryParam, safeSearchParams, textParam } from "./url-params.js";
 
 const SORTS = [
   ["score-desc", "Score high to low"],
@@ -25,7 +27,7 @@ const els = {
 let scores = [];
 
 function params() {
-  return new URLSearchParams(window.location.search);
+  return safeSearchParams(window.location.search);
 }
 
 function setParam(key, value) {
@@ -36,15 +38,15 @@ function setParam(key, value) {
 }
 
 function selectedCode() {
-  return (params().get("country") || "").toUpperCase();
+  return countryParam(params(), "country", countryByCode);
 }
 
 function initializeControls() {
   els.sort.innerHTML = SORTS.map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
-  els.sort.value = params().get("sort") || "score-desc";
-  els.search.value = params().get("q") || "";
-  els.confidence.value = params().get("confidence") || "";
-  els.completeness.value = params().get("completeness") || "";
+  els.sort.value = allowedParam(params(), "sort", SORTS.map(([value]) => value), "score-desc");
+  els.search.value = textParam(params(), "q", "", 120);
+  els.confidence.value = allowedParam(params(), "confidence", ["50", "70"], "");
+  els.completeness.value = allowedParam(params(), "completeness", ["50", "70"], "");
 }
 
 function fillFilters() {
@@ -52,8 +54,8 @@ function fillFilters() {
   const levels = [...new Set(scores.map((score) => score.level).filter(Boolean))].sort();
   els.region.innerHTML = '<option value="">All regions</option>' + regions.map((region) => `<option value="${escapeHtml(region)}">${escapeHtml(region)}</option>`).join("");
   els.level.innerHTML = '<option value="">All levels</option>' + levels.map((level) => `<option value="${escapeHtml(level)}">${escapeHtml(level)}</option>`).join("");
-  els.region.value = params().get("region") || "";
-  els.level.value = params().get("level") || "";
+  els.region.value = allowedParam(params(), "region", regions);
+  els.level.value = allowedParam(params(), "level", levels);
 }
 
 function filteredScores() {

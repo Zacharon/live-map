@@ -1,3 +1,5 @@
+import { ApiInputError, apiErrorResponse, parseJsonBody } from "../../../src/api/request-validation.js";
+
 export function jsonResponse(data, options = {}) {
   const generatedAt = Date.now();
   const body = {
@@ -19,8 +21,13 @@ export function jsonResponse(data, options = {}) {
 
 export async function parseJson(request) {
   try {
-    return await request.json();
-  } catch {
-    return {};
+    return await parseJsonBody(request);
+  } catch (error) {
+    if (error instanceof ApiInputError) return { __apiInputResponse: apiErrorResponse(error) };
+    return { __apiInputResponse: apiErrorResponse(new ApiInputError(400, "malformed-json", "Request body must be valid JSON.")) };
   }
+}
+
+export function jsonInputErrorResponse(parsed) {
+  return parsed?.__apiInputResponse || null;
 }

@@ -1,5 +1,6 @@
 import { orchestrateProviders } from "../data/providers/orchestrator.js";
 import { EVENT_PROVIDERS } from "../data/providers/registry.js";
+import { parseHoursParam } from "./request-validation.js";
 
 const headers = {
   "content-type": "application/json; charset=utf-8",
@@ -70,14 +71,13 @@ function sanitizeStatus(providerId, status = {}, result = {}) {
   };
 }
 
-function parseHours(request) {
-  const url = new URL(request.url);
-  return Math.min(720, Math.max(24, Number(url.searchParams.get("hours") || 168)));
-}
-
 export async function createProviderHealthResponse(request, options = {}) {
+  if (request.method === "OPTIONS") return new Response("", { status: 204, headers });
+  if (request.method !== "GET") return jsonResponse(null, { status: 405, errors: ["Use GET for provider health."] });
+  const warnings = [];
   const result = await withRuntimeEnv(options.env, async () => {
-    const hours = parseHours(request);
+    const url = new URL(request.url);
+    const hours = parseHoursParam(url.searchParams, warnings);
     return orchestrateProviders({ hours, now: Date.now(), env: options.env });
   });
   const resultByProvider = Object.fromEntries((result.providerResults || []).map((item) => [item.providerId, item]));
@@ -89,6 +89,6 @@ export async function createProviderHealthResponse(request, options = {}) {
     note: "Technical diagnostics are sanitized and not a security boundary.",
   }, {
     sourceStatus: result.sourceStatus,
-    warnings: result.errors || [],
+    warnings: [...warnings, ...(result.errors || [])],
   });
 }

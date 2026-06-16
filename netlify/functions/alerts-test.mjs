@@ -1,4 +1,4 @@
-import { jsonResponse, parseJson } from "./lib/response.mjs";
+import { jsonInputErrorResponse, jsonResponse, parseJson } from "./lib/response.mjs";
 
 function validateRule(rule) {
   const errors = [];
@@ -12,6 +12,8 @@ export default async (request) => {
     return jsonResponse(null, { status: 405, errors: ["Use POST to test alert rules."] });
   }
   const rule = await parseJson(request);
+  const inputError = jsonInputErrorResponse(rule);
+  if (inputError) return inputError;
   const errors = validateRule(rule);
   return jsonResponse({
     valid: errors.length === 0,

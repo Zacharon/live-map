@@ -58,28 +58,31 @@ import countriesFunction from "../netlify/functions/countries.mjs";
 import countryRiskFunction from "../netlify/functions/country-risk.mjs";
 import providerHealthFunction from "../netlify/functions/provider-health.mjs";
 import movingObjectsFunction from "../netlify/functions/moving-objects.mjs";
+import briefsFunction from "../netlify/functions/briefs.mjs";
+import alertsTestFunction from "../netlify/functions/alerts-test.mjs";
 import { validateProviderSourceLinks } from "../src/sources/provider-source-links.js";
+import worker from "../src/worker.js";
+import { allowedParam, countryParam, listParam, safeSearchParams, textParam, tokenParam } from "../src/url-params.js";
 
 const pendingTests = [];
 
 function test(name, fn) {
+  pendingTests.push({ name, fn });
+}
+
+async function runPendingTests() {
+  for (const { name, fn } of pendingTests) {
   try {
     const result = fn();
     if (result && typeof result.then === "function") {
-      pendingTests.push(
-        result
-          .then(() => console.log(`ok - ${name}`))
-          .catch((error) => {
-            console.error(`not ok - ${name}`);
-            throw error;
-          })
-      );
+      await result;
     } else {
-      console.log(`ok - ${name}`);
     }
+    console.log(`ok - ${name}`);
   } catch (error) {
     console.error(`not ok - ${name}`);
     throw error;
+  }
   }
 }
 
@@ -445,6 +448,18 @@ test("Source API returns JSON envelope, filters, and invalid source warnings", a
   assert.equal(gdacsBody.data.selectedSource.adapterId, "gdacs");
 });
 
+test("Source API sanitizes malformed filter params without breaking read-only access", async () => {
+  const response = await sourcesFunction(new Request("https://liveworldmap.netlify.app/api/sources?domain=<script>&access=not-real&status=planned&q=%00aviation&source=bad/source"));
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.filters.domain, "");
+  assert.equal(body.filters.accessMode, "");
+  assert.equal(body.filters.status, "planned");
+  assert.equal(body.filters.q, "aviation");
+  assert.equal(body.filters.source, "");
+  assert.ok(Array.isArray(body.data.sources));
+});
+
 test("Country APIs support lookup, filtering, and distribution metadata", async () => {
   const lookup = await countriesFunction(new Request("https://liveworldmap.netlify.app/api/countries?country=UKR"));
   assert.equal(lookup.status, 200);
@@ -522,6 +537,11 @@ test("Moving-object API rejects global requests and reports configuration-requir
   assert.equal(body.data.providerStatus.opensky.status, "configuration-required");
   assert.equal(body.data.providerStatus["global-fishing-watch"].status, "configuration-required");
   assert.equal(body.data.truncated, false);
+
+  const invalidLimit = await movingObjectsFunction(new Request("https://liveworldmap.netlify.app/api/moving-objects?type=aircraft&bbox=40,-74,41,-73&limit=not-a-number"));
+  assert.equal(invalidLimit.status, 200);
+  const invalidLimitBody = await invalidLimit.json();
+  assert.equal(invalidLimitBody.data.truncated, false);
 });
 
 test("Events API preserves recordKind/domain filters", async () => {
@@ -545,6 +565,40 @@ test("Events API preserves recordKind/domain filters", async () => {
     assert.equal(body.filters.recordKind, "event");
     assert.ok(body.events.length >= 1);
     assert.ok(body.events.every((event) => event.recordKind === "event" && event.domain === "natural-disaster"));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("Events API clamps invalid hours and ignores invalid filters safely", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("earthquake.usgs.gov")) {
+      return new Response(JSON.stringify({
+        features: [{
+          id: "api-invalid-hours-safe",
+          properties: { mag: 5.1, time: Date.now(), updated: Date.now(), url: "https://earthquake.usgs.gov/earthquakes/eventpage/api-invalid-hours-safe", place: "Japan" },
+          geometry: { type: "Point", coordinates: [140, 35, 5] },
+        }],
+      }), { status: 200 });
+    }
+    return new Response("unavailable", { status: 503 });
+  };
+  try {
+    const response = await eventsFunction(new Request("https://liveworldmap.netlify.app/api/events?hours=banana&recordKind=bad&domain=bad&verification=bad&country=<x>"));
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.ok(Array.isArray(body.events));
+    assert.equal(body.filters.recordKind, null);
+    assert.equal(body.filters.domain, null);
+    assert.equal(body.filters.verification, null);
+    assert.equal(body.filters.country, null);
+    assert.ok(body.warnings.some((warning) => warning.includes("Invalid hours")));
+
+    const clamped = await eventsFunction(new Request("https://liveworldmap.netlify.app/api/events?hours=999999"));
+    assert.equal(clamped.status, 200);
+    const clampedBody = await clamped.json();
+    assert.ok(clampedBody.warnings.some((warning) => warning.includes("clamped")));
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -574,6 +628,88 @@ test("Events API preserves country filters", async () => {
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("POST APIs reject malformed and oversized JSON bodies", async () => {
+  const malformed = await briefsFunction(new Request("https://liveworldmap.netlify.app/api/briefs", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "{not-json",
+  }));
+  assert.equal(malformed.status, 400);
+  const malformedBody = await malformed.json();
+  assert.equal(malformedBody.error, "malformed-json");
+
+  const wrongType = await alertsTestFunction(new Request("https://liveworldmap.netlify.app/api/alerts/test", {
+    method: "POST",
+    headers: { "content-type": "text/plain" },
+    body: JSON.stringify({ name: "Rule", conditions: {} }),
+  }));
+  assert.equal(wrongType.status, 400);
+
+  const oversized = await alertsTestFunction(new Request("https://liveworldmap.netlify.app/api/alerts/test", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name: "Rule", conditions: {}, padding: "x".repeat(20_000) }),
+  }));
+  assert.equal(oversized.status, 413);
+
+  const valid = await alertsTestFunction(new Request("https://liveworldmap.netlify.app/api/alerts/test", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name: "Rule", conditions: { severity: "high" } }),
+  }));
+  assert.equal(valid.status, 200);
+});
+
+test("Cloudflare worker returns safe JSON errors for unknown and oversized API requests", async () => {
+  const env = { ASSETS: { fetch: async () => new Response("asset") } };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("earthquake.usgs.gov")) {
+      return new Response(JSON.stringify({
+        features: [{
+          id: "worker-events-route",
+          properties: { mag: 4.9, time: Date.now(), updated: Date.now(), url: "https://earthquake.usgs.gov/earthquakes/eventpage/worker-events-route", place: "Japan" },
+          geometry: { type: "Point", coordinates: [140, 35, 5] },
+        }],
+      }), { status: 200 });
+    }
+    return new Response("unavailable", { status: 503 });
+  };
+  try {
+    const events = await worker.fetch(new Request("https://live-map.example/api/events?hours=168"), env);
+    assert.equal(events.status, 200);
+    assert.match(events.headers.get("content-type"), /json/);
+    const eventsBody = await events.json();
+    assert.ok(Array.isArray(eventsBody.events));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  const missing = await worker.fetch(new Request("https://live-map.example/api/not-real-route"), env);
+  assert.equal(missing.status, 404);
+  assert.match(missing.headers.get("content-type"), /json/);
+  const missingBody = await missing.json();
+  assert.equal(missingBody.error, "not-found");
+
+  const oversized = await worker.fetch(new Request("https://live-map.example/api/events", {
+    method: "POST",
+    headers: { "content-length": "20000", "content-type": "application/json" },
+    body: "{}",
+  }), env);
+  assert.equal(oversized.status, 413);
+  const oversizedBody = await oversized.json();
+  assert.equal(oversizedBody.error, "payload-too-large");
+});
+
+test("Frontend URL param helpers sanitize malformed bookmarked params", () => {
+  const params = safeSearchParams("?dashboard=<script>&q=%00Japan%20%20&domains=weather,<bad>,aviation&country=jpn&source=gdacs-alerts&sort=nope");
+  assert.equal(textParam(params, "q"), "Japan");
+  assert.deepEqual([...listParam(params, "domains", ["weather", "aviation"])], ["weather", "aviation"]);
+  assert.equal(countryParam(params, "country", countryByCode), "JPN");
+  assert.equal(tokenParam(params, "source"), "gdacs-alerts");
+  assert.equal(allowedParam(params, "sort", ["score-desc"], "score-desc"), "score-desc");
 });
 
 test("Events API output survives default Explore frontend filters", async () => {
@@ -1241,5 +1377,5 @@ test("Source registry covers every top-level domain with non-live planned states
   assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "acled" && provider.credentialRequired));
 });
 
-await Promise.all(pendingTests);
+await runPendingTests();
 console.log("All tests passed.");
