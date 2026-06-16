@@ -1,3 +1,5 @@
+import { apiBodyLimitBytes, apiContentLength, checkApiRateLimit, jsonPayloadTooLargeResponse, jsonRateLimitResponse } from "./api/rate-limit.js";
+
 function installCloudflareEnv(env) {
   if (!env || typeof env !== "object") return;
   const currentProcess = globalThis.process || {};
@@ -52,6 +54,16 @@ function assetAliasRequest(request, pathname) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith("/api/")) {
+      const declaredLength = apiContentLength(request);
+      if (declaredLength != null && declaredLength > apiBodyLimitBytes(env)) {
+        return jsonPayloadTooLargeResponse();
+      }
+
+      const rateLimit = checkApiRateLimit(request, env);
+      if (!rateLimit.allowed) return jsonRateLimitResponse(rateLimit);
+    }
 
     if (url.pathname === "/api/events") {
       return eventsResponse(request, env);

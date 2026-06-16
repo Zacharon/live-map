@@ -35,6 +35,9 @@ Manual paths are documented in `docs/GITHUB_WORKFLOW.md`.
 - Store provider credentials only in Cloudflare environment variables or bindings.
 - Do not put secrets in frontend files, docs, screenshots, fixtures, or `.env.example`.
 - Keep `/api/*` provider integrations server-side.
+- Keep Worker `/api/*` abuse protection enabled. Public API limits must fail closed with JSON `429` and must not require paid-only Cloudflare services by default.
+- Reject oversized Worker `/api/*` requests with JSON `413` before expensive route handling.
+- There are no first-party auth or login routes today. If one is added, enforce a stricter max 5 attempts per 15 minutes per IP/client key.
 - Sanitize provider errors before returning them to browser clients.
 - Return JSON 404 for unknown API routes instead of frontend HTML.
 - Deploy production only from `main` through the approved connected-build flow.
