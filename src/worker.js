@@ -43,6 +43,12 @@ async function providerHealthResponse(request, env) {
   });
 }
 
+function assetAliasRequest(request, pathname) {
+  const url = new URL(request.url);
+  url.pathname = pathname;
+  return new Request(url, request);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -67,6 +73,10 @@ export default {
         },
         404
       );
+    }
+
+    if (url.pathname === "/sources") {
+      return env.ASSETS.fetch(assetAliasRequest(request, "/source-explorer.html"));
     }
 
     return env.ASSETS.fetch(request);

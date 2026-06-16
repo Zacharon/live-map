@@ -110,7 +110,7 @@ export async function fetchEiaEvents(context = {}) {
       observations: [],
       status: "configuration-required",
       warnings: ["EIA_API_KEY is required before EIA can be queried."],
-      safeError: "EIA is not configured. Add EIA_API_KEY in Netlify environment variables.",
+      safeError: "EIA is not configured. Add EIA_API_KEY in server environment variables.",
       requestAttempted: false,
     };
   }
