@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Live Map limits, data safety, and source transparency." />
+  <title>About / Limits - Live Map</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="source-explorer.css" />
+</head>
+<body class="source-explorer-page about-page">
+  <div class="source-shell">
+    <header class="source-header">
+      <a class="brand source-brand" href="/"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>About / Limits</span></div></a>
+      <nav class="source-links" aria-label="About navigation">
+        <a href="/">Map</a>
+        <a href="/sources">Sources</a>
+        <a href="/about.html" aria-current="page">About / Limits</a>
+        <a href="/diagnostics">Diagnostics</a>
+      </nav>
+    </header>
+
+    <main class="source-workspace about-workspace">
+      <section class="about-hero">
+        <p class="dialog-kicker">Public data only</p>
+        <h1>Live Map shows source-linked public events, not certainty.</h1>
+        <p>Data may be delayed, incomplete, unavailable, duplicated, or corrected by the original publisher. Verify important details with the original source.</p>
+      </section>
+
+      <section class="about-grid" aria-label="Live Map limits">
+        <article>
+          <h2>Use Limits</h2>
+          <p>Live Map is public-information awareness software. It is not for emergency response, navigation, financial decisions, legal decisions, medical decisions, or professional risk advice.</p>
+        </article>
+        <article>
+          <h2>Source Status</h2>
+          <p>Provider status can be live, degraded, fallback, disabled, or unavailable. A partial feed can still show useful events while some public providers are down.</p>
+        </article>
+        <article>
+          <h2>Source Links</h2>
+          <p>Event cards should keep source attribution and original links visible. When a provider is unavailable, the app should say so instead of pretending coverage is complete.</p>
+        </article>
+        <article>
+          <h2>Free Data Rule</h2>
+          <p>The default project uses APIs, feeds, downloads, RSS/Atom, GeoJSON, CSV, or official bulk datasets. Paid providers, secrets, and licensed scraping are not part of the core demo.</p>
+        </article>
+      </section>
+
+      <section class="about-status-list" aria-label="Provider status meanings">
+        <h2>Status Meanings</h2>
+        <dl>
+          <dt>Live</dt><dd>The provider returned usable public data recently.</dd>
+          <dt>Degraded</dt><dd>The provider responded only partially, slowly, or with stale data.</dd>
+          <dt>Fallback</dt><dd>The app is using a simpler backup path so the map remains useful.</dd>
+          <dt>Disabled</dt><dd>The provider is intentionally off, usually because it is planned, gated, or not safe for default use.</dd>
+          <dt>Unavailable</dt><dd>The provider failed or returned no usable data for this refresh.</dd>
+        </dl>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,15 +1,17 @@
 export function sourceStatusText(result) {
   const statuses = result.sourceStatus || {};
   const values = Object.entries(statuses);
-  if (!values.length) return result.mode === "fallback" ? "USGS fallback" : "Live feed";
-  const live = values
-    .filter(([, status]) => status.ok && !status.stale)
-    .map(([key, status]) => `${key.toUpperCase()} ${status.count}`);
-  const stale = values
-    .filter(([, status]) => status.ok && status.stale)
-    .map(([key, status]) => `${key.toUpperCase()} stale ${status.count}`);
-  const failed = values.filter(([, status]) => !status.ok).map(([key]) => `${key.toUpperCase()} unavailable`);
-  return [...live, ...stale, ...failed].join(" - ");
+  if (!values.length) return result.mode === "fallback" ? "Fallback source active" : "Live feed connected";
+  const live = values.filter(([, status]) => status.ok && !status.stale).length;
+  const degraded = values.filter(([, status]) => (status.ok && status.stale) || status.status === "degraded").length;
+  const disabled = values.filter(([, status]) => status.status === "disabled" || status.status === "configuration-required").length;
+  const unavailable = values.filter(([, status]) => !status.ok && !["disabled", "configuration-required"].includes(status.status)).length;
+  const parts = [`${live} live`];
+  if (degraded) parts.push(`${degraded} degraded`);
+  if (unavailable) parts.push(`${unavailable} unavailable`);
+  if (disabled) parts.push(`${disabled} disabled or credential-gated`);
+  const prefix = result.mode === "fallback" ? "Fallback active" : result.systemStatus === "partial-data" ? "Partial public feed" : "Public feed";
+  return `${prefix}: ${parts.join(", ")}.`;
 }
 
 export function renderSourceHealth(element, result, errors = []) {

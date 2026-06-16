@@ -9,6 +9,7 @@ const { SEVERITIES } = await import("../src/config.js");
 const { CONSUMER_PRESETS, severitySetFromMinimum } = await import("../src/consumer/presets.js");
 const { normalizeEvent } = await import("../src/events/event-normalizer.js");
 const { filteredEvents } = await import("../src/events/event-filters.js");
+const { sourceStatusText } = await import("../src/ui/source-health.js");
 
 assert.equal(typeof eventsFunction.onRequest, "function", "functions/api/events.js must export onRequest(context)");
 assert.equal(typeof sourcesResponse.createSourcesResponse, "function", "src/api/sources-response.js must export createSourcesResponse(request)");
@@ -92,6 +93,10 @@ try {
   assert.ok(Array.isArray(healthBody.data.providers), "Cloudflare Worker /api/provider-health should expose providers");
   assert.ok(healthBody.data.providers.some((provider) => provider.providerId === "usgs" && provider.ok), "Provider health should report successful public providers");
   assert.doesNotMatch(JSON.stringify(healthBody), /private-upstream-body-should-not-leak/i, "Provider health must not leak raw upstream response bodies");
+
+  const sourceText = sourceStatusText(eventsBody);
+  assert.doesNotMatch(sourceText, /waiting for live feeds/i, "Source health text must not keep the waiting state after an API response");
+  assert.match(sourceText, /live|degraded|unavailable|fallback|disabled/i, "Source health text should expose user-facing status words");
 
   const missingRouteResponse = await worker.default.fetch(new Request("https://worker.test/api/unknown-route"), cloudflareEnv());
   assert.equal(missingRouteResponse.status, 404, "Cloudflare Worker unknown /api/* routes should return 404");

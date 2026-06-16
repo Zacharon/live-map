@@ -61,6 +61,13 @@ body.source-explorer-page {
   border-color: var(--accent);
 }
 
+.source-links a[aria-current="page"] {
+  color: #061018;
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 900;
+}
+
 .source-workspace {
   max-width: 1440px;
   margin: 0 auto;
@@ -299,6 +306,55 @@ body.source-explorer-page {
   gap: 8px;
 }
 
+.about-workspace {
+  display: grid;
+  gap: 16px;
+}
+
+.about-hero,
+.about-grid article,
+.about-status-list {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 16px;
+}
+
+.about-hero h1,
+.about-grid h2,
+.about-status-list h2 {
+  margin: 0 0 8px;
+}
+
+.about-hero p,
+.about-grid p,
+.about-status-list dd {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.about-status-list dl {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 8px 12px;
+  margin: 0;
+}
+
+.about-status-list dt {
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.about-status-list dd {
+  margin: 0;
+}
+
 @media (max-width: 920px) {
   .source-header {
     align-items: flex-start;
@@ -327,7 +383,9 @@ body.source-explorer-page {
 @media (max-width: 560px) {
   .source-filter-grid,
   .source-summary,
-  .source-detail-grid {
+  .source-detail-grid,
+  .about-grid,
+  .about-status-list dl {
     grid-template-columns: 1fr;
   }
 }
