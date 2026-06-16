@@ -47,7 +47,7 @@ Workers routing:
 
 - `wrangler.toml` points `main` to `src/worker.js`.
 - `[assets]` publishes the repository root (`.`) through the `ASSETS` binding.
-- `run_worker_first = ["/api/*"]` makes API routes enter the Worker before static asset lookup.
+- `run_worker_first = ["/api/*", "/sources"]` makes API routes and the Source Explorer alias enter the Worker before static asset lookup.
 - `src/worker.js` handles `/api/events` by calling the shared `src/api/events-response.js` response builder with Cloudflare `env` bindings.
 - `src/worker.js` handles `/api/sources` by calling the shared `src/api/sources-response.js` response builder.
 - `src/worker.js` handles `/api/provider-health` by calling the shared `src/api/provider-health-response.js` response builder with Cloudflare `env` bindings.

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 
 const eventsFunction = await import("../functions/api/events.js");
 const sourcesResponse = await import("../src/api/sources-response.js");
@@ -13,6 +14,9 @@ assert.equal(typeof eventsFunction.onRequest, "function", "functions/api/events.
 assert.equal(typeof sourcesResponse.createSourcesResponse, "function", "src/api/sources-response.js must export createSourcesResponse(request)");
 assert.equal(typeof providerHealthResponse.createProviderHealthResponse, "function", "src/api/provider-health-response.js must export createProviderHealthResponse(request, options)");
 assert.equal(typeof worker.default?.fetch, "function", "src/worker.js must export a default fetch handler");
+
+const wranglerConfig = await readFile(new URL("../wrangler.toml", import.meta.url), "utf8");
+assert.match(wranglerConfig, /run_worker_first\s*=\s*\[[^\]]*"\/api\/\*"[^\]]*"\/sources"[^\]]*\]/, "wrangler.toml must route /api/* and /sources through the Worker before static assets");
 
 const originalFetch = globalThis.fetch;
 
