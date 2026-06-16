@@ -1,10 +1,12 @@
-import { jsonResponse, parseJson } from "./lib/response.mjs";
+import { jsonInputErrorResponse, jsonResponse, parseJson } from "./lib/response.mjs";
 
 export default async (request) => {
   if (request.method !== "POST") {
     return jsonResponse(null, { status: 405, errors: ["Use POST for AI brief requests."] });
   }
   const body = await parseJson(request);
+  const inputError = jsonInputErrorResponse(body);
+  if (inputError) return inputError;
   return jsonResponse({
     briefType: body.briefType || "global",
     enabled: false,

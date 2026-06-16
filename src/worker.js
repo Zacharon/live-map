@@ -1,3 +1,5 @@
+import { ApiInputError, MAX_JSON_BODY_BYTES, apiErrorResponse, contentLength } from "./api/request-validation.js";
+
 function installCloudflareEnv(env) {
   if (!env || typeof env !== "object") return;
   const currentProcess = globalThis.process || {};
@@ -43,6 +45,16 @@ async function providerHealthResponse(request, env) {
   });
 }
 
+async function safeApiResponse(callback) {
+  try {
+    return await callback();
+  } catch (error) {
+    return apiErrorResponse(error, {
+      "access-control-allow-origin": "*",
+    });
+  }
+}
+
 function assetAliasRequest(request, pathname) {
   const url = new URL(request.url);
   url.pathname = pathname;
@@ -52,17 +64,23 @@ function assetAliasRequest(request, pathname) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const length = contentLength(request);
+    if (url.pathname.startsWith("/api/") && length != null && length > MAX_JSON_BODY_BYTES) {
+      return apiErrorResponse(new ApiInputError(413, "payload-too-large", "Request body is too large."), {
+        "access-control-allow-origin": "*",
+      });
+    }
 
     if (url.pathname === "/api/events") {
-      return eventsResponse(request, env);
+      return safeApiResponse(() => eventsResponse(request, env));
     }
 
     if (url.pathname === "/api/sources") {
-      return sourcesResponse(request);
+      return safeApiResponse(() => sourcesResponse(request));
     }
 
     if (url.pathname === "/api/provider-health") {
-      return providerHealthResponse(request, env);
+      return safeApiResponse(() => providerHealthResponse(request, env));
     }
 
     if (url.pathname.startsWith("/api/")) {

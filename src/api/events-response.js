@@ -2,6 +2,8 @@ import { EVENT_PROVIDERS } from "../data/providers/registry.js";
 import { orchestrateProviders } from "../data/providers/orchestrator.js";
 import { DOMAIN_SOURCE_STATUS, PROVIDER_SOURCE_REGISTRY } from "../data/providers/source-registry.js";
 import { countryByCode, countryForEvent } from "../data/countries.js";
+import { parseHoursParam, sanitizeCountryCode, allowedValue } from "./request-validation.js";
+import { SOURCE_DOMAINS, VERIFICATION_STATES } from "../sources/master-source-registry.js";
 
 const headers = {
   "content-type": "application/json; charset=utf-8",
@@ -51,18 +53,24 @@ const sourceRegistry = Object.fromEntries(
   ])
 );
 
-function parseHours(request) {
-  const url = new URL(request.url);
-  return Math.min(720, Math.max(24, Number(url.searchParams.get("hours") || 168)));
-}
+const EVENT_RECORD_KINDS = ["event", "discovery-lead", "observation", "moving-object"];
+const EVENT_DOMAINS = [...SOURCE_DOMAINS, "other"];
 
-function parseApiFilters(request) {
+function parseApiParams(request) {
   const url = new URL(request.url);
+  const warnings = [];
+  const country = sanitizeCountryCode(url.searchParams.get("country"));
+  const normalizedCountry = countryByCode(country)?.iso3 || null;
+  if (country && !normalizedCountry) warnings.push("Invalid country filter ignored.");
   return {
-    recordKind: url.searchParams.get("recordKind") || null,
-    verification: url.searchParams.get("verification") || null,
-    domain: url.searchParams.get("domain") || null,
-    country: url.searchParams.get("country") || null,
+    hours: parseHoursParam(url.searchParams, warnings),
+    filters: {
+      recordKind: allowedValue(url.searchParams.get("recordKind"), EVENT_RECORD_KINDS, null),
+      verification: allowedValue(url.searchParams.get("verification"), VERIFICATION_STATES, null),
+      domain: allowedValue(url.searchParams.get("domain"), EVENT_DOMAINS, null),
+      country: normalizedCountry,
+    },
+    warnings,
   };
 }
 
@@ -110,11 +118,11 @@ export function createEventsOptionsResponse() {
 
 export async function createEventsResponse(request, options = {}) {
   if (request.method === "OPTIONS") return createEventsOptionsResponse();
+  if (request.method !== "GET") return new Response(JSON.stringify({ error: "method-not-allowed", message: "Use GET for event feeds." }), { status: 405, headers: { ...headers, "cache-control": "no-store" } });
 
   try {
     const result = await withRuntimeEnv(options.env, async () => {
-      const hours = parseHours(request);
-      const filters = parseApiFilters(request);
+      const { hours, filters, warnings } = parseApiParams(request);
       const generatedAt = Date.now();
       const providerResult = await orchestrateProviders({ hours, now: generatedAt, env: options.env });
       const canonicalEvents = applyApiFilters(providerResult.canonicalEvents, filters);
@@ -134,6 +142,7 @@ export async function createEventsResponse(request, options = {}) {
         systemStatus: providerResult.systemStatus,
         mode: responseMode(providerResult, options.runtimeMode),
         errors: providerResult.errors,
+        warnings,
       };
     });
 

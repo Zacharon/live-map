@@ -1,5 +1,8 @@
 import { DOMAIN_LABELS, IMPLEMENTATION_STATUSES, MASTER_SOURCE_REGISTRY, SOURCE_ACCESS_CLASSIFICATIONS, SOURCE_QUALITY_TIERS, filterSources, sourceById, sourceRegistryStats } from "./sources/master-source-registry.js";
 import { escapeHtml, relativeTime } from "./events/event-normalizer.js";
+import { GROUP_OPTIONS, SORT_OPTIONS } from "./events/feed-organization.js";
+import { DASHBOARDS } from "./data/dashboards.js";
+import { allowedParam, safeSearchParams, textParam, tokenParam } from "./url-params.js";
 
 const els = {
   search: document.getElementById("sourceSearch"),
@@ -69,15 +72,15 @@ function syncUrl(selectedId = state.selectedId, mode = "replace") {
 }
 
 function readUrl() {
-  const params = new URLSearchParams(location.search);
-  els.search.value = params.get("q") || "";
-  els.domain.value = params.get("domain") || "";
-  els.access.value = params.get("access") || params.get("accessMode") || "";
-  els.statusFilter.value = params.get("status") || "";
-  els.tierFilter.value = params.get("sourceTier") || "";
-  els.official.value = params.get("official") || "";
-  els.implemented.value = params.get("implemented") || "";
-  state.selectedId = params.get("source") || "";
+  const params = safeSearchParams(location.search);
+  els.search.value = textParam(params, "q", "", 120);
+  els.domain.value = allowedParam(params, "domain", Object.keys(DOMAIN_LABELS));
+  els.access.value = allowedParam(params, params.has("access") ? "access" : "accessMode", SOURCE_ACCESS_CLASSIFICATIONS);
+  els.statusFilter.value = allowedParam(params, "status", IMPLEMENTATION_STATUSES);
+  els.tierFilter.value = allowedParam(params, "sourceTier", SOURCE_QUALITY_TIERS);
+  els.official.value = allowedParam(params, "official", ["true", "false"]);
+  els.implemented.value = allowedParam(params, "implemented", ["true", "false"]);
+  state.selectedId = tokenParam(params, "source");
 }
 
 function badge(value, className = "") {
@@ -233,10 +236,16 @@ optionList(els.domain, Object.keys(DOMAIN_LABELS), DOMAIN_LABELS);
 optionList(els.access, SOURCE_ACCESS_CLASSIFICATIONS);
 optionList(els.statusFilter, IMPLEMENTATION_STATUSES);
 optionList(els.tierFilter, SOURCE_QUALITY_TIERS);
-const currentParams = new URLSearchParams(location.search);
+const currentParams = safeSearchParams(location.search);
 const dashboardParams = new URLSearchParams();
-for (const key of ["dashboard", "sort", "group", "cards"]) {
-  const value = currentParams.get(key);
+const passthrough = {
+  dashboard: DASHBOARDS.map((dashboard) => dashboard.id),
+  sort: SORT_OPTIONS.map(([value]) => value),
+  group: GROUP_OPTIONS.map(([value]) => value),
+  cards: ["compact", "expanded"],
+};
+for (const [key, allowed] of Object.entries(passthrough)) {
+  const value = allowedParam(currentParams, key, allowed);
   if (value) dashboardParams.set(key, value);
 }
 els.backToMap.href = `/${dashboardParams.toString() ? `?${dashboardParams}` : ""}`;

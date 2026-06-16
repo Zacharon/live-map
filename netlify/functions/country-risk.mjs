@@ -2,12 +2,14 @@ import { COUNTRIES } from "../../src/data/countries.js";
 import { computeCountryRiskScores } from "../../src/risk/country-risk.js";
 import { orchestrateProviders } from "../../src/data/providers/orchestrator.js";
 import { jsonResponse } from "./lib/response.mjs";
+import { parseHoursParam, sanitizeCountryCode } from "../../src/api/request-validation.js";
 
 export default async (request) => {
   const url = new URL(request.url);
-  const country = url.searchParams.get("country");
+  const country = sanitizeCountryCode(url.searchParams.get("country"));
+  const warnings = [];
   const now = Date.now();
-  const result = await orchestrateProviders({ hours: Math.min(720, Math.max(24, Number(url.searchParams.get("hours") || 168))), now });
+  const result = await orchestrateProviders({ hours: parseHoursParam(url.searchParams, warnings), now });
   let scores = computeCountryRiskScores(result.events || [], now, null, result.sourceStatus);
   if (country) {
     const code = country.toUpperCase();
@@ -23,6 +25,6 @@ export default async (request) => {
       liveEvents: { status: result.systemStatus, count: result.events?.length || 0 },
       ...result.sourceStatus,
     },
-    warnings: result.errors || [],
+    warnings: [...warnings, ...(result.errors || [])],
   });
 };

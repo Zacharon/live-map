@@ -1,46 +1,64 @@
 import { CONFIG, CATEGORIES, SEVERITIES } from "./config.js";
 import { getDashboard } from "./data/dashboards.js";
+import { countryByCode } from "./data/countries.js";
+import { GROUP_OPTIONS, SORT_OPTIONS } from "./events/feed-organization.js";
+import { domainOptions } from "./events/taxonomy.js";
+import { allowedParam, countryParam, listParam, safeSearchParams, textParam, tokenParam } from "./url-params.js";
+
+const params = safeSearchParams();
+const ACTIVE_AREAS = ["explore", "feed", "countries"];
+const CARD_MODES = ["compact", "expanded"];
+const TRACKING_MODES = ["aircraft", "vessels"];
+const SORT_IDS = SORT_OPTIONS.map(([value]) => value);
+const GROUP_IDS = GROUP_OPTIONS.map(([value]) => value);
+const DOMAIN_IDS = domainOptions().map((domain) => domain.id);
+
+function safeJsonArray(value) {
+  try {
+    const parsed = JSON.parse(value || "[]");
+    return Array.isArray(parsed) ? parsed.map((item) => String(item).slice(0, 120)) : [];
+  } catch {
+    return [];
+  }
+}
 
 function dashboardFromUrl() {
-  const params = new URLSearchParams(window.location.search);
   return getDashboard(params.get(CONFIG.dashboardQueryKey) || CONFIG.defaultDashboard).id;
 }
 
 function urlValue(key, fallback) {
-  const params = new URLSearchParams(window.location.search);
-  return params.get(key) || fallback;
+  return textParam(params, key, fallback);
 }
 
 function urlList(key) {
-  const value = urlValue(key, "");
-  return new Set(value.split(",").map((item) => item.trim()).filter(Boolean));
+  return listParam(params, key, DOMAIN_IDS);
 }
 
 export const state = {
-  activeArea: urlValue("view", "explore"),
-  interfaceMode: localStorage.getItem("live-map-interface-mode-v1") || "standard",
+  activeArea: allowedParam(params, "view", ACTIVE_AREAS, "explore"),
+  interfaceMode: ["standard", "advanced"].includes(localStorage.getItem("live-map-interface-mode-v1")) ? localStorage.getItem("live-map-interface-mode-v1") : "standard",
   leftDrawerOpen: localStorage.getItem("live-map-left-drawer-v1") === "open",
   rightDrawerOpen: localStorage.getItem("live-map-right-drawer-v1") !== "closed",
-  selectedPreset: localStorage.getItem("live-map-preset-v1") || "explore",
+  selectedPreset: tokenParam({ get: (key) => localStorage.getItem(key) }, "live-map-preset-v1", "explore"),
   onboardingComplete: localStorage.getItem("live-map-onboarding-v1") === "done",
   tracking: {
-    aircraft: urlValue("tracking", "") === "aircraft",
-    vessels: urlValue("tracking", "") === "vessels",
+    aircraft: allowedParam(params, "tracking", TRACKING_MODES, "") === "aircraft",
+    vessels: allowedParam(params, "tracking", TRACKING_MODES, "") === "vessels",
     airports: false,
     ports: false,
   },
   movingObjects: [],
   movingObjectStatus: {},
-  selectedMovingObjectId: urlValue("aircraft", "") || urlValue("vessel", "") || null,
+  selectedMovingObjectId: tokenParam(params, "aircraft", "", { maxLength: 80 }) || tokenParam(params, "vessel", "", { maxLength: 80 }) || null,
   dashboard: dashboardFromUrl(),
   events: [],
   categoriesByDashboard: new Map(),
   severitiesByDashboard: new Map(),
   queryByDashboard: new Map(),
   hours: 168,
-  sort: urlValue("sort", "highest-severity"),
-  groupBy: urlValue("group", "domain"),
-  cardMode: urlValue("cards", "compact"),
+  sort: allowedParam(params, "sort", SORT_IDS, "highest-severity"),
+  groupBy: allowedParam(params, "group", GROUP_IDS, "domain"),
+  cardMode: allowedParam(params, "cards", CARD_MODES, "compact"),
   lastLoaded: null,
   sources: [],
   sourceStatus: {},
@@ -58,9 +76,9 @@ export const state = {
   mapMode: "2d",
   ciiVisible: false,
   selectedEventId: null,
-  selectedCountryIso3: urlValue("country", "").toUpperCase() || null,
+  selectedCountryIso3: countryParam(params, "country", countryByCode) || null,
   sessionAlertHistory: [],
-  collapsedGroups: new Set(JSON.parse(localStorage.getItem("live-map-collapsed-groups-v1") || "[]")),
+  collapsedGroups: new Set(safeJsonArray(localStorage.getItem("live-map-collapsed-groups-v1"))),
   incidents: [],
 };
 
