@@ -318,6 +318,8 @@ Run the browser-side secret scan:
 
 npm run security:scan
 
+If local Node or npm commands fail in a Windows Codex shell, see docs/LOCAL_VALIDATION.md for the PATH repair and PowerShell `npm.cmd` fallback.
+
 Run the production smoke test:
 
 npm run smoke:production

@@ -19,6 +19,8 @@ npm run check:syntax
 npm run security:scan
 ```
 
+If Node or npm is unavailable locally, see `docs/LOCAL_VALIDATION.md` before falling back to GitHub Actions.
+
 Do not run production deploy commands from contributor or agent workflows.
 
 ## Adding A Public Data Source

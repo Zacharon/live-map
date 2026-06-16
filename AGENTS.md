@@ -69,3 +69,5 @@ For production or release changes, also run:
 npm run smoke:production
 npm run security:scan
 ```
+
+If a Windows Codex shell cannot find `npm` or resolves `node` to a blocked WindowsApps/Codex shim, follow `docs/LOCAL_VALIDATION.md` before treating GitHub Actions as the only source of validation.
