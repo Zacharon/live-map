@@ -51,7 +51,7 @@
 - OpenRouter
 - Supabase or Neon
 
-Credentials must be stored server-side through Netlify environment variables.
+Credentials must be stored server-side through Cloudflare or Netlify environment variables.
 
 See also:
 

@@ -155,7 +155,7 @@ export async function fetchSecEdgarEvents(context = {}) {
       rejected: [],
       status: "configuration-required",
       warnings: ["SEC_CONTACT_EMAIL is required for a compliant SEC EDGAR User-Agent."],
-      safeError: "SEC EDGAR is not configured. Add SEC_CONTACT_EMAIL in Netlify environment variables.",
+      safeError: "SEC EDGAR is not configured. Add SEC_CONTACT_EMAIL in server environment variables.",
       requestAttempted: false,
     };
   }

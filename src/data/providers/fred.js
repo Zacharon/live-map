@@ -113,7 +113,7 @@ export async function fetchFredEvents(context = {}) {
       observations: [],
       status: "configuration-required",
       warnings: ["FRED_API_KEY is required before FRED can be queried."],
-      safeError: "FRED is not configured. Add FRED_API_KEY in Netlify environment variables.",
+      safeError: "FRED is not configured. Add FRED_API_KEY in server environment variables.",
       requestAttempted: false,
     };
   }

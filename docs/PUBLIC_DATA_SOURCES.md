@@ -24,5 +24,6 @@ Live Map core mode uses only free, public, default-safe sources. A source can be
 - The core app must work without paid accounts or private credentials.
 - Keys and contact emails must stay server-side in Worker or Netlify environment variables.
 - Every event should carry provider identity, source URL when available, freshness, and degraded-state information.
+- `/api/sources` and `/api/provider-health` are the public trust layer for source registry status and sanitized provider health.
 - Public does not mean unrestricted. Review terms before enabling a new source.
 - Do not claim complete global coverage from partial public feeds.

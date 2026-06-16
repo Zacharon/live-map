@@ -131,7 +131,7 @@ export async function fetchReliefWebEvents(context) {
       rejected: [],
       status: "configuration-required",
       warnings: ["RELIEFWEB_APPNAME is required before ReliefWeb can be queried."],
-      safeError: "ReliefWeb is not configured. Add an approved RELIEFWEB_APPNAME in Netlify environment variables.",
+      safeError: "ReliefWeb is not configured. Add an approved RELIEFWEB_APPNAME in server environment variables.",
       requestAttempted: false,
     };
   }

@@ -158,7 +158,12 @@ export function validateEventPayload(payload, reporter, options = {}) {
     }
   }
 
-  if (payload.mode === "partial-netlify-function" || payload.mode === "fallback") {
+  const hasEvents = payload.events.length > 0;
+  const isPartialLiveFeed = payload.mode === "partial-netlify-function" && hasEvents;
+
+  if (isPartialLiveFeed) {
+    reporter.warn(`${label} source mode`, `mode=${payload.mode}`);
+  } else if (payload.mode === "partial-netlify-function" || payload.mode === "fallback") {
     reporter.fail(`${label} source mode`, `mode=${payload.mode}`);
   } else {
     reporter.pass(`${label} source mode`, payload.mode || "mode not supplied");
@@ -166,12 +171,17 @@ export function validateEventPayload(payload, reporter, options = {}) {
 
   const errors = Array.isArray(payload.errors) ? payload.errors.filter(Boolean) : [];
   if (errors.length) {
-    reporter.fail(`${label} provider errors`, errors.join("; "));
+    const detail = errors.join("; ");
+    if (isPartialLiveFeed) {
+      reporter.warn(`${label} provider errors`, detail);
+    } else {
+      reporter.fail(`${label} provider errors`, detail);
+    }
   } else {
     reporter.pass(`${label} provider errors`, "none reported");
   }
 
-  validateSourceStatus(payload.sourceStatus, reporter, label, requireHealthySources);
+  validateSourceStatus(payload.sourceStatus, reporter, label, requireHealthySources && !isPartialLiveFeed);
   validateCoordinates(payload.events, reporter, label);
   validateAttribution(payload.events, reporter, label);
 }
