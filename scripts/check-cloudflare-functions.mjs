@@ -22,7 +22,7 @@ function providerResponse(url) {
       features: [{
         id: "cloudflare-worker-visible",
         properties: {
-          mag: 6.1,
+          mag: 7.2,
           time: Date.now() - 60_000,
           updated: Date.now(),
           url: "https://earthquake.usgs.gov/earthquakes/eventpage/cloudflare-worker-visible",

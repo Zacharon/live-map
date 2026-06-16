@@ -21,7 +21,7 @@ const ignoredFiles = new Set([
 ]);
 
 const patterns = [
-  { name: "env file tracked", testPath: (relative) => /^\.env(?:\.|$)/.test(path.basename(relative)) },
+  { name: "env file tracked", testPath: (relative) => /^\.env(?:\.|$)/.test(path.basename(relative)) && path.basename(relative) !== ".env.example" },
   { name: "private key", pattern: /-----BEGIN (?:RSA |DSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/ },
   { name: "GitHub token", pattern: /gh[pousr]_[A-Za-z0-9_]{30,}/ },
   { name: "Cloudflare token assignment", pattern: /\b(?:CLOUDFLARE_API_TOKEN|CF_API_TOKEN)\b\s*[:=]\s*["']?[A-Za-z0-9._-]{30,}/i },
