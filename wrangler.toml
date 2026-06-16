@@ -3,6 +3,9 @@ main = "src/worker.js"
 compatibility_date = "2026-06-14"
 compatibility_flags = ["nodejs_compat"]
 
+# Public API abuse protection is implemented in src/api/rate-limit.js.
+# It intentionally uses no paid-only bindings so the Worker remains Free-compatible.
+
 [assets]
 directory = "."
 binding = "ASSETS"

@@ -2,6 +2,21 @@
 
 All upstream calls must be centralized server-side.
 
+## Public Cloudflare API Abuse Protection
+
+Cloudflare Worker `/api/*` routes use a lightweight fixed-window limiter in `src/api/rate-limit.js`.
+
+- Default public API limit: 120 requests per 60 seconds per client key and API path.
+- Client key: `CF-Connecting-IP` when Cloudflare provides it, then local-development fallbacks.
+- Failure mode: JSON `429` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`.
+- Oversized request behavior: `/api/*` requests with `Content-Length` above 16 KiB are rejected with JSON `413` before route handling.
+- Compatibility: no KV, D1, Durable Object, database, secret, or paid-only Cloudflare feature is required.
+- Tuning: set non-secret Worker variables `API_RATE_LIMIT_REQUESTS`, `API_RATE_LIMIT_WINDOW_SECONDS`, or `API_MAX_BODY_BYTES` if the production traffic profile needs adjustment.
+
+This is best-effort per Worker isolate. It is intentionally Free-compatible and does not claim globally consistent enforcement across the Cloudflare edge. If the project later adopts Cloudflare-native Rate Limiting bindings or WAF rate limiting rules, keep those controls optional and documented rather than required defaults.
+
+There are currently no first-party auth or login API routes. No auth-specific 5-attempts-per-15-minutes limiter was added because there is no auth route to protect. If an auth endpoint is introduced, it must add a stricter max 5 attempts per 15 minutes per IP/client key before merge.
+
 Provider adapters should use:
 
 - timeouts

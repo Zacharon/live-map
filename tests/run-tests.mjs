@@ -59,27 +59,27 @@ import countryRiskFunction from "../netlify/functions/country-risk.mjs";
 import providerHealthFunction from "../netlify/functions/provider-health.mjs";
 import movingObjectsFunction from "../netlify/functions/moving-objects.mjs";
 import { validateProviderSourceLinks } from "../src/sources/provider-source-links.js";
+import worker from "../src/worker.js";
+import { resetApiRateLimiterForTests } from "../src/api/rate-limit.js";
 
 const pendingTests = [];
 
 function test(name, fn) {
+  pendingTests.push({ name, fn });
+}
+
+async function runPendingTests() {
+  for (const { name, fn } of pendingTests) {
   try {
     const result = fn();
     if (result && typeof result.then === "function") {
-      pendingTests.push(
-        result
-          .then(() => console.log(`ok - ${name}`))
-          .catch((error) => {
-            console.error(`not ok - ${name}`);
-            throw error;
-          })
-      );
-    } else {
-      console.log(`ok - ${name}`);
+      await result;
     }
+    console.log(`ok - ${name}`);
   } catch (error) {
     console.error(`not ok - ${name}`);
     throw error;
+  }
   }
 }
 
@@ -522,6 +522,44 @@ test("Moving-object API rejects global requests and reports configuration-requir
   assert.equal(body.data.providerStatus.opensky.status, "configuration-required");
   assert.equal(body.data.providerStatus["global-fishing-watch"].status, "configuration-required");
   assert.equal(body.data.truncated, false);
+});
+
+test("Cloudflare Worker rate limits public API routes with JSON 429", async () => {
+  resetApiRateLimiterForTests();
+  const env = {
+    API_RATE_LIMIT_REQUESTS: "2",
+    API_RATE_LIMIT_WINDOW_SECONDS: "60",
+    ASSETS: { fetch: async () => new Response("asset") },
+  };
+  const headers = { "cf-connecting-ip": "203.0.113.10" };
+  const first = await worker.fetch(new Request("https://worker.test/api/not-real-route", { headers }), env);
+  const second = await worker.fetch(new Request("https://worker.test/api/not-real-route", { headers }), env);
+  const limited = await worker.fetch(new Request("https://worker.test/api/not-real-route", { headers }), env);
+  assert.equal(first.status, 404);
+  assert.equal(second.status, 404);
+  assert.equal(limited.status, 429);
+  assert.match(limited.headers.get("content-type") || "", /json/);
+  assert.equal(limited.headers.get("retry-after"), "60");
+  const body = await limited.json();
+  assert.equal(body.error, "rate-limited");
+});
+
+test("Cloudflare Worker rejects oversized API requests before route handling", async () => {
+  const response = await worker.fetch(new Request("https://worker.test/api/events", {
+    method: "POST",
+    headers: {
+      "cf-connecting-ip": "203.0.113.11",
+      "content-length": "20000",
+      "content-type": "application/json",
+    },
+    body: "{}",
+  }), {
+    ASSETS: { fetch: async () => new Response("asset") },
+  });
+  assert.equal(response.status, 413);
+  assert.match(response.headers.get("content-type") || "", /json/);
+  const body = await response.json();
+  assert.equal(body.error, "payload-too-large");
 });
 
 test("Events API preserves recordKind/domain filters", async () => {
@@ -1241,5 +1279,5 @@ test("Source registry covers every top-level domain with non-live planned states
   assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "acled" && provider.credentialRequired));
 });
 
-await Promise.all(pendingTests);
+await runPendingTests();
 console.log("All tests passed.");
