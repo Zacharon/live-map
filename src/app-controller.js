@@ -254,13 +254,16 @@ function renderCountDebug() {
 }
 
 function updateSourcesLink(element) {
-  if (!element) return;
   const params = new URLSearchParams();
   params.set("dashboard", state.dashboard);
   params.set("sort", state.sort);
   params.set("group", state.groupBy);
   params.set("cards", state.cardMode);
-  element.href = `/sources?${params.toString()}`;
+  const href = `/sources?${params.toString()}`;
+  if (element) element.href = href;
+  document.querySelectorAll("[data-sources-link]").forEach((link) => {
+    link.href = href;
+  });
 }
 
 function renderStats(els, events) {
@@ -288,9 +291,11 @@ function renderPublicDataStatus() {
   const statuses = Object.values(state.sourceStatus || {});
   const available = statuses.filter((status) => status.ok).length;
   const stale = statuses.filter((status) => status.stale || status.status === "degraded").length;
+  const disabled = statuses.filter((status) => status.status === "disabled" || status.status === "configuration-required").length;
+  const unavailable = statuses.filter((status) => !status.ok && !["disabled", "configuration-required"].includes(status.status)).length;
   const label = state.systemStatus === "operational" ? "Operational" : state.systemStatus === "partial-data" ? "Some data delayed" : state.systemStatus === "major-provider-outage" ? "Offline" : "Some data delayed";
   const tools = state.interfaceMode === "advanced" ? '<p><a href="/diagnostics">Technical diagnostics</a></p>' : "";
-  return `<strong>Data status</strong><p>${escapeHtml(label)}. Last refreshed ${state.lastLoaded ? escapeHtml(relativeTime(state.lastLoaded)) : "never"}. ${available} of ${statuses.length || state.sources.length || 0} sources available. ${stale} stale or delayed.</p>${tools}`;
+  return `<strong>Public data status</strong><p>${escapeHtml(label)}. Last refreshed ${state.lastLoaded ? escapeHtml(relativeTime(state.lastLoaded)) : "never"}. ${available} live, ${stale} degraded, ${unavailable} unavailable, ${disabled} disabled or credential-gated.</p><p>Public data only. May be delayed or incomplete. Verify with original sources; not for emergency or professional decisions.</p>${tools}`;
 }
 
 function renderRiskTable(scores) {
@@ -483,11 +488,15 @@ export function bootLiveMap() {
 
   function renderNav() {
     const items = [
-      ["explore", "Explore"],
+      ["explore", "Map"],
       ["feed", "Live Feed"],
+      ["sources", "Sources"],
+      ["limits", "About / Limits"],
       ["countries", "Country Scores"],
     ];
     els.dashboardNav.innerHTML = items.map(([id, label]) => {
+      if (id === "sources") return `<a class="dashboard-tab" href="/sources" data-sources-link>${label}</a>`;
+      if (id === "limits") return `<a class="dashboard-tab" href="/about.html">${label}</a>`;
       if (id === "countries") return `<a class="dashboard-tab ${state.activeArea === id ? "active" : ""}" href="/countries">${label}</a>`;
       return `<button class="dashboard-tab ${state.activeArea === id ? "active" : ""}" data-area="${id}" type="button">${label}</button>`;
     }).join("");

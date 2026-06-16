@@ -6,6 +6,22 @@ import { filterSources } from "../src/sources/master-source-registry.js";
 const html = await readFile(new URL("../source-explorer.html", import.meta.url), "utf8");
 assert.match(html, /src\/source-explorer-app\.js/);
 assert.match(html, /source-explorer\.css/);
+assert.match(html, /About \/ Limits/);
+assert.match(html, /href="\/sources" aria-current="page"/);
+
+const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
+assert.match(index, /data-sources-link/);
+assert.match(index, /About \/ Limits/);
+
+const about = await readFile(new URL("../about.html", import.meta.url), "utf8");
+assert.match(about, /Public data only/);
+assert.match(about, /May be delayed or incomplete|delayed, incomplete/);
+assert.match(about, /not for emergency/i);
+assert.match(about, /Live/);
+assert.match(about, /Degraded/);
+assert.match(about, /Fallback/);
+assert.match(about, /Disabled/);
+assert.match(about, /Unavailable/);
 
 const response = await sourcesFunction(new Request("https://liveworldmap.netlify.app/api/sources?q=weather&status=planned"));
 assert.equal(response.status, 200);

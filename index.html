@@ -15,7 +15,7 @@
   <div class="app-shell">
     <header class="topbar">
       <div class="brand"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Global news map</span></div></div>
-      <nav id="dashboardNav" class="dashboard-nav consumer-nav" aria-label="Main navigation"><button class="dashboard-tab active" type="button">Explore</button><button class="dashboard-tab" type="button">Live Feed</button><a class="dashboard-tab" href="/countries">Country Scores</a></nav>
+      <nav id="dashboardNav" class="dashboard-nav consumer-nav" aria-label="Main navigation"><button class="dashboard-tab active" type="button">Map</button><button class="dashboard-tab" type="button">Live Feed</button><a class="dashboard-tab" href="/sources" data-sources-link>Sources</a><a class="dashboard-tab" href="/about.html">About / Limits</a><a class="dashboard-tab" href="/countries">Country Scores</a></nav>
       <section class="global-search search-wrap" aria-label="Global search">
         <label for="globalSearch">Search</label>
         <input id="globalSearch" type="search" autocomplete="off" placeholder="Country, city, airport, event..." />
@@ -26,7 +26,7 @@
         <details id="toolsMenu" class="tools-menu">
           <summary>Tools</summary>
           <div>
-            <a id="sourcesLink" href="/sources">Source Explorer</a>
+            <a id="sourcesLink" href="/sources" data-sources-link>Source Explorer</a>
             <a href="/diagnostics">Diagnostics</a>
             <button type="button" data-open-drawer="left">Advanced filters</button>
             <button type="button" data-open-drawer="right">Saved views</button>
