@@ -2,6 +2,31 @@
 
 These instructions apply to the whole repository.
 
+## ICM First-Read Pack
+
+Before broad repo exploration, read only this Interpretable Context Memory pack:
+
+1. `AGENTS.md`
+2. `docs/PROJECT_HANDOFF.md`
+3. `docs/LAST_30_DAYS.md`
+4. `docs/API_CONTRACTS.md`
+5. `docs/SECURITY_INVARIANTS.md`
+6. `docs/NEXT_TASK_QUEUE.md`
+
+Then list the exact extra files needed for the task before reading more. Do not scan the whole repo unless the task truly requires it.
+
+Default agent workflow:
+
+- Work on one task only.
+- Do not deploy.
+- Do not push `main`.
+- Do not refactor unrelated code.
+- Run the smallest relevant tests.
+- Update `docs/LAST_30_DAYS.md` and `docs/NEXT_TASK_QUEUE.md` when the work changes recent context or task priority.
+- Use repo memory docs as source of truth over rediscovering architecture from scratch.
+
+Useful skill pipeline when available: `last30days-skill` for recent context, `Understand-Anything` for confusing code, `graphify` for architecture diagrams, `frontend-design` and `taste-skill` for UI, `stop-slop` for vague text, `gstack` for stack conventions, and `Remotion` only for later demo/marketing videos.
+
 ## Deployment and API Compatibility
 
 - Never run Netlify deploy commands, build hooks, deployment APIs, manual deploy triggers, or production-publish actions unless the user explicitly asks for deployment.
