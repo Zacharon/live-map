@@ -19,7 +19,7 @@ Last updated: 2026-07-02.
 
 ## Open Context
 
-- Branch `feature/future-feature-structure`: pending docs/structure PR to add future feature folders, feature-flag documentation, and data-model notes without runtime wiring.
+- PR #38 / branch `feature/future-feature-structure`: pending docs/structure PR to add future feature folders, feature-flag documentation, and data-model notes without runtime wiring.
 - PR #34: Dependabot bump for `actions/checkout`.
 - PR #32: input-validation hardening branch remains open but was dirty against current `main` during the July 2 audit. Do not assume it is merged.
 
