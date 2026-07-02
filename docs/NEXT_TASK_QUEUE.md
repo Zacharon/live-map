@@ -2,6 +2,11 @@
 
 Small, agent-ready tasks only. Do not turn these into broad refactors.
 
+## Context Updates
+
+- Completed: PR #37 created the ICM memory pack and made `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/LAST_30_DAYS.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY_INVARIANTS.md`, and this queue the first-read context for future agents.
+- In progress: Future feature structure and feature-flag documentation on branch `feature/future-feature-structure`. Keep it docs/structure-only: no runtime imports, no fake UI, no unfinished feature activation.
+
 ## P0
 
 ### Rebase or close PR #32
