@@ -1,4 +1,4 @@
-import { jsonResponse, parseJson } from "./lib/response.mjs";
+import { jsonRequestErrorResponse, jsonResponse, parseJson, withPublicApiGuard } from "./lib/response.mjs";
 
 function validateRule(rule) {
   const errors = [];
@@ -8,17 +8,26 @@ function validateRule(rule) {
 }
 
 export default async (request) => {
-  if (request.method !== "POST") {
-    return jsonResponse(null, { status: 405, errors: ["Use POST to test alert rules."] });
-  }
-  const rule = await parseJson(request);
-  const errors = validateRule(rule);
-  return jsonResponse({
-    valid: errors.length === 0,
-    externalDelivery: false,
-    previewOnly: true,
-  }, {
-    errors,
-    warnings: ["External notifications are disabled until explicit delivery setup exists."],
+  return withPublicApiGuard(request, async () => {
+    if (request.method !== "POST") {
+      return jsonResponse(null, { status: 405, errors: ["Use POST to test alert rules."] });
+    }
+    let rule;
+    try {
+      rule = await parseJson(request);
+    } catch (error) {
+      const response = jsonRequestErrorResponse(error);
+      if (response) return response;
+      throw error;
+    }
+    const errors = validateRule(rule);
+    return jsonResponse({
+      valid: errors.length === 0,
+      externalDelivery: false,
+      previewOnly: true,
+    }, {
+      errors,
+      warnings: ["External notifications are disabled until explicit delivery setup exists."],
+    });
   });
 };

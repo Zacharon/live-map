@@ -58,6 +58,8 @@ import countriesFunction from "../netlify/functions/countries.mjs";
 import countryRiskFunction from "../netlify/functions/country-risk.mjs";
 import providerHealthFunction from "../netlify/functions/provider-health.mjs";
 import movingObjectsFunction from "../netlify/functions/moving-objects.mjs";
+import briefsFunction from "../netlify/functions/briefs.mjs";
+import alertsTestFunction from "../netlify/functions/alerts-test.mjs";
 import { validateProviderSourceLinks } from "../src/sources/provider-source-links.js";
 import worker from "../src/worker.js";
 import { resetApiRateLimiterForTests } from "../src/api/rate-limit.js";
@@ -560,6 +562,57 @@ test("Cloudflare Worker rejects oversized API requests before route handling", a
   assert.match(response.headers.get("content-type") || "", /json/);
   const body = await response.json();
   assert.equal(body.error, "payload-too-large");
+});
+
+test("Netlify compatibility API routes share JSON 429 rate limiting", async () => {
+  resetApiRateLimiterForTests();
+  const previousLimit = process.env.API_RATE_LIMIT_REQUESTS;
+  const previousWindow = process.env.API_RATE_LIMIT_WINDOW_SECONDS;
+  process.env.API_RATE_LIMIT_REQUESTS = "1";
+  process.env.API_RATE_LIMIT_WINDOW_SECONDS = "60";
+  try {
+    const headers = { "x-forwarded-for": "203.0.113.20" };
+    const first = await sourcesFunction(new Request("https://liveworldmap.netlify.app/api/sources", { headers }));
+    const limited = await sourcesFunction(new Request("https://liveworldmap.netlify.app/api/sources", { headers }));
+    assert.equal(first.status, 200);
+    assert.equal(limited.status, 429);
+    assert.match(limited.headers.get("content-type") || "", /json/);
+    assert.equal(limited.headers.get("retry-after"), "60");
+    const body = await limited.json();
+    assert.equal(body.error, "rate-limited");
+  } finally {
+    if (previousLimit === undefined) delete process.env.API_RATE_LIMIT_REQUESTS;
+    else process.env.API_RATE_LIMIT_REQUESTS = previousLimit;
+    if (previousWindow === undefined) delete process.env.API_RATE_LIMIT_WINDOW_SECONDS;
+    else process.env.API_RATE_LIMIT_WINDOW_SECONDS = previousWindow;
+    resetApiRateLimiterForTests();
+  }
+});
+
+test("Netlify compatibility POST routes reject malformed and oversized JSON", async () => {
+  resetApiRateLimiterForTests();
+  const malformed = await briefsFunction(new Request("https://liveworldmap.netlify.app/api/briefs", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": "203.0.113.21",
+    },
+    body: "{",
+  }));
+  assert.equal(malformed.status, 400);
+  assert.equal((await malformed.json()).error, "bad-request");
+
+  const oversized = await alertsTestFunction(new Request("https://liveworldmap.netlify.app/api/alerts/test", {
+    method: "POST",
+    headers: {
+      "content-length": "20000",
+      "content-type": "application/json",
+      "x-forwarded-for": "203.0.113.22",
+    },
+    body: "{}",
+  }));
+  assert.equal(oversized.status, 413);
+  assert.equal((await oversized.json()).error, "payload-too-large");
 });
 
 test("Events API preserves recordKind/domain filters", async () => {

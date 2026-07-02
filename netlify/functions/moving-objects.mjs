@@ -1,4 +1,4 @@
-import { jsonResponse } from "./lib/response.mjs";
+import { jsonResponse, withPublicApiGuard } from "./lib/response.mjs";
 import { clampMovingObjectLimit, movingObjectPublicView, validateBbox } from "../../src/moving-objects/schema.js";
 import { fetchOpenSkyAircraft, openskyStatus } from "../../src/data/providers/opensky.js";
 import { fetchGfwVessels, gfwStatus } from "../../src/data/providers/global-fishing-watch.js";
@@ -53,39 +53,41 @@ async function loadObjects(type, bbox, limit, now) {
 }
 
 export default async (request) => {
-  const url = new URL(request.url);
-  const type = url.searchParams.get("type") || "all";
-  if (!["all", "aircraft", "vessel"].includes(type)) {
-    return jsonResponse({ objects: [] }, { status: 400, warnings: ["Unsupported moving-object type."] });
-  }
-  const bboxValidation = validateBbox(url.searchParams.get("bbox"));
-  if (!bboxValidation.valid) {
+  return withPublicApiGuard(request, async () => {
+    const url = new URL(request.url);
+    const type = url.searchParams.get("type") || "all";
+    if (!["all", "aircraft", "vessel"].includes(type)) {
+      return jsonResponse({ objects: [] }, { status: 400, warnings: ["Unsupported moving-object type."] });
+    }
+    const bboxValidation = validateBbox(url.searchParams.get("bbox"));
+    if (!bboxValidation.valid) {
+      return jsonResponse({
+        objects: [],
+        providerStatus: {
+          opensky: openskyStatus("Viewport required before aircraft requests run."),
+          "global-fishing-watch": gfwStatus("Viewport required before vessel requests run."),
+          aishub: aishubStatus(),
+        },
+        viewport: null,
+        truncated: false,
+        nextRefreshAfterMs: 30000,
+      }, { status: 400, warnings: [bboxValidation.error], cacheControl: "no-store" });
+    }
+    const limit = clampMovingObjectLimit(url.searchParams.get("limit"), 500);
+    const now = Date.now();
+    const result = await loadObjects(type, bboxValidation.bbox, limit, now);
     return jsonResponse({
-      objects: [],
-      providerStatus: {
-        opensky: openskyStatus("Viewport required before aircraft requests run."),
-        "global-fishing-watch": gfwStatus("Viewport required before vessel requests run."),
-        aishub: aishubStatus(),
-      },
-      viewport: null,
-      truncated: false,
+      data: result.objects,
+      generatedAt: result.generatedAt,
+      providerStatus: result.providerStatus,
+      viewport: bboxValidation.bbox,
+      truncated: result.truncated || result.objects.length >= limit,
       nextRefreshAfterMs: 30000,
-    }, { status: 400, warnings: [bboxValidation.error], cacheControl: "no-store" });
-  }
-  const limit = clampMovingObjectLimit(url.searchParams.get("limit"), 500);
-  const now = Date.now();
-  const result = await loadObjects(type, bboxValidation.bbox, limit, now);
-  return jsonResponse({
-    data: result.objects,
-    generatedAt: result.generatedAt,
-    providerStatus: result.providerStatus,
-    viewport: bboxValidation.bbox,
-    truncated: result.truncated || result.objects.length >= limit,
-    nextRefreshAfterMs: 30000,
-    requestId: crypto.randomUUID(),
-  }, {
-    sourceStatus: result.providerStatus,
-    warnings: result.warnings,
-    cacheControl: "public, max-age=10, s-maxage=20",
+      requestId: crypto.randomUUID(),
+    }, {
+      sourceStatus: result.providerStatus,
+      warnings: result.warnings,
+      cacheControl: "public, max-age=10, s-maxage=20",
+    });
   });
 };
