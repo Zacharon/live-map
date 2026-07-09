@@ -8,6 +8,13 @@ It is evolving into a modular intelligence, risk, finance, infrastructure, and O
 
 Live Map is a near-real-time public-information aggregator. It is not an emergency dispatch, evacuation, military, navigation, legal, compliance, credit, travel, or financial-rating system.
 
+Operator dashboard (OSINT Forge)
+- Dashboard v2: summary, change awareness, timeline, clusters, provider health
+- Threat level v0: explainable local heuristic (not an official assessment)
+- Connected events: in-memory relationship strip with reason chips
+- Event artifacts: Markdown/JSON export from the detail drawer
+- Operator guide: `docs/osint-dashboard-operator-guide.md`
+
 Current working layers
 USGS Earthquake Hazards Program earthquake feeds
 NASA EONET natural-hazard events
