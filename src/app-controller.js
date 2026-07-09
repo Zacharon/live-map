@@ -17,6 +17,7 @@ import { exchangeMarkers } from "./finance/finance-adapter.js";
 import { loadAlertRules, saveAlertRules, createLocalRule, validateAlertRule, previewAlerts } from "./alerts/alert-rules.js";
 import { createMapController } from "./map/map-controller.js";
 import { renderMarkers } from "./map/marker-renderer.js";
+import { renderClusterHighlight, fitClusterOnMap } from "./map/cluster-highlight.js";
 import { setGlobeMode } from "./map/globe-controller.js";
 import { renderSourceHealth } from "./ui/source-health.js";
 import { renderSourcesStatusPanel, emptyDomainMessage } from "./ui/sources-status-panel.js";
@@ -26,7 +27,7 @@ import { renderDashboardPanel, applyDashboardTitle } from "./dashboards/dashboar
 import { CONSUMER_PRESETS, PRESET_ORDER, presetById, severitySetFromMinimum } from "./consumer/presets.js";
 import { buildGlobalSearchResults, groupSearchResults } from "./search/global-search.js";
 import { renderOsintDashboardShell, renderOsintEventDetailDrawer } from "./ui/osint-dashboard-v2/shell.js";
-import { buildEventClusters } from "./events/clustering.js";
+import { buildEventClusters, clusterMemberIds, findClusterById } from "./events/clustering.js";
 
 function ids(names) {
   return Object.fromEntries(names.map((id) => [id, document.getElementById(id)]));
@@ -438,9 +439,17 @@ export function bootLiveMap() {
     const correlations = correlateEventsToMarkets(state.events, EXCHANGES);
     const layers = layersForDashboard(state.dashboard);
     renderFilters(els);
+    const clusters = buildEventClusters(events);
+    const selectedCluster = state.selectedClusterId ? findClusterById(clusters, state.selectedClusterId) : null;
+    const highlightMemberIds = selectedCluster ? clusterMemberIds(selectedCluster) : null;
     renderMarkers(mapController.markerLayer, events, (event) => {
       openEventInspector(event);
+    }, {
+      selectedEventId: state.selectedEventId,
+      clusterMemberIds: highlightMemberIds,
     });
+    mapController.clearClusterHighlight();
+    if (selectedCluster) renderClusterHighlight(mapController.clusterHighlightLayer, selectedCluster);
     mapController.renderCountryRisk(riskScores, state.ciiVisible);
     mapController.renderCountryBoundaries(COUNTRIES, riskScores, state.selectedCountryIso3, (country) => selectCountry(country.iso3, false));
     mapController.renderMovingObjects(state.movingObjects, (object) => {
@@ -488,8 +497,6 @@ export function bootLiveMap() {
     els.sourcesStatusPanel.innerHTML = renderSourcesStatusPanel(state.events, state.sourceStatus);
     applyDashboardTitle(state.dashboard, els.dashboardEyebrow, els.dashboardTitle);
     els.dashboardPanel.innerHTML = renderDashboardPanel(state.dashboard, { riskScores, correlations, events, sourceStatus: state.sourceStatus, providerResults: state.providerResults }) + renderLayerSummary(layers) + renderRiskTable(riskScores) + renderAlerts(events) + renderCountDebug();
-    const clusters = buildEventClusters(events);
-    const selectedCluster = state.selectedClusterId ? clusters.find((cluster) => cluster.clusterId === state.selectedClusterId) || null : null;
     const selectedEvent = selectedCluster
       ? null
       : events.find((event) => event.id === state.selectedEventId) || state.events.find((event) => event.id === state.selectedEventId) || null;
@@ -501,20 +508,37 @@ export function bootLiveMap() {
       hours: state.hours,
       lastLoaded: state.lastLoaded,
       systemStatus: state.systemStatus,
+      selectedClusterId: state.selectedClusterId,
+      selectedCluster,
       loading: state.apiStatus === "loading",
       error: state.apiFailure?.message || null,
     });
     renderOsintEventDetailDrawer(els.eventDetailDrawer, { event: selectedEvent, cluster: selectedCluster });
   }
 
-  function openEventInspector(eventRecord, { openModal = true } = {}) {
+  function clearInspectorSelection({ closeDrawer = false } = {}) {
+    state.selectedEventId = null;
+    state.selectedClusterId = null;
+    if (els.eventDialog.open) els.eventDialog.close();
+    if (closeDrawer) {
+      state.rightDrawerOpen = false;
+      localStorage.setItem("live-map-right-drawer-v1", "closed");
+    }
+    render();
+  }
+
+  function openEventInspector(eventRecord, { openModal = false, flyTo = true } = {}) {
     if (!eventRecord) return;
     state.selectedEventId = eventRecord.id;
     state.selectedClusterId = null;
     state.rightDrawerOpen = true;
     localStorage.setItem("live-map-right-drawer-v1", "open");
-    renderOsintEventDetailDrawer(els.eventDetailDrawer, { event: eventRecord, cluster: null });
+    if (els.eventDialog.open) els.eventDialog.close();
+    render();
     if (openModal) openEventDialog(eventRecord, els.eventDialog, els.dialogContent, mapController.map);
+    else if (flyTo && Number.isFinite(eventRecord.lat) && Number.isFinite(eventRecord.lon)) {
+      mapController.map.flyTo([eventRecord.lat, eventRecord.lon], Math.max(mapController.map.getZoom(), 5));
+    }
   }
 
   function openClusterInspector(cluster) {
@@ -523,7 +547,9 @@ export function bootLiveMap() {
     state.selectedEventId = null;
     state.rightDrawerOpen = true;
     localStorage.setItem("live-map-right-drawer-v1", "open");
-    renderOsintEventDetailDrawer(els.eventDetailDrawer, { event: null, cluster });
+    if (els.eventDialog.open) els.eventDialog.close();
+    render();
+    fitClusterOnMap(mapController.map, cluster);
   }
 
   function renderNav() {
@@ -808,9 +834,11 @@ export function bootLiveMap() {
       return;
     }
     if (event.target.closest("[data-v2-close-detail]")) {
-      state.selectedEventId = null;
-      state.selectedClusterId = null;
-      renderOsintEventDetailDrawer(els.eventDetailDrawer, { event: null, cluster: null });
+      clearInspectorSelection();
+      return;
+    }
+    if (event.target.closest("[data-v2-clear-selection]")) {
+      clearInspectorSelection();
       return;
     }
     if (event.target.closest("[data-v2-clear-filters]")) {
@@ -959,6 +987,8 @@ export function bootLiveMap() {
     state.leftDrawerOpen = false;
     state.rightDrawerOpen = true;
     state.selectedCountryIso3 = null;
+    state.selectedEventId = null;
+    state.selectedClusterId = null;
     state.tracking.aircraft = false;
     state.tracking.vessels = false;
     localStorage.setItem("live-map-left-drawer-v1", "closed");

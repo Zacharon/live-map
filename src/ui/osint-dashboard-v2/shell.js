@@ -16,6 +16,8 @@ export function renderOsintDashboardShell(container, context = {}) {
     lastLoaded = null,
     systemStatus = "unknown",
     selectedEvent = null,
+    selectedClusterId = null,
+    selectedCluster = null,
     loading = false,
     error = null,
   } = context;
@@ -30,10 +32,17 @@ export function renderOsintDashboardShell(container, context = {}) {
     return;
   }
 
+  const selectionBanner = selectedCluster
+    ? `<div class="v2-selection-banner" role="status"><span>Cluster selected on map — ${selectedCluster.eventCount} related events</span><button type="button" class="v2-text-btn" data-v2-clear-selection>Clear</button></div>`
+    : selectedClusterId
+      ? `<div class="v2-selection-banner v2-selection-banner-stale" role="status"><span>Previous cluster no longer in view</span><button type="button" class="v2-text-btn" data-v2-clear-selection>Clear</button></div>`
+      : "";
+
   container.innerHTML = `<div class="v2-shell">
+    ${selectionBanner}
     ${renderEventSummaryCards({ events, sourceStatus, lastLoaded, systemStatus })}
     ${renderTimelinePanel(events, lastLoaded || Date.now())}
-    ${renderClusterSummary(events)}
+    ${renderClusterSummary(events, selectedClusterId)}
     ${renderEventFilterSummary(filters, hours)}
     ${renderProviderHealthSummary(sourceStatus, providerResults)}
   </div>`;

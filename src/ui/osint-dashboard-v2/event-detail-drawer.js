@@ -14,6 +14,9 @@ export function renderClusterDetailDrawer(cluster) {
     </button>`;
   }).join("");
   const hidden = (cluster.events || []).length > 12 ? `<p class="v2-empty">${cluster.events.length - 12} more member events in feed.</p>` : "";
+  const mapNote = cluster.events?.some((event) => event.geographic !== false && Number.isFinite(event.lat) && Number.isFinite(event.lon))
+    ? `<p class="v2-map-note">Map highlights member events in this cluster.</p>`
+    : `<p class="v2-map-note">No map coordinates in this cluster — inspect member events below.</p>`;
   return `<aside class="v2-event-detail v2-cluster-detail" aria-label="Cluster details">
     <div class="v2-detail-head">
       <button type="button" class="v2-detail-close" data-v2-close-detail aria-label="Close details">×</button>
@@ -25,6 +28,8 @@ export function renderClusterDetailDrawer(cluster) {
       <h2 class="v2-detail-title">Related cluster</h2>
     </div>
     <p class="v2-detail-summary">${escapeHtml(cluster.attentionLabel)} — ${escapeHtml(cluster.locationLabel)} across ${cluster.sourceCount} source${cluster.sourceCount === 1 ? "" : "s"}.</p>
+    ${mapNote}
+    <div class="v2-detail-actions"><button type="button" class="v2-detail-link secondary" data-v2-clear-selection>Clear selection</button></div>
     <dl class="v2-detail-facts">
       <div><dt>Domain</dt><dd>${escapeHtml(cluster.domainLabel)}</dd></div>
       <div><dt>Type</dt><dd>${escapeHtml(cluster.typeLabel)}</dd></div>
@@ -73,6 +78,6 @@ export function renderEventDetailDrawer(event) {
       <div><dt>Verification</dt><dd>${escapeHtml(event.verificationStatus || "Reported")}</dd></div>
       <div><dt>Type</dt><dd>${escapeHtml(event.typeLabel || event.category || "—")}</dd></div>
     </dl>
-    <div class="v2-detail-actions">${sourceLink}${providerLink}${mapLink}</div>
+    <div class="v2-detail-actions">${sourceLink}${providerLink}${mapLink}<button type="button" class="v2-detail-link secondary" data-v2-clear-selection>Clear selection</button></div>
   </aside>`;
 }

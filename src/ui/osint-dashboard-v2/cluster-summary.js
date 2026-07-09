@@ -4,13 +4,13 @@ import { buildEventClusters } from "../../events/clustering.js";
 
 const MAX_CLUSTERS = 8;
 
-function renderClusterCard(cluster) {
+function renderClusterCard(cluster, selected = false) {
   const severityColor = SEVERITIES[cluster.severity]?.color || SEVERITIES.low.color;
   const severityLabel = SEVERITIES[cluster.severity]?.label || cluster.severity;
   const range = cluster.startedAt && cluster.endedAt
     ? `${relativeTime(cluster.endedAt)} – ${relativeTime(cluster.startedAt)}`
     : "Time range unknown";
-  return `<button type="button" class="v2-cluster-card" data-v2-cluster="${escapeHtml(cluster.clusterId)}">
+  return `<button type="button" class="v2-cluster-card${selected ? " selected" : ""}" data-v2-cluster="${escapeHtml(cluster.clusterId)}" aria-pressed="${selected ? "true" : "false"}">
     <div class="v2-cluster-head">
       <strong>${cluster.eventCount} events</strong>
       <span class="severity-tag" style="--sev:${severityColor}">${escapeHtml(severityLabel)}</span>
@@ -25,7 +25,7 @@ function renderClusterCard(cluster) {
   </button>`;
 }
 
-export function renderClusterSummary(events = []) {
+export function renderClusterSummary(events = [], selectedClusterId = null) {
   const clusters = buildEventClusters(events).slice(0, MAX_CLUSTERS);
   if (!events.length) {
     return `<section class="v2-clusters" aria-label="Event clusters"><div class="v2-section-title"><span>Related clusters</span></div><p class="v2-empty">No events to cluster.</p></section>`;
@@ -33,7 +33,7 @@ export function renderClusterSummary(events = []) {
   if (!clusters.length) {
     return `<section class="v2-clusters" aria-label="Event clusters"><div class="v2-section-title"><span>Related clusters</span></div><p class="v2-empty">No multi-event clusters in the current view. Try widening filters or time window.</p></section>`;
   }
-  return `<section class="v2-clusters" aria-label="Event clusters"><div class="v2-section-title"><span>Related clusters</span><small>${clusters.length} groups</small></div><div class="v2-cluster-list">${clusters.map(renderClusterCard).join("")}</div></section>`;
+  return `<section class="v2-clusters" aria-label="Event clusters"><div class="v2-section-title"><span>Related clusters</span><small>${clusters.length} groups</small></div><div class="v2-cluster-list">${clusters.map((cluster) => renderClusterCard(cluster, cluster.clusterId === selectedClusterId)).join("")}</div></section>`;
 }
 
 export { buildEventClusters } from "../../events/clustering.js";
