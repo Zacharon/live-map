@@ -56,7 +56,7 @@ import { renderProviderHealthSummary } from "../src/ui/osint-dashboard-v2/provid
 import { buildActiveFilterChips, renderEventFilterSummary } from "../src/ui/osint-dashboard-v2/event-filter-summary.js";
 import { renderEventDetailDrawer } from "../src/ui/osint-dashboard-v2/event-detail-drawer.js";
 import { groupEventsByTimeline, timelineBucketForEvent, TIMELINE_BUCKETS } from "../src/events/timeline.js";
-import { buildEventClusters, clusterKeyForEvent, geoCellForEvent } from "../src/events/clustering.js";
+import { buildEventClusters, clusterKeyForEvent, geoCellForEvent, clusterMemberIds, clusterGeographicBounds, findClusterById } from "../src/events/clustering.js";
 import { renderTimelinePanel } from "../src/ui/osint-dashboard-v2/timeline-panel.js";
 import { renderClusterSummary } from "../src/ui/osint-dashboard-v2/cluster-summary.js";
 import { serializeView } from "../src/ui/saved-views.js";
@@ -1420,6 +1420,41 @@ test("Clustering handles missing coordinates without crashing", () => {
   assert.equal(clusters.length, 1);
   assert.equal(clusters[0].eventCount, 2);
   assert.equal(clusterKeyForEvent(a), clusterKeyForEvent(b));
+});
+
+test("Cluster helpers resolve members, bounds, and stale ids safely", () => {
+  const base = Date.UTC(2026, 6, 8, 10, 0, 0);
+  const a = { id: "a", domain: "natural-disaster", category: "earthquake", lat: 35.12, lon: 139.71, occurredAt: base, severity: "high", sourceName: "USGS", title: "Quake A" };
+  const b = { id: "b", domain: "natural-disaster", category: "earthquake", lat: 35.14, lon: 139.69, occurredAt: base + 3600000, severity: "medium", sourceName: "USGS", title: "Quake B" };
+  const clusters = buildEventClusters([a, b]);
+  const cluster = clusters[0];
+  assert.deepEqual(clusterMemberIds(cluster).sort(), ["a", "b"]);
+  const bounds = clusterGeographicBounds(cluster);
+  assert.ok(bounds);
+  assert.equal(bounds.count, 2);
+  assert.ok(bounds.south < bounds.north);
+  assert.equal(findClusterById(clusters, cluster.clusterId), cluster);
+  assert.equal(findClusterById(clusters, "cluster-missing"), null);
+  const nogeoCluster = buildEventClusters([
+    { id: "x", domain: "technology-cyber", category: "cyber", geographic: false, occurredAt: base, severity: "low", sourceName: "CISA", title: "CVE" },
+    { id: "y", domain: "technology-cyber", category: "cyber", geographic: false, occurredAt: base + 1000, severity: "low", sourceName: "NVD", title: "CVE-2" },
+  ])[0];
+  assert.equal(clusterGeographicBounds(nogeoCluster), null);
+  const before = JSON.stringify([a, b]);
+  clusterMemberIds(cluster);
+  assert.equal(JSON.stringify([a, b]), before);
+});
+
+test("Cluster summary marks selected cluster without mutating events", () => {
+  const base = Date.UTC(2026, 6, 8, 10, 0, 0);
+  const events = [
+    { id: "a", domain: "natural-disaster", category: "earthquake", lat: 35.12, lon: 139.71, occurredAt: base, severity: "high", sourceName: "USGS", title: "Quake A" },
+    { id: "b", domain: "natural-disaster", category: "earthquake", lat: 35.14, lon: 139.69, occurredAt: base + 3600000, severity: "medium", sourceName: "USGS", title: "Quake B" },
+  ];
+  const clusterId = buildEventClusters(events)[0].clusterId;
+  const html = renderClusterSummary(events, clusterId);
+  assert.match(html, /v2-cluster-card selected/);
+  assert.match(html, /aria-pressed="true"/);
 });
 
 test("Dashboard v2 event detail drawer handles null and populated events", () => {

@@ -113,6 +113,7 @@ export function createMapController(options = {}) {
   const markerLayer = typeof L.markerClusterGroup === "function"
     ? L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 44, spiderfyOnMaxZoom: true, disableClusteringAtZoom: 7 }).addTo(map)
     : L.layerGroup().addTo(map);
+  const clusterHighlightLayer = L.layerGroup().addTo(map);
   const ciiLayer = L.layerGroup().addTo(map);
   const countryLayer = L.layerGroup().addTo(map);
   const movingObjectLayer = L.layerGroup().addTo(map);
@@ -228,9 +229,15 @@ export function createMapController(options = {}) {
   window.requestAnimationFrame(invalidateMapSize);
   resetTileHealth("satellite");
 
+  function clearClusterHighlight() {
+    clusterHighlightLayer.clearLayers();
+  }
+
   return {
     map,
     markerLayer,
+    clusterHighlightLayer,
+    clearClusterHighlight,
     switchBase,
     fitWorld: () => map.setView([22, 10], 2.35),
     fitEvents,

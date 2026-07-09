@@ -52,6 +52,32 @@ function attentionLabel(severity, count) {
   return "Related group";
 }
 
+export function clusterMemberIds(cluster) {
+  return (cluster?.events || []).map((event) => event.id);
+}
+
+export function clusterGeographicBounds(cluster) {
+  const coords = (cluster?.events || [])
+    .filter((event) => event.geographic !== false && Number.isFinite(event.lat) && Number.isFinite(event.lon))
+    .map((event) => [event.lat, event.lon]);
+  if (!coords.length) return null;
+  const lats = coords.map(([lat]) => lat);
+  const lons = coords.map(([, lon]) => lon);
+  return {
+    south: Math.min(...lats),
+    north: Math.max(...lats),
+    west: Math.min(...lons),
+    east: Math.max(...lons),
+    center: [(Math.min(...lats) + Math.max(...lats)) / 2, (Math.min(...lons) + Math.max(...lons)) / 2],
+    count: coords.length,
+  };
+}
+
+export function findClusterById(clusters, clusterId) {
+  if (!clusterId) return null;
+  return clusters.find((cluster) => cluster.clusterId === clusterId) || null;
+}
+
 export function buildEventClusters(events = []) {
   const buckets = new Map();
   for (const event of events) {
