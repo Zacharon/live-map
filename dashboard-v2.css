@@ -1,0 +1,51 @@
+/* OSINT Dashboard v2 — operator shell layer */
+.v2-shell{display:grid;gap:12px;margin-bottom:14px}
+.v2-summary-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.v2-card{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:10px 11px;display:grid;gap:2px}
+.v2-card-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.v2-card-value{font-size:20px;line-height:1.1;color:var(--text)}
+.v2-card-time{font-size:14px}
+.v2-card small{font-size:10px;color:var(--muted)}
+.v2-card-warn{border-color:color-mix(in srgb,var(--warn) 55%,var(--line));background:color-mix(in srgb,var(--warn) 8%,transparent)}
+.v2-card.warn .v2-card-value{color:var(--warn)}
+.v2-card.error .v2-card-value{color:#ff6b7a}
+.v2-section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin:0 0 8px}
+.v2-section-title small{color:var(--muted);text-transform:none;letter-spacing:0;font-size:10px}
+.v2-text-btn{background:none;border:0;color:var(--accent);font-size:10px;cursor:pointer;padding:0}
+.v2-empty{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
+.v2-filter-chips{display:flex;flex-wrap:wrap;gap:6px}
+.v2-chip{background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:5px 10px;font-size:11px;cursor:pointer}
+.v2-chip:hover{border-color:var(--accent)}
+.v2-provider-health,.v2-filter-summary{border-top:1px solid var(--line);padding-top:10px}
+.v2-provider-alert{font-size:11px;color:var(--warn);margin:0 0 8px;padding:8px 10px;border:1px solid color-mix(in srgb,var(--warn) 40%,var(--line));border-radius:8px;background:color-mix(in srgb,var(--warn) 6%,transparent)}
+.v2-provider-list{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:220px;overflow:auto}
+.v2-provider-row{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:rgba(255,255,255,.03)}
+.v2-provider-warn{border-color:color-mix(in srgb,var(--warn) 50%,var(--line))}
+.v2-provider-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.v2-provider-head strong{font-size:12px;text-transform:uppercase}
+.v2-provider-badge{font-size:10px;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.v2-provider-operational .v2-provider-badge{color:#5fe0a8;border-color:color-mix(in srgb,#5fe0a8 40%,var(--line))}
+.v2-provider-stale .v2-provider-badge,.v2-provider-degraded .v2-provider-badge,.v2-provider-unavailable .v2-provider-badge{color:var(--warn)}
+.v2-provider-meta{display:flex;gap:10px;font-size:10px;color:var(--muted);margin-top:4px}
+.v2-provider-msg{font-size:10px;color:var(--muted);margin:6px 0 0;line-height:1.4}
+.v2-event-detail{border-bottom:1px solid var(--line);padding:0 0 12px;margin-bottom:10px}
+.v2-event-detail-empty{padding:12px 0}
+.v2-detail-head{position:relative;padding-right:28px}
+.v2-detail-close{position:absolute;top:0;right:0;width:28px;height:28px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.04);color:var(--text);cursor:pointer;font-size:16px;line-height:1}
+.v2-detail-badges{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.v2-confidence{font-size:10px;color:var(--muted)}
+.v2-detail-title{font-size:16px;line-height:1.25;margin:0 0 8px}
+.v2-detail-summary{font-size:12px;color:var(--muted);line-height:1.5;margin:0 0 10px}
+.v2-detail-facts{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:0 0 12px;font-size:11px}
+.v2-detail-facts dt{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.v2-detail-facts dd{margin:2px 0 0;color:var(--text)}
+.v2-detail-actions{display:flex;flex-wrap:wrap;gap:8px}
+.v2-detail-link{font-size:11px;color:var(--accent);text-decoration:none;padding:6px 10px;border:1px solid var(--line);border-radius:8px}
+.v2-detail-link.secondary{color:var(--muted)}
+.v2-shell-loading,.v2-shell-error{padding:12px;border:1px dashed var(--line);border-radius:8px;text-align:center;font-size:12px;color:var(--muted)}
+.v2-shell-error{color:var(--warn)}
+@media(max-width:760px){
+  .v2-summary-cards{grid-template-columns:1fr 1fr}
+  .v2-provider-list{max-height:160px}
+  .v2-detail-facts{grid-template-columns:1fr}
+}

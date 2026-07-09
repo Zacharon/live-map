@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="vendor/leaflet-markercluster/MarkerCluster.Default.css" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="source-explorer.css" />
+  <link rel="stylesheet" href="dashboard-v2.css" />
 </head>
 <body>
   <div class="app-shell">
@@ -39,6 +40,7 @@
     </header>
 
     <aside id="filterDrawer" class="sidebar left-panel drawer drawer-left" aria-label="Filters">
+      <section id="osintDashboardV2" class="osint-dashboard-v2 panel-sticky" aria-label="OSINT dashboard"></section>
       <section class="panel-sticky">
         <div class="section-title"><span>Filters</span><button type="button" data-close-drawer="left">Close</button></div>
         <p class="panel-help standard-copy">Choose the kinds of world events you want to see.</p>
@@ -93,6 +95,7 @@
         </div>
       </div>
       <button class="drawer-close" type="button" data-close-drawer="right">Hide feed</button>
+      <div id="eventDetailDrawer" class="event-detail-drawer-host" hidden></div>
       <section class="search-wrap event-search"><label for="search">Search events, countries, or sources</label><input id="search" type="search" placeholder="Japan, M6.2, wildfire..." /></section>
       <div id="eventList" class="event-list"></div>
     </aside>
