@@ -35,6 +35,8 @@ import {
   buildChangeStatusMap,
   saveSnapshot,
 } from "./events/change-awareness.js";
+import { buildEventArtifact, buildClusterArtifact } from "./artifacts/event-artifacts.js";
+import { runArtifactExportAction } from "./ui/osint-dashboard-v2/artifact-export.js";
 
 function ids(names) {
   return Object.fromEntries(names.map((id) => [id, document.getElementById(id)]));
@@ -529,7 +531,13 @@ export function bootLiveMap() {
       error: state.apiFailure?.message || null,
     });
     const selectedChangeStatus = selectedEvent ? changeStatusById.get(selectedEvent.id) || null : null;
-    renderOsintEventDetailDrawer(els.eventDetailDrawer, { event: selectedEvent, cluster: selectedCluster, changeStatus: selectedChangeStatus });
+    renderOsintEventDetailDrawer(els.eventDetailDrawer, {
+      event: selectedEvent,
+      cluster: selectedCluster,
+      changeStatus: selectedChangeStatus,
+      allEvents: events,
+      clusters,
+    });
   }
 
   function clearInspectorSelection({ closeDrawer = false } = {}) {
@@ -835,6 +843,33 @@ export function bootLiveMap() {
       const visibleClusters = buildEventClusters(visibleEvents);
       saveSnapshot(buildSnapshotFromEvents(visibleEvents, visibleClusters));
       render();
+      return;
+    }
+    const artifactActionButton = event.target.closest("[data-v2-artifact-action]");
+    if (artifactActionButton) {
+      const action = artifactActionButton.dataset.v2ArtifactAction;
+      const visibleEvents = currentEvents();
+      const visibleClusters = buildEventClusters(visibleEvents);
+      let artifact = null;
+      if (state.selectedClusterId) {
+        const cluster = findClusterById(visibleClusters, state.selectedClusterId);
+        if (cluster) artifact = buildClusterArtifact(cluster, { allEvents: visibleEvents });
+      } else if (state.selectedEventId) {
+        const selected = visibleEvents.find((item) => item.id === state.selectedEventId)
+          || state.events.find((item) => item.id === state.selectedEventId)
+          || null;
+        if (selected) {
+          const changeStatus = null;
+          artifact = buildEventArtifact(selected, {
+            allEvents: visibleEvents,
+            clusters: visibleClusters,
+            changeStatus,
+          });
+        }
+      }
+      if (artifact) {
+        runArtifactExportAction(action, artifact).catch(() => {});
+      }
       return;
     }
     const timelineButton = event.target.closest("[data-v2-timeline-event]");

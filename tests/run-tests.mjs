@@ -70,6 +70,15 @@ import {
   eventStableId,
 } from "../src/events/change-awareness.js";
 import { renderChangeAwarenessPanel } from "../src/ui/osint-dashboard-v2/change-awareness-panel.js";
+import {
+  ARTIFACT_SCHEMA_VERSION,
+  buildEventArtifact,
+  buildClusterArtifact,
+  findRelatedEvents,
+  resolveConfidence,
+} from "../src/artifacts/event-artifacts.js";
+import { artifactToMarkdown, artifactToJson, artifactToJsonString } from "../src/ui/osint-dashboard-v2/artifact-export.js";
+import { renderEventArtifactSection } from "../src/ui/osint-dashboard-v2/event-artifact-card.js";
 import { serializeView } from "../src/ui/saved-views.js";
 import sourcesFunction from "../netlify/functions/sources.mjs";
 import eventsFunction from "../netlify/functions/events.mjs";
@@ -1558,6 +1567,147 @@ test("Dashboard v2 event detail drawer handles null and populated events", () =>
   });
   assert.match(html, /M6\.2 earthquake/);
   assert.match(html, /90% confidence/);
+  assert.match(html, /OSINT artifact/);
+  assert.match(html, /data-v2-artifact-action="copy-md"/);
+});
+
+test("Event artifact creation from a normalized event", () => {
+  const now = Date.UTC(2026, 6, 9, 12, 0, 0);
+  const event = {
+    id: "usgs-1",
+    title: "M5.1 quake",
+    summary: "Test",
+    occurredAt: now,
+    updatedAt: now + 1000,
+    lat: 35.6,
+    lon: 139.7,
+    place: "Tokyo",
+    country: "Japan",
+    domain: "natural-disaster",
+    category: "earthquake",
+    severity: "high",
+    confidence: 88,
+    sourceName: "USGS",
+    sourceUrl: "https://example.com/q",
+    provider: "usgs",
+  };
+  const artifact = buildEventArtifact(event, { allEvents: [event], clusters: [], now });
+  assert.equal(artifact.schemaVersion, ARTIFACT_SCHEMA_VERSION);
+  assert.equal(artifact.artifactType, "event");
+  assert.equal(artifact.eventId, "usgs-1");
+  assert.equal(artifact.title, "M5.1 quake");
+  assert.equal(artifact.confidence.display, "88%");
+  assert.equal(artifact.confidence.mode, "numeric");
+  assert.ok(artifact.artifactId.startsWith("event-artifact:"));
+  assert.ok(Array.isArray(artifact.normalizedFields));
+  assert.ok(artifact.normalizedFields.some((field) => field.key === "source_name" && field.present));
+});
+
+test("Cluster artifact creation from cluster events", () => {
+  const base = Date.UTC(2026, 6, 9, 10, 0, 0);
+  const events = [
+    { id: "a", title: "Quake A", domain: "natural-disaster", category: "earthquake", lat: 35.12, lon: 139.71, occurredAt: base, severity: "high", sourceName: "USGS", provider: "usgs", confidence: 80 },
+    { id: "b", title: "Quake B", domain: "natural-disaster", category: "earthquake", lat: 35.14, lon: 139.69, occurredAt: base + 3600000, severity: "medium", sourceName: "EMSC", provider: "emsc", confidence: 70 },
+  ];
+  const cluster = buildEventClusters(events)[0];
+  assert.ok(cluster);
+  const before = JSON.stringify(cluster);
+  const artifact = buildClusterArtifact(cluster, { allEvents: events, now: base });
+  assert.equal(JSON.stringify(cluster), before);
+  assert.equal(artifact.artifactType, "cluster");
+  assert.equal(artifact.schemaVersion, "v1");
+  assert.equal(artifact.eventCount, 2);
+  assert.ok(artifact.representativeEvents.length >= 2);
+  assert.ok(artifact.corroborationCount >= 2);
+});
+
+test("Artifact Markdown export contains required sections", () => {
+  const event = { id: "e1", title: "Alpha", occurredAt: 1000, sourceName: "USGS", category: "other", severity: "low" };
+  const md = artifactToMarkdown(buildEventArtifact(event, { now: 1000 }));
+  for (const section of [
+    "## Artifact Summary",
+    "## Event / Cluster Details",
+    "## Source Attribution",
+    "## Location",
+    "## Timeline",
+    "## Related Events",
+    "## Normalized Fields",
+    "## Analyst Notes",
+    "## Caveats",
+    "## Generated Metadata",
+  ]) {
+    assert.ok(md.includes(section), `missing section ${section}`);
+  }
+});
+
+test("Artifact JSON export is parseable and stable", () => {
+  const event = { id: "e2", title: "Beta", occurredAt: 2000, sourceName: "NWS", category: "storm", severity: "medium", confidence: 55 };
+  const artifact = buildEventArtifact(event, { now: 2000 });
+  const json = artifactToJson(artifact);
+  assert.equal(json.schemaVersion, "v1");
+  assert.equal(json.eventId, "e2");
+  const parsed = JSON.parse(artifactToJsonString(artifact));
+  assert.equal(parsed.schemaVersion, "v1");
+  assert.equal(parsed.artifactType, "event");
+});
+
+test("Artifact generation handles missing fields without crashing", () => {
+  const sparse = buildEventArtifact({}, { allEvents: [], clusters: [], now: 1 });
+  assert.equal(sparse.artifactType, "event");
+  assert.ok(sparse.title);
+  const empty = buildEventArtifact(null, { now: 1 });
+  assert.equal(empty.eventId, "unknown-event");
+  const clusterEmpty = buildClusterArtifact(null, { now: 1 });
+  assert.equal(clusterEmpty.artifactType, "cluster");
+});
+
+test("Artifact generation does not mutate raw events", () => {
+  const events = [
+    { id: "x", title: "X", occurredAt: 10, sourceName: "A", category: "earthquake", domain: "natural-disaster", lat: 1, lon: 2, severity: "low" },
+    { id: "y", title: "Y", occurredAt: 20, sourceName: "B", category: "earthquake", domain: "natural-disaster", lat: 1.1, lon: 2.1, severity: "low" },
+  ];
+  const before = JSON.stringify(events);
+  buildEventArtifact(events[0], { allEvents: events, clusters: buildEventClusters(events), now: 30 });
+  findRelatedEvents(events[0], events, buildEventClusters(events));
+  assert.equal(JSON.stringify(events), before);
+});
+
+test("Related events logic is deterministic", () => {
+  const base = Date.UTC(2026, 6, 9, 8, 0, 0);
+  const subject = { id: "s", title: "Subject", occurredAt: base, provider: "usgs", sourceName: "USGS", country: "Japan", category: "earthquake", domain: "natural-disaster", lat: 35, lon: 139 };
+  const all = [
+    subject,
+    { id: "r1", title: "R1", occurredAt: base + 1000, provider: "usgs", sourceName: "USGS", country: "Japan", category: "earthquake", domain: "natural-disaster", lat: 35.1, lon: 139.1 },
+    { id: "r2", title: "R2", occurredAt: base + 2000, provider: "emsc", sourceName: "EMSC", country: "Japan", category: "earthquake", domain: "natural-disaster", lat: 36, lon: 140 },
+    { id: "z", title: "Unrelated", occurredAt: base + 10 * 86400000, provider: "other", sourceName: "Other", country: "France", category: "storm", domain: "weather", lat: 48, lon: 2 },
+  ];
+  const clusters = buildEventClusters(all.filter((e) => e.category === "earthquake" && e.country === "Japan"));
+  const a = findRelatedEvents(subject, all, clusters);
+  const b = findRelatedEvents(subject, all, clusters);
+  assert.deepEqual(a.map((r) => r.eventId), b.map((r) => r.eventId));
+  assert.ok(a.some((r) => r.eventId === "r1"));
+  assert.ok(!a.some((r) => r.eventId === "z") || a.find((r) => r.eventId === "z").matchScore < a[0].matchScore);
+});
+
+test("Confidence placeholder present when no confidence data", () => {
+  const artifact = buildEventArtifact({ id: "n", title: "No conf", occurredAt: 1, sourceName: "X" }, { now: 1 });
+  assert.equal(artifact.confidence.display, "Not scored in v1");
+  assert.equal(artifact.confidence.mode, "not-scored");
+  assert.equal(resolveConfidence({}).display, "Not scored in v1");
+});
+
+test("Event artifact card renders export controls", () => {
+  const html = renderEventArtifactSection({
+    id: "card-1",
+    title: "Card event",
+    occurredAt: Date.now(),
+    sourceName: "USGS",
+    severity: "low",
+    category: "other",
+  }, { allEvents: [], clusters: [] });
+  assert.match(html, /Copy Markdown/);
+  assert.match(html, /Download JSON/);
+  assert.match(html, /data-v2-artifact-action="download-md"/);
 });
 
 await runPendingTests();
