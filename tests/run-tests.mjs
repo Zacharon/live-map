@@ -59,6 +59,17 @@ import { groupEventsByTimeline, timelineBucketForEvent, TIMELINE_BUCKETS } from 
 import { buildEventClusters, clusterKeyForEvent, geoCellForEvent, clusterMemberIds, clusterGeographicBounds, findClusterById } from "../src/events/clustering.js";
 import { renderTimelinePanel } from "../src/ui/osint-dashboard-v2/timeline-panel.js";
 import { renderClusterSummary } from "../src/ui/osint-dashboard-v2/cluster-summary.js";
+import {
+  CHANGE_AWARENESS_STORAGE_KEY,
+  buildSnapshotFromEvents,
+  computeChangeSummary,
+  buildChangeStatusMap,
+  loadSnapshotWithMeta,
+  saveSnapshot,
+  parseSnapshot,
+  eventStableId,
+} from "../src/events/change-awareness.js";
+import { renderChangeAwarenessPanel } from "../src/ui/osint-dashboard-v2/change-awareness-panel.js";
 import { serializeView } from "../src/ui/saved-views.js";
 import sourcesFunction from "../netlify/functions/sources.mjs";
 import eventsFunction from "../netlify/functions/events.mjs";
@@ -1455,6 +1466,77 @@ test("Cluster summary marks selected cluster without mutating events", () => {
   const html = renderClusterSummary(events, clusterId);
   assert.match(html, /v2-cluster-card selected/);
   assert.match(html, /aria-pressed="true"/);
+});
+
+test("Change awareness handles empty and missing previous snapshot", () => {
+  const events = [{ id: "e1", title: "A", occurredAt: 1000, severity: "low", category: "other", sourceName: "USGS" }];
+  const summary = computeChangeSummary(events, null, []);
+  assert.equal(summary.hasPreviousSnapshot, false);
+  assert.equal(summary.newEvents.length, 0);
+  assert.equal(summary.updatedEvents.length, 0);
+  assert.match(renderChangeAwarenessPanel(summary), /No previous snapshot yet/);
+});
+
+test("Change awareness detects new, updated, unchanged, and removed events", () => {
+  const base = Date.UTC(2026, 6, 8, 10, 0, 0);
+  const original = [
+    { id: "a", title: "Alpha", occurredAt: base, updatedAt: base, severity: "low", category: "earthquake", sourceName: "USGS", lat: 1, lon: 2 },
+    { id: "b", title: "Beta", occurredAt: base, updatedAt: base, severity: "medium", category: "storm", sourceName: "NWS", lat: 3, lon: 4 },
+  ];
+  const snapshot = buildSnapshotFromEvents(original, [], base);
+  const current = [
+    { id: "a", title: "Alpha revised", occurredAt: base, updatedAt: base + 1000, severity: "high", category: "earthquake", sourceName: "USGS", lat: 1, lon: 2 },
+    { id: "c", title: "Gamma", occurredAt: base + 2000, updatedAt: base + 2000, severity: "low", category: "other", sourceName: "GDACS", lat: 5, lon: 6 },
+  ];
+  const before = JSON.stringify(current);
+  const summary = computeChangeSummary(current, snapshot, []);
+  assert.equal(summary.newEvents.length, 1);
+  assert.equal(summary.newEvents[0].id, "c");
+  assert.equal(summary.updatedEvents.length, 1);
+  assert.equal(summary.updatedEvents[0].id, "a");
+  assert.equal(summary.unchangedEvents.length, 0);
+  assert.deepEqual(summary.removedEventIds, ["b"]);
+  const status = buildChangeStatusMap(summary);
+  assert.equal(status.get("c"), "new");
+  assert.equal(status.get("a"), "updated");
+  assert.equal(JSON.stringify(current), before);
+});
+
+test("Change awareness handles corrupt snapshot and unavailable storage safely", () => {
+  const corruptStorage = {
+    getItem() {
+      return "{not-json";
+    },
+    setItem() {},
+  };
+  const meta = loadSnapshotWithMeta(corruptStorage);
+  assert.equal(meta.snapshot, null);
+  assert.equal(meta.corrupt, true);
+  assert.equal(parseSnapshot("{bad"), null);
+  assert.equal(computeChangeSummary([], null, []).newEvents.length, 0);
+  assert.equal(eventStableId({ title: "No id" }).startsWith("derived-"), true);
+  const unavailable = loadSnapshotWithMeta(null);
+  assert.equal(unavailable.unavailable, true);
+  assert.match(renderChangeAwarenessPanel({ storageUnavailable: true }), /storage unavailable/i);
+});
+
+test("Change awareness snapshot save and reload is deterministic", () => {
+  const storage = {
+    data: {},
+    getItem(key) {
+      return this.data[key] ?? null;
+    },
+    setItem(key, value) {
+      this.data[key] = value;
+    },
+  };
+  const events = [{ id: "x", title: "Event", occurredAt: 1, severity: "low", category: "other", sourceName: "USGS" }];
+  const snapshot = buildSnapshotFromEvents(events, []);
+  assert.ok(saveSnapshot(snapshot, storage));
+  const loaded = loadSnapshotWithMeta(storage);
+  assert.equal(loaded.snapshot.savedAt, snapshot.savedAt);
+  assert.ok(loaded.snapshot.events.x);
+  assert.equal(storage.data[CHANGE_AWARENESS_STORAGE_KEY], JSON.stringify(snapshot));
 });
 
 test("Dashboard v2 event detail drawer handles null and populated events", () => {

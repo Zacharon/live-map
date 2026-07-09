@@ -4,6 +4,7 @@ import { renderEventFilterSummary } from "./event-filter-summary.js";
 import { renderEventDetailDrawer, renderClusterDetailDrawer } from "./event-detail-drawer.js";
 import { renderTimelinePanel } from "./timeline-panel.js";
 import { renderClusterSummary } from "./cluster-summary.js";
+import { renderChangeAwarenessPanel } from "./change-awareness-panel.js";
 
 export function renderOsintDashboardShell(container, context = {}) {
   if (!container) return;
@@ -18,6 +19,8 @@ export function renderOsintDashboardShell(container, context = {}) {
     selectedEvent = null,
     selectedClusterId = null,
     selectedCluster = null,
+    changeSummary = null,
+    changeStatusById = null,
     loading = false,
     error = null,
   } = context;
@@ -41,17 +44,18 @@ export function renderOsintDashboardShell(container, context = {}) {
   container.innerHTML = `<div class="v2-shell">
     ${selectionBanner}
     ${renderEventSummaryCards({ events, sourceStatus, lastLoaded, systemStatus })}
-    ${renderTimelinePanel(events, lastLoaded || Date.now())}
+    ${renderChangeAwarenessPanel(changeSummary)}
+    ${renderTimelinePanel(events, lastLoaded || Date.now(), changeStatusById)}
     ${renderClusterSummary(events, selectedClusterId)}
     ${renderEventFilterSummary(filters, hours)}
     ${renderProviderHealthSummary(sourceStatus, providerResults)}
   </div>`;
 }
 
-export function renderOsintEventDetailDrawer(container, { event = null, cluster = null } = {}) {
+export function renderOsintEventDetailDrawer(container, { event = null, cluster = null, changeStatus = null } = {}) {
   if (!container) return;
   const active = Boolean(event || cluster);
-  container.innerHTML = cluster ? renderClusterDetailDrawer(cluster) : renderEventDetailDrawer(event);
+  container.innerHTML = cluster ? renderClusterDetailDrawer(cluster) : renderEventDetailDrawer(event, { changeStatus });
   container.hidden = !active;
   container.classList.toggle("open", active);
 }
