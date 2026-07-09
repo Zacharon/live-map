@@ -1,7 +1,9 @@
 import { renderEventSummaryCards } from "./summary-cards.js";
 import { renderProviderHealthSummary } from "./provider-health-summary.js";
 import { renderEventFilterSummary } from "./event-filter-summary.js";
-import { renderEventDetailDrawer } from "./event-detail-drawer.js";
+import { renderEventDetailDrawer, renderClusterDetailDrawer } from "./event-detail-drawer.js";
+import { renderTimelinePanel } from "./timeline-panel.js";
+import { renderClusterSummary } from "./cluster-summary.js";
 
 export function renderOsintDashboardShell(container, context = {}) {
   if (!container) return;
@@ -30,19 +32,24 @@ export function renderOsintDashboardShell(container, context = {}) {
 
   container.innerHTML = `<div class="v2-shell">
     ${renderEventSummaryCards({ events, sourceStatus, lastLoaded, systemStatus })}
+    ${renderTimelinePanel(events, lastLoaded || Date.now())}
+    ${renderClusterSummary(events)}
     ${renderEventFilterSummary(filters, hours)}
     ${renderProviderHealthSummary(sourceStatus, providerResults)}
   </div>`;
 }
 
-export function renderOsintEventDetailDrawer(container, event) {
+export function renderOsintEventDetailDrawer(container, { event = null, cluster = null } = {}) {
   if (!container) return;
-  container.innerHTML = renderEventDetailDrawer(event);
-  container.hidden = !event;
-  container.classList.toggle("open", Boolean(event));
+  const active = Boolean(event || cluster);
+  container.innerHTML = cluster ? renderClusterDetailDrawer(cluster) : renderEventDetailDrawer(event);
+  container.hidden = !active;
+  container.classList.toggle("open", active);
 }
 
 export { renderEventSummaryCards, computeSourceMetrics } from "./summary-cards.js";
 export { renderProviderHealthSummary } from "./provider-health-summary.js";
 export { renderEventFilterSummary, buildActiveFilterChips } from "./event-filter-summary.js";
-export { renderEventDetailDrawer } from "./event-detail-drawer.js";
+export { renderEventDetailDrawer, renderClusterDetailDrawer } from "./event-detail-drawer.js";
+export { renderTimelinePanel } from "./timeline-panel.js";
+export { renderClusterSummary } from "./cluster-summary.js";

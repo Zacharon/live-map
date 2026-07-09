@@ -26,6 +26,7 @@ import { renderDashboardPanel, applyDashboardTitle } from "./dashboards/dashboar
 import { CONSUMER_PRESETS, PRESET_ORDER, presetById, severitySetFromMinimum } from "./consumer/presets.js";
 import { buildGlobalSearchResults, groupSearchResults } from "./search/global-search.js";
 import { renderOsintDashboardShell, renderOsintEventDetailDrawer } from "./ui/osint-dashboard-v2/shell.js";
+import { buildEventClusters } from "./events/clustering.js";
 
 function ids(names) {
   return Object.fromEntries(names.map((id) => [id, document.getElementById(id)]));
@@ -438,11 +439,7 @@ export function bootLiveMap() {
     const layers = layersForDashboard(state.dashboard);
     renderFilters(els);
     renderMarkers(mapController.markerLayer, events, (event) => {
-      state.selectedEventId = event.id;
-      state.rightDrawerOpen = true;
-      localStorage.setItem("live-map-right-drawer-v1", "open");
-      renderOsintEventDetailDrawer(els.eventDetailDrawer, event);
-      openEventDialog(event, els.eventDialog, els.dialogContent, mapController.map);
+      openEventInspector(event);
     });
     mapController.renderCountryRisk(riskScores, state.ciiVisible);
     mapController.renderCountryBoundaries(COUNTRIES, riskScores, state.selectedCountryIso3, (country) => selectCountry(country.iso3, false));
@@ -491,7 +488,11 @@ export function bootLiveMap() {
     els.sourcesStatusPanel.innerHTML = renderSourcesStatusPanel(state.events, state.sourceStatus);
     applyDashboardTitle(state.dashboard, els.dashboardEyebrow, els.dashboardTitle);
     els.dashboardPanel.innerHTML = renderDashboardPanel(state.dashboard, { riskScores, correlations, events, sourceStatus: state.sourceStatus, providerResults: state.providerResults }) + renderLayerSummary(layers) + renderRiskTable(riskScores) + renderAlerts(events) + renderCountDebug();
-    const selectedEvent = events.find((event) => event.id === state.selectedEventId) || state.events.find((event) => event.id === state.selectedEventId) || null;
+    const clusters = buildEventClusters(events);
+    const selectedCluster = state.selectedClusterId ? clusters.find((cluster) => cluster.clusterId === state.selectedClusterId) || null : null;
+    const selectedEvent = selectedCluster
+      ? null
+      : events.find((event) => event.id === state.selectedEventId) || state.events.find((event) => event.id === state.selectedEventId) || null;
     renderOsintDashboardShell(els.osintDashboardV2, {
       events,
       sourceStatus: state.sourceStatus,
@@ -503,7 +504,26 @@ export function bootLiveMap() {
       loading: state.apiStatus === "loading",
       error: state.apiFailure?.message || null,
     });
-    renderOsintEventDetailDrawer(els.eventDetailDrawer, selectedEvent);
+    renderOsintEventDetailDrawer(els.eventDetailDrawer, { event: selectedEvent, cluster: selectedCluster });
+  }
+
+  function openEventInspector(eventRecord, { openModal = true } = {}) {
+    if (!eventRecord) return;
+    state.selectedEventId = eventRecord.id;
+    state.selectedClusterId = null;
+    state.rightDrawerOpen = true;
+    localStorage.setItem("live-map-right-drawer-v1", "open");
+    renderOsintEventDetailDrawer(els.eventDetailDrawer, { event: eventRecord, cluster: null });
+    if (openModal) openEventDialog(eventRecord, els.eventDialog, els.dialogContent, mapController.map);
+  }
+
+  function openClusterInspector(cluster) {
+    if (!cluster) return;
+    state.selectedClusterId = cluster.clusterId;
+    state.selectedEventId = null;
+    state.rightDrawerOpen = true;
+    localStorage.setItem("live-map-right-drawer-v1", "open");
+    renderOsintEventDetailDrawer(els.eventDetailDrawer, { event: null, cluster });
   }
 
   function renderNav() {
@@ -768,21 +788,29 @@ export function bootLiveMap() {
       render();
       return;
     }
+    const timelineButton = event.target.closest("[data-v2-timeline-event]");
+    if (timelineButton) {
+      const eventRecord = [...state.events, ...exchangeMarkers()].find((item) => item.id === timelineButton.dataset.v2TimelineEvent);
+      if (eventRecord) openEventInspector(eventRecord, { openModal: false });
+      return;
+    }
+    const clusterButton = event.target.closest("[data-v2-cluster]");
+    if (clusterButton) {
+      const clusters = buildEventClusters(currentEvents());
+      const cluster = clusters.find((item) => item.clusterId === clusterButton.dataset.v2Cluster);
+      if (cluster) openClusterInspector(cluster);
+      return;
+    }
     const detailButton = event.target.closest("[data-event-detail]");
     if (detailButton) {
       const eventRecord = [...state.events, ...exchangeMarkers()].find((item) => item.id === detailButton.dataset.eventDetail);
-      if (eventRecord) {
-        state.selectedEventId = eventRecord.id;
-        state.rightDrawerOpen = true;
-        localStorage.setItem("live-map-right-drawer-v1", "open");
-        renderOsintEventDetailDrawer(els.eventDetailDrawer, eventRecord);
-        openEventDialog(eventRecord, els.eventDialog, els.dialogContent, mapController.map);
-      }
+      if (eventRecord) openEventInspector(eventRecord);
       return;
     }
     if (event.target.closest("[data-v2-close-detail]")) {
       state.selectedEventId = null;
-      renderOsintEventDetailDrawer(els.eventDetailDrawer, null);
+      state.selectedClusterId = null;
+      renderOsintEventDetailDrawer(els.eventDetailDrawer, { event: null, cluster: null });
       return;
     }
     if (event.target.closest("[data-v2-clear-filters]")) {
@@ -818,15 +846,9 @@ export function bootLiveMap() {
       return;
     }
     const card = event.target.closest("[data-id]");
-    if (card && !event.target.closest("a,button")) {
+    if (card && !event.target.closest("a,button,[data-v2-timeline-event],[data-v2-cluster]")) {
       const eventRecord = [...state.events, ...exchangeMarkers()].find((item) => item.id === card.dataset.id);
-      if (eventRecord) {
-        state.selectedEventId = eventRecord.id;
-        state.rightDrawerOpen = true;
-        localStorage.setItem("live-map-right-drawer-v1", "open");
-        renderOsintEventDetailDrawer(els.eventDetailDrawer, eventRecord);
-        openEventDialog(eventRecord, els.eventDialog, els.dialogContent, mapController.map);
-      }
+      if (eventRecord) openEventInspector(eventRecord);
       return;
     }
     if (event.target.id === "openCiiMethod") openMethodologyDialog(els.methodologyDialog, els.methodologyContent);

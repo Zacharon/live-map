@@ -55,6 +55,10 @@ import { computeSourceMetrics, renderEventSummaryCards } from "../src/ui/osint-d
 import { renderProviderHealthSummary } from "../src/ui/osint-dashboard-v2/provider-health-summary.js";
 import { buildActiveFilterChips, renderEventFilterSummary } from "../src/ui/osint-dashboard-v2/event-filter-summary.js";
 import { renderEventDetailDrawer } from "../src/ui/osint-dashboard-v2/event-detail-drawer.js";
+import { groupEventsByTimeline, timelineBucketForEvent, TIMELINE_BUCKETS } from "../src/events/timeline.js";
+import { buildEventClusters, clusterKeyForEvent, geoCellForEvent } from "../src/events/clustering.js";
+import { renderTimelinePanel } from "../src/ui/osint-dashboard-v2/timeline-panel.js";
+import { renderClusterSummary } from "../src/ui/osint-dashboard-v2/cluster-summary.js";
 import { serializeView } from "../src/ui/saved-views.js";
 import sourcesFunction from "../netlify/functions/sources.mjs";
 import eventsFunction from "../netlify/functions/events.mjs";
@@ -1370,6 +1374,52 @@ test("Dashboard v2 filter chips summarize filters without mutating event data", 
   assert.equal(JSON.stringify(events), before);
   const html = renderEventFilterSummary(filters, 24);
   assert.match(html, /japan/i);
+});
+
+test("Timeline buckets are stable and handle missing timestamps", () => {
+  const now = Date.UTC(2026, 6, 8, 12, 0, 0);
+  const recent = { id: "e1", occurredAt: now - 30 * 60 * 1000, title: "Recent" };
+  const older = { id: "e2", occurredAt: now - 3 * 24 * 3600000, title: "Older" };
+  const unknown = { id: "e3", title: "Unknown" };
+  assert.equal(timelineBucketForEvent(recent, now), "1h");
+  assert.equal(timelineBucketForEvent(older, now), "7d");
+  assert.equal(timelineBucketForEvent(unknown, now), "older");
+  const groups = groupEventsByTimeline([recent, older, unknown], now);
+  assert.ok(groups.some((group) => group.id === "1h" && group.events.length === 1));
+  assert.equal(TIMELINE_BUCKETS.length, 5);
+});
+
+test("Timeline and clustering handle empty arrays without mutation", () => {
+  const events = [];
+  const before = JSON.stringify(events);
+  assert.deepEqual(groupEventsByTimeline(events), []);
+  assert.deepEqual(buildEventClusters(events), []);
+  assert.equal(JSON.stringify(events), before);
+  assert.match(renderTimelinePanel([]), /No events/);
+  assert.match(renderClusterSummary([]), /No events to cluster/);
+});
+
+test("Clustering groups nearby coordinates and separates categories", () => {
+  const base = Date.UTC(2026, 6, 8, 10, 0, 0);
+  const quakeA = { id: "a", domain: "natural-disaster", category: "earthquake", lat: 35.12, lon: 139.71, occurredAt: base, severity: "high", sourceName: "USGS", title: "Quake A" };
+  const quakeB = { id: "b", domain: "natural-disaster", category: "earthquake", lat: 35.14, lon: 139.69, occurredAt: base + 3600000, severity: "medium", sourceName: "USGS", title: "Quake B" };
+  const storm = { id: "c", domain: "weather", category: "storm", lat: 35.13, lon: 139.70, occurredAt: base, severity: "high", sourceName: "NWS", title: "Storm" };
+  const clusters = buildEventClusters([quakeA, quakeB, storm]);
+  const quakeCluster = clusters.find((cluster) => cluster.events.some((event) => event.id === "a"));
+  assert.ok(quakeCluster);
+  assert.equal(quakeCluster.eventCount, 2);
+  assert.equal(clusters.find((cluster) => cluster.events.some((event) => event.id === "c")), undefined);
+  assert.equal(geoCellForEvent({ geographic: false, domain: "cyber", category: "cyber" }), "nogeo:cyber:cyber");
+});
+
+test("Clustering handles missing coordinates without crashing", () => {
+  const base = Date.UTC(2026, 6, 8, 10, 0, 0);
+  const a = { id: "a", domain: "technology-cyber", category: "cyber", geographic: false, occurredAt: base, severity: "medium", sourceName: "CISA", title: "CVE-1" };
+  const b = { id: "b", domain: "technology-cyber", category: "cyber", geographic: false, occurredAt: base + 1000, severity: "low", sourceName: "NVD", title: "CVE-2" };
+  const clusters = buildEventClusters([a, b]);
+  assert.equal(clusters.length, 1);
+  assert.equal(clusters[0].eventCount, 2);
+  assert.equal(clusterKeyForEvent(a), clusterKeyForEvent(b));
 });
 
 test("Dashboard v2 event detail drawer handles null and populated events", () => {
