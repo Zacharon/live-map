@@ -40,10 +40,15 @@ export function renderClusterDetailDrawer(cluster) {
   </aside>`;
 }
 
-export function renderEventDetailDrawer(event) {
+export function renderEventDetailDrawer(event, { changeStatus = null } = {}) {
   if (!event) {
     return `<aside class="v2-event-detail v2-event-detail-empty" aria-label="Event details"><p class="v2-empty">Select an event from the feed or map to inspect details.</p></aside>`;
   }
+  const changeBadge = changeStatus === "new"
+    ? `<span class="v2-change-badge v2-change-badge-new">New since last visit</span>`
+    : changeStatus === "updated"
+      ? `<span class="v2-change-badge v2-change-badge-updated">Updated since last visit</span>`
+      : "";
   const categoryLabel = event.domainLabel || CATEGORIES[event.category]?.label || event.category || "Event";
   const severityLabel = SEVERITIES[event.severity]?.label || event.severity || "Low";
   const severityColor = SEVERITIES[event.severity]?.color || SEVERITIES.low.color;
@@ -66,6 +71,7 @@ export function renderEventDetailDrawer(event) {
         <span class="category-pill" style="--cat:${categoryColor}">${escapeHtml(categoryLabel)}</span>
         <span class="severity-tag" style="--sev:${severityColor}">${escapeHtml(severityLabel)}</span>
         <span class="v2-confidence">${escapeHtml(confidence)} confidence</span>
+        ${changeBadge}
       </div>
       <h2 class="v2-detail-title">${escapeHtml(event.title)}</h2>
     </div>

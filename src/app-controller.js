@@ -28,6 +28,13 @@ import { CONSUMER_PRESETS, PRESET_ORDER, presetById, severitySetFromMinimum } fr
 import { buildGlobalSearchResults, groupSearchResults } from "./search/global-search.js";
 import { renderOsintDashboardShell, renderOsintEventDetailDrawer } from "./ui/osint-dashboard-v2/shell.js";
 import { buildEventClusters, clusterMemberIds, findClusterById } from "./events/clustering.js";
+import {
+  loadSnapshotWithMeta,
+  buildSnapshotFromEvents,
+  computeChangeSummary,
+  buildChangeStatusMap,
+  saveSnapshot,
+} from "./events/change-awareness.js";
 
 function ids(names) {
   return Object.fromEntries(names.map((id) => [id, document.getElementById(id)]));
@@ -442,11 +449,17 @@ export function bootLiveMap() {
     const clusters = buildEventClusters(events);
     const selectedCluster = state.selectedClusterId ? findClusterById(clusters, state.selectedClusterId) : null;
     const highlightMemberIds = selectedCluster ? clusterMemberIds(selectedCluster) : null;
+    const { snapshot: changeSnapshot, corrupt: corruptSnapshot, unavailable: storageUnavailable } = loadSnapshotWithMeta();
+    const changeSummary = computeChangeSummary(events, changeSnapshot, clusters);
+    changeSummary.corruptSnapshot = corruptSnapshot;
+    changeSummary.storageUnavailable = storageUnavailable;
+    const changeStatusById = buildChangeStatusMap(changeSummary);
     renderMarkers(mapController.markerLayer, events, (event) => {
       openEventInspector(event);
     }, {
       selectedEventId: state.selectedEventId,
       clusterMemberIds: highlightMemberIds,
+      changeStatusById,
     });
     mapController.clearClusterHighlight();
     if (selectedCluster) renderClusterHighlight(mapController.clusterHighlightLayer, selectedCluster);
@@ -510,10 +523,13 @@ export function bootLiveMap() {
       systemStatus: state.systemStatus,
       selectedClusterId: state.selectedClusterId,
       selectedCluster,
+      changeSummary,
+      changeStatusById,
       loading: state.apiStatus === "loading",
       error: state.apiFailure?.message || null,
     });
-    renderOsintEventDetailDrawer(els.eventDetailDrawer, { event: selectedEvent, cluster: selectedCluster });
+    const selectedChangeStatus = selectedEvent ? changeStatusById.get(selectedEvent.id) || null : null;
+    renderOsintEventDetailDrawer(els.eventDetailDrawer, { event: selectedEvent, cluster: selectedCluster, changeStatus: selectedChangeStatus });
   }
 
   function clearInspectorSelection({ closeDrawer = false } = {}) {
@@ -811,6 +827,13 @@ export function bootLiveMap() {
       const filters = dashboardFilters();
       const key = severityButton.dataset.severity;
       filters.severities.has(key) ? filters.severities.delete(key) : filters.severities.add(key);
+      render();
+      return;
+    }
+    if (event.target.closest("[data-v2-mark-seen]")) {
+      const visibleEvents = currentEvents();
+      const visibleClusters = buildEventClusters(visibleEvents);
+      saveSnapshot(buildSnapshotFromEvents(visibleEvents, visibleClusters));
       render();
       return;
     }
