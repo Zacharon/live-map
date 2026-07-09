@@ -51,6 +51,10 @@ import { shouldCluster, buildIncidents } from "../src/events/incident-clustering
 import { computeQualityDimensions, normalizeVerificationStatus } from "../src/events/event-quality.js";
 import { providerState } from "../src/ui/provider-health-panel.js";
 import { sourceStatusText } from "../src/ui/source-health.js";
+import { computeSourceMetrics, renderEventSummaryCards } from "../src/ui/osint-dashboard-v2/summary-cards.js";
+import { renderProviderHealthSummary } from "../src/ui/osint-dashboard-v2/provider-health-summary.js";
+import { buildActiveFilterChips, renderEventFilterSummary } from "../src/ui/osint-dashboard-v2/event-filter-summary.js";
+import { renderEventDetailDrawer } from "../src/ui/osint-dashboard-v2/event-detail-drawer.js";
 import { serializeView } from "../src/ui/saved-views.js";
 import sourcesFunction from "../netlify/functions/sources.mjs";
 import eventsFunction from "../netlify/functions/events.mjs";
@@ -1330,6 +1334,63 @@ test("Source registry covers every top-level domain with non-live planned states
   assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "statuspage" && provider.status === "live"));
   assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "ripestat" && provider.status === "configuration-required"));
   assert.ok(PROVIDER_SOURCE_REGISTRY.some((provider) => provider.id === "acled" && provider.credentialRequired));
+});
+
+test("Dashboard v2 summary cards handle empty events and missing provider health", () => {
+  const metrics = computeSourceMetrics({});
+  assert.equal(metrics.total, 0);
+  assert.equal(metrics.active, 0);
+  const html = renderEventSummaryCards({ events: [], sourceStatus: {}, lastLoaded: null });
+  assert.match(html, /Visible events/);
+  assert.match(html, /0/);
+  assert.doesNotThrow(() => renderEventSummaryCards());
+});
+
+test("Dashboard v2 provider health summary does not crash without data", () => {
+  const empty = renderProviderHealthSummary({}, []);
+  assert.match(empty, /No provider diagnostics yet/);
+  const html = renderProviderHealthSummary({ usgs: { ok: true, count: 3, acceptedCount: 3 } }, [{ providerId: "usgs", recordCount: 3 }]);
+  assert.match(html, /usgs/i);
+  assert.match(html, /Live/);
+});
+
+test("Dashboard v2 filter chips summarize filters without mutating event data", () => {
+  const events = [
+    { id: "e1", category: "earthquake", severity: "high", domain: "natural-disaster", occurredAt: Date.now(), title: "Test" },
+  ];
+  const filters = {
+    domains: new Set(["natural-disaster"]),
+    categories: new Set(["earthquake"]),
+    severities: new Set(["high", "critical"]),
+    query: "japan",
+  };
+  const before = JSON.stringify(events);
+  const chips = buildActiveFilterChips(filters, 24);
+  assert.ok(chips.length >= 3);
+  assert.equal(JSON.stringify(events), before);
+  const html = renderEventFilterSummary(filters, 24);
+  assert.match(html, /japan/i);
+});
+
+test("Dashboard v2 event detail drawer handles null and populated events", () => {
+  const empty = renderEventDetailDrawer(null);
+  assert.match(empty, /Select an event/);
+  const html = renderEventDetailDrawer({
+    id: "e1",
+    title: "M6.2 earthquake",
+    summary: "Test event",
+    category: "earthquake",
+    severity: "high",
+    confidence: 90,
+    lat: 35.6,
+    lon: 139.7,
+    place: "Tokyo",
+    occurredAt: Date.now(),
+    sourceName: "USGS",
+    sourceUrl: "https://example.com",
+  });
+  assert.match(html, /M6\.2 earthquake/);
+  assert.match(html, /90% confidence/);
 });
 
 await runPendingTests();

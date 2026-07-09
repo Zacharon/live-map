@@ -25,6 +25,7 @@ import { openEventDialog, openMethodologyDialog } from "./ui/dialogs.js";
 import { renderDashboardPanel, applyDashboardTitle } from "./dashboards/dashboard-renderer.js";
 import { CONSUMER_PRESETS, PRESET_ORDER, presetById, severitySetFromMinimum } from "./consumer/presets.js";
 import { buildGlobalSearchResults, groupSearchResults } from "./search/global-search.js";
+import { renderOsintDashboardShell, renderOsintEventDetailDrawer } from "./ui/osint-dashboard-v2/shell.js";
 
 function ids(names) {
   return Object.fromEntries(names.map((id) => [id, document.getElementById(id)]));
@@ -406,7 +407,7 @@ function renderAlerts(events) {
 }
 
 export function bootLiveMap() {
-  const els = ids(["dashboardNav", "domainFilters", "layerFilters", "severityFilters", "eventList", "visibleCount", "highCount", "countryCount", "updatedAt", "search", "globalSearch", "globalSearchResults", "clearDomains", "clearFilters", "timeWindow", "sortOrder", "groupBy", "cardMode", "savedViews", "saveView", "fitWorld", "fitEvents", "themeToggle", "eventDialog", "dialogContent", "closeDialog", "methodologyDialog", "methodologyContent", "closeMethodology", "onboardingDialog", "mapLegend", "systemStatus", "feedAge", "baseMap", "refreshNow", "sourceHealth", "publicDataStatus", "countrySummaryPanel", "sourcesStatusPanel", "dashboardPanel", "dashboardEyebrow", "dashboardTitle", "mapMode", "mapHealth", "feedError", "ciiToggle", "sourcesLink", "filterDrawer", "eventDrawer", "presetList", "advancedMode", "aircraftToggle", "vesselToggle", "airportsToggle", "portsToggle", "trackingStatus", "mapListToggle", "locateMap", "resetWorkspace"]);
+  const els = ids(["dashboardNav", "domainFilters", "layerFilters", "severityFilters", "eventList", "visibleCount", "highCount", "countryCount", "updatedAt", "search", "globalSearch", "globalSearchResults", "clearDomains", "clearFilters", "timeWindow", "sortOrder", "groupBy", "cardMode", "savedViews", "saveView", "fitWorld", "fitEvents", "themeToggle", "eventDialog", "dialogContent", "closeDialog", "methodologyDialog", "methodologyContent", "closeMethodology", "onboardingDialog", "mapLegend", "systemStatus", "feedAge", "baseMap", "refreshNow", "sourceHealth", "publicDataStatus", "countrySummaryPanel", "sourcesStatusPanel", "dashboardPanel", "dashboardEyebrow", "dashboardTitle", "mapMode", "mapHealth", "feedError", "ciiToggle", "sourcesLink", "filterDrawer", "eventDrawer", "presetList", "advancedMode", "aircraftToggle", "vesselToggle", "airportsToggle", "portsToggle", "trackingStatus", "mapListToggle", "locateMap", "resetWorkspace", "osintDashboardV2", "eventDetailDrawer"]);
   const mapController = createMapController({ onHealthChange: (health) => { state.mapHealth = health; renderMapHealth(els.mapHealth, health); } });
   let refreshTimer = null;
   let retryAttempts = 0;
@@ -436,7 +437,13 @@ export function bootLiveMap() {
     const correlations = correlateEventsToMarkets(state.events, EXCHANGES);
     const layers = layersForDashboard(state.dashboard);
     renderFilters(els);
-    renderMarkers(mapController.markerLayer, events, (event) => openEventDialog(event, els.eventDialog, els.dialogContent, mapController.map));
+    renderMarkers(mapController.markerLayer, events, (event) => {
+      state.selectedEventId = event.id;
+      state.rightDrawerOpen = true;
+      localStorage.setItem("live-map-right-drawer-v1", "open");
+      renderOsintEventDetailDrawer(els.eventDetailDrawer, event);
+      openEventDialog(event, els.eventDialog, els.dialogContent, mapController.map);
+    });
     mapController.renderCountryRisk(riskScores, state.ciiVisible);
     mapController.renderCountryBoundaries(COUNTRIES, riskScores, state.selectedCountryIso3, (country) => selectCountry(country.iso3, false));
     mapController.renderMovingObjects(state.movingObjects, (object) => {
@@ -484,6 +491,19 @@ export function bootLiveMap() {
     els.sourcesStatusPanel.innerHTML = renderSourcesStatusPanel(state.events, state.sourceStatus);
     applyDashboardTitle(state.dashboard, els.dashboardEyebrow, els.dashboardTitle);
     els.dashboardPanel.innerHTML = renderDashboardPanel(state.dashboard, { riskScores, correlations, events, sourceStatus: state.sourceStatus, providerResults: state.providerResults }) + renderLayerSummary(layers) + renderRiskTable(riskScores) + renderAlerts(events) + renderCountDebug();
+    const selectedEvent = events.find((event) => event.id === state.selectedEventId) || state.events.find((event) => event.id === state.selectedEventId) || null;
+    renderOsintDashboardShell(els.osintDashboardV2, {
+      events,
+      sourceStatus: state.sourceStatus,
+      providerResults: state.providerResults,
+      filters: dashboardFilters(),
+      hours: state.hours,
+      lastLoaded: state.lastLoaded,
+      systemStatus: state.systemStatus,
+      loading: state.apiStatus === "loading",
+      error: state.apiFailure?.message || null,
+    });
+    renderOsintEventDetailDrawer(els.eventDetailDrawer, selectedEvent);
   }
 
   function renderNav() {
@@ -748,10 +768,65 @@ export function bootLiveMap() {
       render();
       return;
     }
+    const detailButton = event.target.closest("[data-event-detail]");
+    if (detailButton) {
+      const eventRecord = [...state.events, ...exchangeMarkers()].find((item) => item.id === detailButton.dataset.eventDetail);
+      if (eventRecord) {
+        state.selectedEventId = eventRecord.id;
+        state.rightDrawerOpen = true;
+        localStorage.setItem("live-map-right-drawer-v1", "open");
+        renderOsintEventDetailDrawer(els.eventDetailDrawer, eventRecord);
+        openEventDialog(eventRecord, els.eventDialog, els.dialogContent, mapController.map);
+      }
+      return;
+    }
+    if (event.target.closest("[data-v2-close-detail]")) {
+      state.selectedEventId = null;
+      renderOsintEventDetailDrawer(els.eventDetailDrawer, null);
+      return;
+    }
+    if (event.target.closest("[data-v2-clear-filters]")) {
+      resetDashboardFilters();
+      els.search.value = "";
+      els.timeWindow.value = "168";
+      state.hours = 168;
+      syncUrlState();
+      render();
+      return;
+    }
+    const filterChip = event.target.closest("[data-v2-filter]");
+    if (filterChip) {
+      const filters = dashboardFilters();
+      const type = filterChip.dataset.v2Filter;
+      const key = filterChip.dataset.v2FilterKey;
+      if (type === "domain") filters.domains.delete(key);
+      if (type === "category") filters.categories.delete(key);
+      if (type === "severity") filters.severities.delete(key);
+      if (type === "query") {
+        filters.query = "";
+        els.search.value = "";
+        syncUrlState();
+      }
+      if (type === "time") {
+        state.hours = 168;
+        els.timeWindow.value = "168";
+        loadEvents(true);
+        return;
+      }
+      syncUrlState();
+      render();
+      return;
+    }
     const card = event.target.closest("[data-id]");
-    if (card) {
+    if (card && !event.target.closest("a,button")) {
       const eventRecord = [...state.events, ...exchangeMarkers()].find((item) => item.id === card.dataset.id);
-      if (eventRecord) openEventDialog(eventRecord, els.eventDialog, els.dialogContent, mapController.map);
+      if (eventRecord) {
+        state.selectedEventId = eventRecord.id;
+        state.rightDrawerOpen = true;
+        localStorage.setItem("live-map-right-drawer-v1", "open");
+        renderOsintEventDetailDrawer(els.eventDetailDrawer, eventRecord);
+        openEventDialog(eventRecord, els.eventDialog, els.dialogContent, mapController.map);
+      }
       return;
     }
     if (event.target.id === "openCiiMethod") openMethodologyDialog(els.methodologyDialog, els.methodologyContent);
