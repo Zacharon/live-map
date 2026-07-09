@@ -14,4 +14,4 @@ secrets/
 .dev.vars
 
 # Generated local artifacts
-artifacts/
+/artifacts/

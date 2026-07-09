@@ -1,7 +1,8 @@
 import { CATEGORIES, SEVERITIES } from "../../config.js";
 import { escapeHtml, exactTime, relativeTime } from "../../events/event-normalizer.js";
+import { renderEventArtifactSection, renderClusterArtifactSection } from "./event-artifact-card.js";
 
-export function renderClusterDetailDrawer(cluster) {
+export function renderClusterDetailDrawer(cluster, { allEvents = [] } = {}) {
   if (!cluster) {
     return `<aside class="v2-event-detail v2-event-detail-empty" aria-label="Cluster details"><p class="v2-empty">Select a cluster to inspect related events.</p></aside>`;
   }
@@ -37,10 +38,11 @@ export function renderClusterDetailDrawer(cluster) {
       <div><dt>Time range</dt><dd>${cluster.startedAt ? escapeHtml(relativeTime(cluster.endedAt)) + " to " + escapeHtml(relativeTime(cluster.startedAt)) : "Unknown"}</dd></div>
     </dl>
     <div class="v2-cluster-members"><div class="v2-section-title"><span>Member events</span></div>${members}${hidden}</div>
+    ${renderClusterArtifactSection(cluster, { allEvents })}
   </aside>`;
 }
 
-export function renderEventDetailDrawer(event, { changeStatus = null } = {}) {
+export function renderEventDetailDrawer(event, { changeStatus = null, allEvents = [], clusters = [] } = {}) {
   if (!event) {
     return `<aside class="v2-event-detail v2-event-detail-empty" aria-label="Event details"><p class="v2-empty">Select an event from the feed or map to inspect details.</p></aside>`;
   }
@@ -85,5 +87,6 @@ export function renderEventDetailDrawer(event, { changeStatus = null } = {}) {
       <div><dt>Type</dt><dd>${escapeHtml(event.typeLabel || event.category || "—")}</dd></div>
     </dl>
     <div class="v2-detail-actions">${sourceLink}${providerLink}${mapLink}<button type="button" class="v2-detail-link secondary" data-v2-clear-selection>Clear selection</button></div>
+    ${renderEventArtifactSection(event, { allEvents, clusters, changeStatus })}
   </aside>`;
 }

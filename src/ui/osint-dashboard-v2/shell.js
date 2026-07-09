@@ -52,10 +52,18 @@ export function renderOsintDashboardShell(container, context = {}) {
   </div>`;
 }
 
-export function renderOsintEventDetailDrawer(container, { event = null, cluster = null, changeStatus = null } = {}) {
+export function renderOsintEventDetailDrawer(container, {
+  event = null,
+  cluster = null,
+  changeStatus = null,
+  allEvents = [],
+  clusters = [],
+} = {}) {
   if (!container) return;
   const active = Boolean(event || cluster);
-  container.innerHTML = cluster ? renderClusterDetailDrawer(cluster) : renderEventDetailDrawer(event, { changeStatus });
+  container.innerHTML = cluster
+    ? renderClusterDetailDrawer(cluster, { allEvents })
+    : renderEventDetailDrawer(event, { changeStatus, allEvents, clusters });
   container.hidden = !active;
   container.classList.toggle("open", active);
 }
