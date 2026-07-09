@@ -1,4 +1,16 @@
-import { DOMAIN_LABELS, MASTER_SOURCE_REGISTRY, filterSources, sourceById, sourceRegistryStats, validateSourceRegistry } from "../sources/master-source-registry.js";
+import {
+  DOMAIN_LABELS,
+  IMPLEMENTATION_STATUSES,
+  MASTER_SOURCE_REGISTRY,
+  SOURCE_ACCESS_CLASSIFICATIONS,
+  SOURCE_DOMAINS,
+  SOURCE_QUALITY_TIERS,
+  filterSources,
+  sourceById,
+  sourceRegistryStats,
+  validateSourceRegistry,
+} from "../sources/master-source-registry.js";
+import { allowedValue, booleanString, sanitizeText, sanitizeToken } from "./request-validation.js";
 
 const headers = {
   "content-type": "application/json; charset=utf-8",
@@ -6,20 +18,22 @@ const headers = {
   "access-control-allow-origin": "*",
 };
 
+const SOURCE_CATEGORIES = [...new Set(MASTER_SOURCE_REGISTRY.map((source) => source.category).filter(Boolean))];
+
 function paramsFromUrl(url) {
   const search = new URL(url).searchParams;
   return {
-    q: search.get("q") || "",
-    domain: search.get("domain") || "",
-    category: search.get("category") || "",
-    accessMode: search.get("accessMode") || search.get("access") || "",
-    status: search.get("status") || "",
-    sourceTier: search.get("sourceTier") || "",
-    official: search.get("official") || "",
-    implemented: search.get("implemented") || "",
-    credentialRequired: search.get("credentialRequired") || "",
-    legalReviewRequired: search.get("legalReviewRequired") || "",
-    source: search.get("source") || "",
+    q: sanitizeText(search.get("q"), { maxLength: 120 }),
+    domain: allowedValue(search.get("domain"), SOURCE_DOMAINS, ""),
+    category: allowedValue(search.get("category"), SOURCE_CATEGORIES, ""),
+    accessMode: allowedValue(search.get("accessMode") || search.get("access"), SOURCE_ACCESS_CLASSIFICATIONS, ""),
+    status: allowedValue(search.get("status"), IMPLEMENTATION_STATUSES, ""),
+    sourceTier: allowedValue(search.get("sourceTier"), SOURCE_QUALITY_TIERS, ""),
+    official: booleanString(search.get("official")),
+    implemented: booleanString(search.get("implemented")),
+    credentialRequired: booleanString(search.get("credentialRequired")),
+    legalReviewRequired: booleanString(search.get("legalReviewRequired")),
+    source: sanitizeToken(search.get("source")),
   };
 }
 

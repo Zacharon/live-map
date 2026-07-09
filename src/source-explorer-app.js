@@ -1,5 +1,6 @@
-import { DOMAIN_LABELS, IMPLEMENTATION_STATUSES, MASTER_SOURCE_REGISTRY, SOURCE_ACCESS_CLASSIFICATIONS, SOURCE_QUALITY_TIERS, filterSources, sourceById, sourceRegistryStats } from "./sources/master-source-registry.js";
+import { DOMAIN_LABELS, IMPLEMENTATION_STATUSES, MASTER_SOURCE_REGISTRY, SOURCE_ACCESS_CLASSIFICATIONS, SOURCE_DOMAINS, SOURCE_QUALITY_TIERS, filterSources, sourceById, sourceRegistryStats } from "./sources/master-source-registry.js";
 import { escapeHtml, relativeTime } from "./events/event-normalizer.js";
+import { allowedParam, safeSearchParams, textParam, tokenParam } from "./url-params.js";
 
 const els = {
   search: document.getElementById("sourceSearch"),
@@ -69,15 +70,16 @@ function syncUrl(selectedId = state.selectedId, mode = "replace") {
 }
 
 function readUrl() {
-  const params = new URLSearchParams(location.search);
-  els.search.value = params.get("q") || "";
-  els.domain.value = params.get("domain") || "";
-  els.access.value = params.get("access") || params.get("accessMode") || "";
-  els.statusFilter.value = params.get("status") || "";
-  els.tierFilter.value = params.get("sourceTier") || "";
-  els.official.value = params.get("official") || "";
-  els.implemented.value = params.get("implemented") || "";
-  state.selectedId = params.get("source") || "";
+  const params = safeSearchParams(location.search);
+  els.search.value = textParam(params, "q", "", 120);
+  els.domain.value = allowedParam(params, "domain", SOURCE_DOMAINS, "");
+  els.access.value = allowedParam(params, "access", SOURCE_ACCESS_CLASSIFICATIONS, "")
+    || allowedParam(params, "accessMode", SOURCE_ACCESS_CLASSIFICATIONS, "");
+  els.statusFilter.value = allowedParam(params, "status", IMPLEMENTATION_STATUSES, "");
+  els.tierFilter.value = allowedParam(params, "sourceTier", SOURCE_QUALITY_TIERS, "");
+  els.official.value = ["true", "false"].includes(params.get("official") || "") ? params.get("official") : "";
+  els.implemented.value = ["true", "false"].includes(params.get("implemented") || "") ? params.get("implemented") : "";
+  state.selectedId = tokenParam(params, "source", "");
 }
 
 function badge(value, className = "") {

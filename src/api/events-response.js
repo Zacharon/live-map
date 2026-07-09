@@ -2,12 +2,17 @@ import { EVENT_PROVIDERS } from "../data/providers/registry.js";
 import { orchestrateProviders } from "../data/providers/orchestrator.js";
 import { DOMAIN_SOURCE_STATUS, PROVIDER_SOURCE_REGISTRY } from "../data/providers/source-registry.js";
 import { countryByCode, countryForEvent } from "../data/countries.js";
+import { RECORD_KINDS } from "../events/normalized-event.js";
+import { SOURCE_DOMAINS, VERIFICATION_STATES } from "../sources/master-source-registry.js";
+import { allowedValue, parseHoursParam, sanitizeCountryCode } from "./request-validation.js";
 
 const headers = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
   "access-control-allow-origin": "*",
 };
+
+const EVENT_DOMAINS = SOURCE_DOMAINS;
 
 const providerSourceRegistry = Object.fromEntries(
   PROVIDER_SOURCE_REGISTRY.map((provider) => [
@@ -51,18 +56,31 @@ const sourceRegistry = Object.fromEntries(
   ])
 );
 
-function parseHours(request) {
+function parseApiParams(request) {
   const url = new URL(request.url);
-  return Math.min(720, Math.max(24, Number(url.searchParams.get("hours") || 168)));
-}
+  const warnings = [];
+  const country = sanitizeCountryCode(url.searchParams.get("country"));
+  const normalizedCountry = country ? countryByCode(country)?.iso3 || null : null;
+  if (country && !normalizedCountry) warnings.push("Invalid country filter ignored.");
 
-function parseApiFilters(request) {
-  const url = new URL(request.url);
+  const recordKind = allowedValue(url.searchParams.get("recordKind"), RECORD_KINDS, null);
+  if (url.searchParams.get("recordKind") && !recordKind) warnings.push("Invalid recordKind filter ignored.");
+
+  const verification = allowedValue(url.searchParams.get("verification"), VERIFICATION_STATES, null);
+  if (url.searchParams.get("verification") && !verification) warnings.push("Invalid verification filter ignored.");
+
+  const domain = allowedValue(url.searchParams.get("domain"), EVENT_DOMAINS, null);
+  if (url.searchParams.get("domain") && !domain) warnings.push("Invalid domain filter ignored.");
+
   return {
-    recordKind: url.searchParams.get("recordKind") || null,
-    verification: url.searchParams.get("verification") || null,
-    domain: url.searchParams.get("domain") || null,
-    country: url.searchParams.get("country") || null,
+    hours: parseHoursParam(url.searchParams, warnings),
+    filters: {
+      recordKind,
+      verification,
+      domain,
+      country: normalizedCountry,
+    },
+    warnings,
   };
 }
 
@@ -110,11 +128,16 @@ export function createEventsOptionsResponse() {
 
 export async function createEventsResponse(request, options = {}) {
   if (request.method === "OPTIONS") return createEventsOptionsResponse();
+  if (request.method !== "GET") {
+    return new Response(
+      JSON.stringify({ error: "method-not-allowed", message: "Use GET for event feeds." }),
+      { status: 405, headers: { ...headers, "cache-control": "no-store" } },
+    );
+  }
 
   try {
     const result = await withRuntimeEnv(options.env, async () => {
-      const hours = parseHours(request);
-      const filters = parseApiFilters(request);
+      const { hours, filters, warnings } = parseApiParams(request);
       const generatedAt = Date.now();
       const providerResult = await orchestrateProviders({ hours, now: generatedAt, env: options.env });
       const canonicalEvents = applyApiFilters(providerResult.canonicalEvents, filters);
@@ -125,6 +148,7 @@ export async function createEventsResponse(request, options = {}) {
         canonicalEvents,
         generatedAt,
         filters,
+        hours,
         sources: EVENT_PROVIDERS.filter((provider) => providerResult.sourceStatus[provider.id]?.ok).map((provider) => provider.name),
         sourceStatus: providerResult.sourceStatus,
         sourceRegistry,
@@ -134,6 +158,7 @@ export async function createEventsResponse(request, options = {}) {
         systemStatus: providerResult.systemStatus,
         mode: responseMode(providerResult, options.runtimeMode),
         errors: providerResult.errors,
+        warnings: [...warnings, ...(providerResult.errors || [])],
       };
     });
 

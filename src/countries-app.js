@@ -1,4 +1,6 @@
+import { countryByCode } from "./data/countries.js";
 import { escapeHtml, relativeTime } from "./events/event-normalizer.js";
+import { allowedParam, countryParam, safeSearchParams, textParam } from "./url-params.js";
 
 const SORTS = [
   ["score-desc", "Score high to low"],
@@ -7,6 +9,7 @@ const SORTS = [
   ["region", "Region"],
   ["name", "Country name"],
 ];
+const SORT_IDS = SORTS.map(([value]) => value);
 
 const els = {
   status: document.getElementById("countriesStatus"),
@@ -25,7 +28,7 @@ const els = {
 let scores = [];
 
 function params() {
-  return new URLSearchParams(window.location.search);
+  return safeSearchParams();
 }
 
 function setParam(key, value) {
@@ -36,15 +39,16 @@ function setParam(key, value) {
 }
 
 function selectedCode() {
-  return (params().get("country") || "").toUpperCase();
+  return countryParam(params(), "country", countryByCode) || "";
 }
 
 function initializeControls() {
   els.sort.innerHTML = SORTS.map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
-  els.sort.value = params().get("sort") || "score-desc";
-  els.search.value = params().get("q") || "";
-  els.confidence.value = params().get("confidence") || "";
-  els.completeness.value = params().get("completeness") || "";
+  const searchParams = params();
+  els.sort.value = allowedParam(searchParams, "sort", SORT_IDS, "score-desc");
+  els.search.value = textParam(searchParams, "q", "", 120);
+  els.confidence.value = textParam(searchParams, "confidence", "", 40);
+  els.completeness.value = textParam(searchParams, "completeness", "", 40);
 }
 
 function fillFilters() {
