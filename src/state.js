@@ -58,6 +58,7 @@ export const state = {
   mapMode: "2d",
   ciiVisible: false,
   selectedEventId: null,
+  selectedClusterId: null,
   selectedCountryIso3: urlValue("country", "").toUpperCase() || null,
   sessionAlertHistory: [],
   collapsedGroups: new Set(JSON.parse(localStorage.getItem("live-map-collapsed-groups-v1") || "[]")),
