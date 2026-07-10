@@ -4,6 +4,8 @@
 
 import { escapeHtml, relativeTime } from "../../events/event-normalizer.js";
 import { buildEventArtifact, buildClusterArtifact } from "../../artifacts/event-artifacts.js";
+import { computeThreatLevel, computeClusterThreatLevel } from "../../intelligence/threat-level.js";
+import { renderThreatBadge } from "./threat-badge.js";
 
 function exportButtons() {
   return `<div class="v2-artifact-actions" role="group" aria-label="Export artifact">
@@ -65,6 +67,7 @@ export function renderEventArtifactSection(event, opts = {}) {
   const corroboration = escapeHtml(String(artifact.corroborationCount ?? 0));
   const severity = escapeHtml(artifact.severity || "—");
   const source = escapeHtml(artifact.sourceName || artifact.source?.sourceName || "Unknown");
+  const threat = computeThreatLevel(event, { relatedCount: artifact.relatedEvents?.length || 0 });
 
   return `<section class="v2-artifact" aria-label="Event artifact">
     <div class="v2-section-title">
@@ -73,6 +76,7 @@ export function renderEventArtifactSection(event, opts = {}) {
     </div>
     <div class="v2-artifact-summary">
       <span class="v2-artifact-chip">Severity: ${severity}</span>
+      ${renderThreatBadge(threat, { compact: true })}
       <span class="v2-artifact-chip">Confidence: ${confidence}</span>
       <span class="v2-artifact-chip">Corroboration: ${corroboration}</span>
       <span class="v2-artifact-chip">Source: ${source}</span>
@@ -103,6 +107,7 @@ export function renderClusterArtifactSection(cluster, opts = {}) {
   const corroboration = escapeHtml(String(artifact.corroborationCount ?? 0));
   const severity = escapeHtml(artifact.severity || "—");
   const sources = escapeHtml(artifact.providerSummary || "—");
+  const threat = computeClusterThreatLevel(cluster);
 
   return `<section class="v2-artifact" aria-label="Cluster artifact">
     <div class="v2-section-title">
@@ -112,6 +117,7 @@ export function renderClusterArtifactSection(cluster, opts = {}) {
     <div class="v2-artifact-summary">
       <span class="v2-artifact-chip">Events: ${escapeHtml(String(artifact.eventCount))}</span>
       <span class="v2-artifact-chip">Severity: ${severity}</span>
+      ${renderThreatBadge(threat, { compact: true })}
       <span class="v2-artifact-chip">Confidence: ${confidence}</span>
       <span class="v2-artifact-chip">Corroboration: ${corroboration}</span>
     </div>

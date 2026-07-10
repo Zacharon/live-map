@@ -5,6 +5,8 @@ import { renderEventDetailDrawer, renderClusterDetailDrawer } from "./event-deta
 import { renderTimelinePanel } from "./timeline-panel.js";
 import { renderClusterSummary } from "./cluster-summary.js";
 import { renderChangeAwarenessPanel } from "./change-awareness-panel.js";
+import { renderOperatorCommandBar } from "./operator-command-bar.js";
+import { renderLegendPanel } from "./legend-panel.js";
 
 export function renderOsintDashboardShell(container, context = {}) {
   if (!container) return;
@@ -26,24 +28,38 @@ export function renderOsintDashboardShell(container, context = {}) {
   } = context;
 
   if (loading) {
-    container.innerHTML = `<div class="v2-shell v2-shell-loading" role="status"><p>Loading dashboard…</p></div>`;
+    container.innerHTML = `<div class="v2-shell v2-shell-loading" role="status">
+      ${renderOperatorCommandBar({ events: [], filters, hours, lastLoaded, systemStatus, sourceStatus, providerResults, changeSummary, loading: true })}
+      <p class="v2-empty">Loading dashboard… provider responses still arriving.</p>
+    </div>`;
     return;
   }
 
   if (error && !events.length) {
-    container.innerHTML = `<div class="v2-shell v2-shell-error" role="alert"><p>${error}</p></div>`;
+    container.innerHTML = `<div class="v2-shell v2-shell-error" role="alert">
+      ${renderOperatorCommandBar({ events: [], filters, hours, lastLoaded, systemStatus, sourceStatus, providerResults, changeSummary, error })}
+      <p>${error}</p>
+      <p class="v2-empty">Clear filters if applied, then refresh. Cached events may still appear in the feed when available.</p>
+    </div>`;
     return;
   }
 
   const selectionBanner = selectedCluster
     ? `<div class="v2-selection-banner" role="status"><span>Cluster selected on map — ${selectedCluster.eventCount} related events</span><button type="button" class="v2-text-btn" data-v2-clear-selection>Clear</button></div>`
     : selectedClusterId
-      ? `<div class="v2-selection-banner v2-selection-banner-stale" role="status"><span>Previous cluster no longer in view</span><button type="button" class="v2-text-btn" data-v2-clear-selection>Clear</button></div>`
+      ? `<div class="v2-selection-banner v2-selection-banner-stale" role="status"><span>Previous cluster no longer in view — clear selection or adjust filters</span><button type="button" class="v2-text-btn" data-v2-clear-selection>Clear</button></div>`
       : "";
+
+  const emptyFocus = !events.length
+    ? `<div class="v2-empty-focus" role="status"><p class="v2-empty"><strong>No events in this focus.</strong> Filters or the time window may be hiding everything. Clear filters, widen the hours window, or check provider health below.</p></div>`
+    : "";
 
   container.innerHTML = `<div class="v2-shell">
     ${selectionBanner}
+    ${renderOperatorCommandBar({ events, filters, hours, lastLoaded, systemStatus, sourceStatus, providerResults, changeSummary, loading, error })}
     ${renderEventSummaryCards({ events, sourceStatus, lastLoaded, systemStatus })}
+    ${renderLegendPanel()}
+    ${emptyFocus}
     ${renderChangeAwarenessPanel(changeSummary)}
     ${renderTimelinePanel(events, lastLoaded || Date.now(), changeStatusById)}
     ${renderClusterSummary(events, selectedClusterId)}

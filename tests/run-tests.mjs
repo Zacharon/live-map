@@ -93,6 +93,15 @@ import {
 } from "../src/api/request-validation.js";
 import { clampMovingObjectLimit } from "../src/moving-objects/schema.js";
 import { allowedParam, listParam, safeSearchParams, textParam, tokenParam } from "../src/url-params.js";
+import {
+  computeThreatLevel,
+  computeClusterThreatLevel,
+  BASE_THREAT_CAVEATS,
+} from "../src/intelligence/threat-level.js";
+import { buildEventConnections, CONNECTIONS_MAX } from "../src/intelligence/event-connections.js";
+import { renderThreatBadge, renderThreatExplain } from "../src/ui/osint-dashboard-v2/threat-badge.js";
+import { renderConnectionsPanel } from "../src/ui/osint-dashboard-v2/connections-panel.js";
+import { renderOperatorCommandBar } from "../src/ui/osint-dashboard-v2/operator-command-bar.js";
 import { serializeView } from "../src/ui/saved-views.js";
 import sourcesFunction from "../netlify/functions/sources.mjs";
 import eventsFunction from "../netlify/functions/events.mjs";
@@ -1802,6 +1811,171 @@ test("Artifact and change-awareness helpers still soft-fail on malformed inputs"
   const summary = computeChangeSummary([], null, []);
   assert.equal(summary.hasPreviousSnapshot, false);
   assert.equal(parseSnapshot("{bad"), null);
+});
+
+test("Threat level v0 is deterministic", () => {
+  const now = Date.UTC(2026, 6, 9, 12, 0, 0);
+  const event = {
+    id: "t1",
+    severity: "high",
+    occurredAt: now - 30 * 60 * 1000,
+    updatedAt: now - 20 * 60 * 1000,
+    domain: "conflict-security",
+    category: "conflict",
+    confidence: 80,
+    lat: 10,
+    lon: 20,
+    place: "Somewhere",
+    country: "X",
+  };
+  const a = computeThreatLevel(event, { now, relatedCount: 2, cluster: { eventCount: 3 } });
+  const b = computeThreatLevel(event, { now, relatedCount: 2, cluster: { eventCount: 3 } });
+  assert.deepEqual(a, b);
+  assert.ok(THREAT_LEVELS_OR_SCORE(a));
+  assert.ok(a.caveats.length >= BASE_THREAT_CAVEATS.length);
+});
+
+function THREAT_LEVELS_OR_SCORE(result) {
+  return ["low", "guarded", "elevated", "high", "critical"].includes(result.level)
+    && Number.isFinite(result.score)
+    && result.score >= 0
+    && result.score <= 100
+    && Array.isArray(result.reasons)
+    && Array.isArray(result.caveats)
+    && result.caveats.length > 0;
+}
+
+test("Threat level missing fields do not crash", () => {
+  const empty = computeThreatLevel(null);
+  assert.equal(empty.level, "low");
+  assert.ok(empty.caveats.length);
+  const sparse = computeThreatLevel({});
+  assert.ok(THREAT_LEVELS_OR_SCORE(sparse));
+});
+
+test("Threat level ranks high/recent/clustered above low/old/single", () => {
+  const now = Date.UTC(2026, 6, 9, 12, 0, 0);
+  const hot = computeThreatLevel({
+    id: "hot",
+    severity: "critical",
+    occurredAt: now - 10 * 60 * 1000,
+    domain: "conflict-security",
+    category: "attack",
+    confidence: 90,
+    lat: 1,
+    lon: 2,
+    place: "A",
+  }, { now, relatedCount: 4, cluster: { eventCount: 5 } });
+  const cold = computeThreatLevel({
+    id: "cold",
+    severity: "low",
+    occurredAt: now - 20 * 24 * 60 * 60 * 1000,
+    domain: "other",
+    category: "other",
+    confidence: 40,
+  }, { now, relatedCount: 0 });
+  assert.ok(hot.score > cold.score);
+  assert.ok(["elevated", "high", "critical"].includes(hot.level));
+});
+
+test("Threat level caveats are always present", () => {
+  const result = computeThreatLevel({ id: "c", severity: "medium", occurredAt: Date.now() });
+  assert.ok(result.caveats.some((c) => /not an official assessment/i.test(c)));
+  const clusterThreat = computeClusterThreatLevel({
+    clusterId: "cl1",
+    eventCount: 2,
+    events: [
+      { id: "a", severity: "high", occurredAt: Date.now() },
+      { id: "b", severity: "medium", occurredAt: Date.now() - 1000 },
+    ],
+  });
+  assert.ok(clusterThreat.caveats.length > 0);
+});
+
+test("Event connections are deterministic and capped", () => {
+  const base = Date.UTC(2026, 6, 9, 8, 0, 0);
+  const subject = {
+    id: "s",
+    title: "Subject quake event",
+    occurredAt: base,
+    provider: "usgs",
+    sourceName: "USGS",
+    country: "Japan",
+    category: "earthquake",
+    domain: "natural-disaster",
+    lat: 35,
+    lon: 139,
+    severity: "high",
+  };
+  const all = [subject];
+  for (let i = 0; i < 15; i += 1) {
+    all.push({
+      id: `r${i}`,
+      title: `Related quake ${i}`,
+      occurredAt: base + i * 1000,
+      provider: "usgs",
+      sourceName: "USGS",
+      country: "Japan",
+      category: "earthquake",
+      domain: "natural-disaster",
+      lat: 35 + i * 0.01,
+      lon: 139,
+      severity: "medium",
+    });
+  }
+  const clusters = buildEventClusters(all);
+  const a = buildEventConnections(subject, { allEvents: all, clusters, max: CONNECTIONS_MAX });
+  const b = buildEventConnections(subject, { allEvents: all, clusters, max: CONNECTIONS_MAX });
+  assert.deepEqual(a.relatedEvents.map((r) => r.eventId), b.relatedEvents.map((r) => r.eventId));
+  assert.ok(a.relatedEvents.length <= CONNECTIONS_MAX);
+  assert.ok(a.relatedEvents.length > 0);
+  assert.ok(a.relatedEvents.every((r) => Array.isArray(r.relationReasons) && r.relationReasons.length));
+  assert.ok(a.summary);
+});
+
+test("Event connections do not mutate raw events", () => {
+  const events = [
+    { id: "x", title: "X", occurredAt: 10, provider: "a", sourceName: "A", category: "earthquake", domain: "natural-disaster", lat: 1, lon: 2, country: "Z", severity: "low" },
+    { id: "y", title: "Y", occurredAt: 20, provider: "a", sourceName: "A", category: "earthquake", domain: "natural-disaster", lat: 1.1, lon: 2.1, country: "Z", severity: "low" },
+  ];
+  const before = JSON.stringify(events);
+  buildEventConnections(events[0], { allEvents: events, clusters: buildEventClusters(events) });
+  assert.equal(JSON.stringify(events), before);
+});
+
+test("Threat and connections UI helpers render safely", () => {
+  assert.match(renderThreatBadge(null), /Threat/);
+  assert.match(renderThreatExplain(computeThreatLevel({ id: "1", severity: "high", occurredAt: Date.now() })), /Threat level v0/);
+  assert.match(renderConnectionsPanel(null), /Connection data unavailable/);
+  assert.match(renderConnectionsPanel({ relatedEvents: [], summary: "None", patternHint: "one-off", entities: {} }), /one-off|No connected/i);
+  assert.match(renderOperatorCommandBar({ events: [], filters: {}, hours: 24 }), /No events match/i);
+  assert.match(renderOperatorCommandBar({
+    events: [{ id: "1", severity: "critical" }],
+    filters: {},
+    hours: 24,
+    lastLoaded: Date.now(),
+    changeSummary: { hasPreviousSnapshot: true, newEvents: [{}], updatedEvents: [] },
+  }), /critical/i);
+});
+
+test("Event drawer includes threat and connections sections", () => {
+  const html = renderEventDetailDrawer({
+    id: "drawer-1",
+    title: "Drawer event",
+    summary: "Summary",
+    category: "earthquake",
+    severity: "high",
+    confidence: 70,
+    lat: 1,
+    lon: 2,
+    place: "Test",
+    occurredAt: Date.now(),
+    sourceName: "USGS",
+    domain: "natural-disaster",
+  }, { allEvents: [], clusters: [] });
+  assert.match(html, /Threat level v0|v2-threat-badge/);
+  assert.match(html, /Connected events|Why am I seeing this/);
+  assert.match(html, /OSINT artifact/);
 });
 
 await runPendingTests();
