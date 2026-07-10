@@ -1,3 +1,5 @@
+import { clampedInteger } from "../api/request-validation.js";
+
 const MAX_AGE_SECONDS = 10 * 60;
 
 export function normalizeMovingObject(input = {}) {
@@ -60,5 +62,5 @@ export function validateBbox(value) {
 }
 
 export function clampMovingObjectLimit(value, fallback = 500) {
-  return Math.min(1000, Math.max(1, Number(value || fallback)));
+  return clampedInteger(value === "" || value == null ? fallback : value, { min: 1, max: 1000, fallback });
 }

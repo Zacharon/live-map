@@ -79,6 +79,20 @@ import {
 } from "../src/artifacts/event-artifacts.js";
 import { artifactToMarkdown, artifactToJson, artifactToJsonString } from "../src/ui/osint-dashboard-v2/artifact-export.js";
 import { renderEventArtifactSection } from "../src/ui/osint-dashboard-v2/event-artifact-card.js";
+import {
+  DEFAULT_HOURS,
+  MAX_HOURS,
+  MIN_HOURS,
+  allowedValue,
+  clampedInteger,
+  parseHoursParam,
+  safeJsonArray,
+  sanitizeCountryCode,
+  sanitizeText,
+  sanitizeToken,
+} from "../src/api/request-validation.js";
+import { clampMovingObjectLimit } from "../src/moving-objects/schema.js";
+import { allowedParam, listParam, safeSearchParams, textParam, tokenParam } from "../src/url-params.js";
 import { serializeView } from "../src/ui/saved-views.js";
 import sourcesFunction from "../netlify/functions/sources.mjs";
 import eventsFunction from "../netlify/functions/events.mjs";
@@ -1708,6 +1722,86 @@ test("Event artifact card renders export controls", () => {
   assert.match(html, /Copy Markdown/);
   assert.match(html, /Download JSON/);
   assert.match(html, /data-v2-artifact-action="download-md"/);
+});
+
+test("Request validation clamps hours and rejects non-numeric values", () => {
+  const warnings = [];
+  assert.equal(parseHoursParam(new URLSearchParams(""), warnings), DEFAULT_HOURS);
+  assert.equal(parseHoursParam(new URLSearchParams("hours=banana"), warnings), DEFAULT_HOURS);
+  assert.ok(warnings.some((w) => /Invalid hours/i.test(w)));
+  const clampWarn = [];
+  assert.equal(parseHoursParam(new URLSearchParams("hours=999999"), clampWarn), MAX_HOURS);
+  assert.ok(clampWarn.some((w) => /clamped/i.test(w)));
+  assert.equal(parseHoursParam(new URLSearchParams("hours=-5"), []), MIN_HOURS);
+  assert.equal(clampedInteger("nope", { min: 1, max: 10, fallback: 3 }), 3);
+  assert.equal(clampMovingObjectLimit("nope", 50), 50);
+  assert.equal(clampMovingObjectLimit(5000, 50), 1000);
+});
+
+test("Events API clamps invalid hours and ignores invalid filters safely", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("earthquake.usgs.gov")) {
+      return new Response(JSON.stringify({
+        features: [{
+          id: "hours-filter-test",
+          properties: { mag: 4.8, time: Date.now(), updated: Date.now(), url: "https://earthquake.usgs.gov/earthquakes/eventpage/hours-filter-test", place: "Test" },
+          geometry: { type: "Point", coordinates: [100, 10, 5] },
+        }],
+      }), { status: 200 });
+    }
+    return new Response("unavailable", { status: 503 });
+  };
+  try {
+    const badHours = await eventsFunction(new Request("https://liveworldmap.netlify.app/api/events?hours=not-a-number&domain=__proto__&recordKind=<script>"));
+    assert.equal(badHours.status, 200);
+    const body = await badHours.json();
+    assert.equal(body.hours, DEFAULT_HOURS);
+    assert.equal(body.filters.domain, null);
+    assert.equal(body.filters.recordKind, null);
+    assert.ok(Array.isArray(body.warnings));
+    assert.ok(body.warnings.some((w) => /hours|domain|recordKind/i.test(w)));
+    const method = await eventsFunction(new Request("https://liveworldmap.netlify.app/api/events", { method: "POST" }));
+    assert.equal(method.status, 405);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("Source API sanitizes malformed filter params without breaking read-only access", async () => {
+  const response = await sourcesFunction(new Request("https://liveworldmap.netlify.app/api/sources?q=" + "x".repeat(500) + "&domain=not-a-domain&official=maybe&source=%3Cscript%3E"));
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.ok(body.filters.q.length <= 120);
+  assert.equal(body.filters.domain, "");
+  assert.equal(body.filters.official, "");
+  assert.equal(body.filters.source, "");
+  assert.ok(Array.isArray(body.sources));
+});
+
+test("Frontend URL param helpers sanitize malformed bookmarked params", () => {
+  const params = safeSearchParams("?view=%3Cscript%3E&sort=__proto__&q=" + encodeURIComponent("a".repeat(200)) + "&domains=natural-disaster,../../etc&country=ZZ");
+  assert.equal(allowedParam(params, "view", ["explore", "feed", "countries"], "explore"), "explore");
+  assert.equal(allowedParam(params, "sort", ["highest-severity", "recently-updated"], "highest-severity"), "highest-severity");
+  assert.ok(textParam(params, "q", "", 120).length <= 120);
+  assert.ok(!tokenParam(params, "sort", "").includes("__proto__") || tokenParam(params, "sort", "") === "");
+  const domains = listParam(params, "domains", ["natural-disaster", "weather"], 5);
+  assert.ok(domains.has("natural-disaster"));
+  assert.ok(!domains.has("../../etc"));
+  assert.equal(sanitizeCountryCode("<script>"), "");
+  assert.equal(sanitizeText("\u0000bad\u0007", { maxLength: 10 }), "bad");
+  assert.equal(allowedValue("__proto__", ["event"], null), null);
+  assert.deepEqual(safeJsonArray("{not-json"), []);
+  assert.deepEqual(safeJsonArray('["a","b"]'), ["a", "b"]);
+  assert.deepEqual(safeJsonArray("null"), []);
+});
+
+test("Artifact and change-awareness helpers still soft-fail on malformed inputs", () => {
+  const empty = buildEventArtifact(null, { now: 1 });
+  assert.equal(empty.artifactType, "event");
+  const summary = computeChangeSummary([], null, []);
+  assert.equal(summary.hasPreviousSnapshot, false);
+  assert.equal(parseSnapshot("{bad"), null);
 });
 
 await runPendingTests();
