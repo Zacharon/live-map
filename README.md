@@ -9,7 +9,9 @@ It is evolving into a modular intelligence, risk, finance, infrastructure, and O
 Live Map is a near-real-time public-information aggregator. It is not an emergency dispatch, evacuation, military, navigation, legal, compliance, credit, travel, or financial-rating system.
 
 Operator dashboard (OSINT Forge)
-- Dashboard v2: summary, change awareness, timeline, clusters, provider health
+OSINT Forge is a dark, tactical **operator console** for multi-source public events — map + mission summary + analyst drawer — designed for demo, GitHub portfolio, and future productization. Client-side only; heuristics are explainable, not official assessments.
+- Dashboard v2: command bar, legend, change awareness, timeline, clusters, provider health
+- Visual identity v1: command-console tokens, threat/connection color language, analyst-drawer HUD
 - Threat level v0: explainable local heuristic (not an official assessment)
 - Connected events: in-memory relationship strip with reason chips
 - Event artifacts: Markdown/JSON export from the detail drawer
