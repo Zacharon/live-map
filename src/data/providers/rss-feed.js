@@ -2,6 +2,7 @@ import { createNormalizedEvent, stableStringHash } from "../../events/normalized
 import { OFFICIAL_FEED_REGISTRY } from "./feed-registry.js";
 import { applyPublicationPolicy } from "./publication-policy.js";
 import { assertSafeFetchUrl, assertSafeRedirect } from "./ssrf-protection.js";
+import { createSourceObservation } from "../../intelligence/source-observations.js";
 
 const PROVIDER_ENABLE_FLAGS = {
   "security-rss": "SECURITY_RSS_ENABLED",
@@ -43,6 +44,24 @@ export function parseFeedItems(xml = "") {
     updatedAt: tagValue(chunk, "updated") || tagValue(chunk, "pubDate") || tagValue(chunk, "published"),
     summary: tagValue(chunk, "description") || tagValue(chunk, "summary") || tagValue(chunk, "content"),
   }));
+}
+
+export function parseFeedDocument(body = "") {
+  const text = String(body).trim();
+  if (text.startsWith("{") || text.startsWith("[")) {
+    try {
+      const json = JSON.parse(text);
+      const items = Array.isArray(json.items) ? json.items : [];
+      return items.map((item) => ({ title: item.title || item.content_text || item.summary || "", link: item.url || item.external_url || "", guid: item.id || item.url || "", publishedAt: item.date_published || item.date_modified || "", updatedAt: item.date_modified || item.date_published || "", summary: item.summary || item.content_text || "" }));
+    } catch {
+      return [];
+    }
+  }
+  return parseFeedItems(text);
+}
+
+export function observationFromFeedItem(item, feed, now = new Date()) {
+  return createSourceObservation({ provider: feed.providerId, observationType: "feed", externalId: `${feed.id}:${item.guid || item.link}`, url: item.link, title: item.title, excerpt: item.summary, publishedAt: item.publishedAt || item.updatedAt, sourceOrganizationId: feed.sourceOrganizationId || feed.id, sourceOrganizationName: feed.name, publisher: feed.name, sourceTier: feed.sourceTier, verificationState: feed.verificationState || "unverified" }, now);
 }
 
 async function fetchTextWithSafety(url, options = {}) {
@@ -147,7 +166,7 @@ export async function fetchOfficialFeedEvents(context = {}) {
       timeoutMs: context.provider?.timeoutMs || context.schedule?.requestTimeoutMs || 12000,
       userAgent: context.provider?.userAgent,
     });
-    const items = parseFeedItems(xml).slice(0, 8);
+    const items = parseFeedDocument(xml).slice(0, 8);
     receivedCount += items.length;
     for (const item of items) {
       const result = normalizeFeedItem(item, feed, now);
@@ -155,6 +174,7 @@ export async function fetchOfficialFeedEvents(context = {}) {
       else rejected.push({ id: item.guid || item.link || null, errors: result.errors });
     }
   }
-  return { events, rejected, receivedCount, warnings: ["Official RSS/Atom records are metadata-only feed items unless promoted by corroboration rules."] };
+  const observations = events.map((event) => observationFromFeedItem({ title: event.title, link: event.sourceUrl, guid: event.providerEventId, publishedAt: event.sourcePublishedAt, updatedAt: event.updatedAt, summary: event.description }, registry.find((feed) => feed.id === event.metadata?.feedId) || { providerId, id: providerId, name: event.sourceName, sourceTier: event.sourceTier }, now));
+  return { events, observations, rejected, receivedCount, warnings: ["Official RSS, Atom, and JSON Feed records are metadata-only observations unless promoted by corroboration rules."] };
 }
 

@@ -74,3 +74,6 @@ See also:
 - `docs/STRATEGIC_CHOKEPOINTS_V1.md`
 - `docs/STRATEGIC_DATA_SOURCE_ROADMAP.md`
 
+# Open News and Social Signals
+
+Open news/social records are source observations, not automatic events. See `OPEN_NEWS_SOCIAL_SIGNAL_FUSION_V1.md` and `SOCIAL_PLATFORM_ACCESS_MATRIX.md` for access status and limitations.

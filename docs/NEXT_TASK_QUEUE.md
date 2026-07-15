@@ -67,3 +67,6 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 - Goal: let advanced users inspect provenance without overwhelming the public map.
 - Touch first: `src/app-controller.js`, `src/ui/`, `docs/STANDARD_AND_ADVANCED_MODES.md`.
 - Test: smallest frontend rendering/unit coverage available.
+# Next: Review and activate approved open-news/social watchlists
+
+Before enabling any new social/video provider, document official access, terms, attribution, quota budget, cache/retention policy, approved watchlists, and provider-specific test fixtures. Do not add scraping or browser credentials.

@@ -674,3 +674,6 @@ docs/OPEN_PROVIDER_EXPANSION.md
 docs/PROVIDER_ADAPTER_TEMPLATE.md
 
 The selectable country layer uses simplified rectangular bounds from the local country registry. It is for navigation and filtering only, not legal border display.
+# Open News and Social Signals
+
+The dashboard includes a configuration-gated Latest Intelligence view for metadata-only source observations and deterministic storylines. See `docs/OPEN_NEWS_SOCIAL_SIGNAL_FUSION_V1.md`; social trend is explicitly separate from verification, and restricted platforms are never scraped.

@@ -155,6 +155,13 @@ export async function createEventsResponse(request, options = {}) {
         providerSourceRegistry,
         domainSourceStatus: Object.fromEntries(DOMAIN_SOURCE_STATUS.map(([domainId, status, message]) => [domainId, { status, message }])),
         providerResults: providerResult.providerResults,
+        observationSummary: {
+          total: providerResult.observations.length,
+          retained: "metadata-only",
+          coverageGaps: providerResult.storylines.flatMap((storyline) => storyline.coverageGaps).filter((item, index, values) => values.indexOf(item) === index),
+        },
+        storylines: providerResult.storylines,
+        observations: providerResult.observations,
         systemStatus: providerResult.systemStatus,
         mode: responseMode(providerResult, options.runtimeMode),
         errors: providerResult.errors,
@@ -173,6 +180,8 @@ export async function createEventsResponse(request, options = {}) {
         providerSourceRegistry,
         sourceStatus: {},
         providerResults: [],
+        storylines: [],
+        observations: [],
         mode: "error",
       }),
       { status: 500, headers: { ...headers, "cache-control": "no-store" } }

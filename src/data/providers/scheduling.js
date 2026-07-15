@@ -20,6 +20,13 @@ export const PROVIDER_SCHEDULES = {
   "positive-rss": schedule("positive-rss", { refreshIntervalMs: 6 * 60 * 60 * 1000, cacheTtlMs: 6 * 60 * 60 * 1000, staleAfterMs: 48 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 24 }),
   statuspage: schedule("statuspage", { refreshIntervalMs: 5 * 60 * 1000, cacheTtlMs: 5 * 60 * 1000, staleAfterMs: 60 * 60 * 1000, requestTimeoutMs: 12000, maximumRetries: 1, dailyRequestBudget: 180 }),
   ripestat: schedule("ripestat", { refreshIntervalMs: 30 * 60 * 1000, cacheTtlMs: 30 * 60 * 1000, staleAfterMs: 6 * 60 * 60 * 1000, requestTimeoutMs: 15000, maximumRetries: 1, dailyRequestBudget: 72 }),
+  youtube: schedule("youtube", { refreshIntervalMs: 30 * 60 * 1000, cacheTtlMs: 30 * 60 * 1000, staleAfterMs: 6 * 60 * 60 * 1000, dailyRequestBudget: 48 }),
+  bluesky: schedule("bluesky", { refreshIntervalMs: 15 * 60 * 1000, cacheTtlMs: 15 * 60 * 1000, staleAfterMs: 2 * 60 * 60 * 1000, dailyRequestBudget: 96 }),
+  mastodon: schedule("mastodon", { refreshIntervalMs: 20 * 60 * 1000, cacheTtlMs: 20 * 60 * 1000, staleAfterMs: 4 * 60 * 60 * 1000, dailyRequestBudget: 72 }),
+  "hacker-news": schedule("hacker-news", { refreshIntervalMs: 15 * 60 * 1000, cacheTtlMs: 15 * 60 * 1000, staleAfterMs: 2 * 60 * 60 * 1000, dailyRequestBudget: 96 }),
+  wikimedia: schedule("wikimedia", { refreshIntervalMs: 30 * 60 * 1000, cacheTtlMs: 30 * 60 * 1000, staleAfterMs: 6 * 60 * 60 * 1000, dailyRequestBudget: 48 }),
+  twitch: schedule("twitch", { refreshIntervalMs: 30 * 60 * 1000, cacheTtlMs: 30 * 60 * 1000, staleAfterMs: 6 * 60 * 60 * 1000, dailyRequestBudget: 24 }),
+  kick: schedule("kick", { refreshIntervalMs: 30 * 60 * 1000, cacheTtlMs: 30 * 60 * 1000, staleAfterMs: 6 * 60 * 60 * 1000, dailyRequestBudget: 24 }),
 };
 
 export function schedule(providerId, overrides = {}) {

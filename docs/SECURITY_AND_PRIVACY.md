@@ -29,3 +29,6 @@ Humanitarian providers must not display sensitive camps, shelters, medical facil
 
 Cyber providers must not include exploit instructions, proof-of-concept retrieval, malware retrieval, or fabricated geographic locations.
 
+# Open News and Social Privacy
+
+No provider credential is exposed to browser code. The feed adapter uses the existing SSRF URL and redirect guard. Raw social content, comments, transcripts, chat, profile histories, and raw responses are not retained.

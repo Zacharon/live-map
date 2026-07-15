@@ -137,3 +137,11 @@ body{
 .drawer.open,.drawer-right.open,.event-panel{
   border-color:color-mix(in srgb,var(--of-cyan) 18%, var(--line));
 }
+/* Open-web intelligence is a list view, not a verification dashboard. */
+.latest-intelligence { display: grid; gap: 12px; }
+.latest-storyline-list { display: grid; gap: 10px; }
+.latest-storyline { border: 1px solid var(--line, #d6dce5); border-radius: 6px; background: var(--surface, #fff); padding: 12px; }
+.latest-storyline h2 { margin: 6px 0; font-size: 1rem; }
+.latest-storyline p { margin: 6px 0; }
+.latest-storyline-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: .78rem; color: var(--muted, #536273); }
+.latest-gap { color: #8b3b16; font-size: .86rem; }

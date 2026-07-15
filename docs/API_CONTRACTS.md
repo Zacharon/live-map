@@ -75,3 +75,6 @@ Netlify helper responses use:
 - `requestId`
 
 `/api/moving-objects` currently nests public objects at `data.data` for compatibility. Do not change that shape casually.
+# Open News and Social Response Fields
+
+`GET /api/events` remains backward compatible and may additionally return bounded `observations`, `storylines`, and `observationSummary`. Observation data is metadata-only. Storyline trend fields must never be interpreted as verification; use `storyline.verification` and its independent-source count.

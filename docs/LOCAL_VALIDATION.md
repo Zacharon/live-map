@@ -65,3 +65,6 @@ npm run security:scan
 ```
 
 GitHub Actions uses `actions/setup-node` with Node 20 and remains the authoritative CI environment, but local agents should first try the PATH repair above before reporting that local validation is unavailable.
+# Open News and Social Validation
+
+Run `npm run test:platform` to exercise observation URL normalization, source independence, deterministic storyline grouping, and metadata-only social normalizers. Keep provider feature flags unset during ordinary validation so no external social/video polling occurs.

@@ -32,3 +32,6 @@ Each source shows attribution, docs, terms, credentials, commercial-use status, 
 ## Main App Integration
 
 The main Live Map header links to `/sources` and preserves dashboard, sort, group, and card-density query state where practical. The main source-domain panel links each domain to `/sources?domain=...`.
+# Open News and Social Sources
+
+Source Explorer now records configuration-required open news/social providers and registry-only restricted platforms. A source must not be labeled live unless its adapter, attribution, terms, cache, and retention requirements are documented.

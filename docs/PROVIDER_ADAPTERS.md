@@ -88,3 +88,6 @@ Scaffolding:
 - `scripts/create-provider.mjs` creates a disabled provider adapter stub, fixture README, and provider doc skeleton. It does not register or enable the provider.
 - See `docs/PROVIDER_ADAPTER_TEMPLATE.md`.
 
+# Open News and Social Adapters
+
+`open-news-social.js` provides bounded, server-side, configuration-gated normalizers for YouTube, Bluesky, Mastodon, Hacker News, Wikimedia, Twitch, and Kick. `rss-feed.js` supports allowlisted RSS, Atom, and JSON Feed documents. All produce metadata-only observations.

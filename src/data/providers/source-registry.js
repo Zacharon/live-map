@@ -485,6 +485,20 @@ export const PROVIDER_SOURCE_REGISTRY = [
     attribution: "OpenStreetMap contributors",
     limitations: "Reference data is not an active event feed and must not imply current outage or damage.",
   },
+  ...[
+    ["youtube", "youtube-data-api", "YouTube Data API", "credential-required", true, "https://developers.google.com/youtube/v3", "Official API metadata only; no comments, transcripts, or user-profile ingestion."],
+    ["bluesky", "bluesky-api", "Bluesky AppView", "open-api", false, "https://docs.bsky.app/", "Public post metadata only from bounded watchlists; never a verification source by itself."],
+    ["mastodon", "mastodon-api", "Mastodon API", "open-api", false, "https://docs.joinmastodon.org/", "Instance and watchlist must be approved; public status metadata only."],
+    ["hacker-news", "hacker-news-api", "Hacker News API", "open-api", false, "https://github.com/HackerNews/API", "Story metadata only; voting and discussion volume are trend signals, not verification."],
+    ["wikimedia", "wikimedia-recent-changes", "Wikimedia Recent Changes", "open-api", false, "https://www.mediawiki.org/wiki/API:RecentChanges", "Reference-change metadata only; no raw revisions retained."],
+    ["twitch", "twitch-api", "Twitch API", "credential-required", true, "https://dev.twitch.tv/docs/api/", "Configuration-ready only; reviewed channel allowlist required before activation."],
+    ["kick", "kick-api", "Kick developer access", "registration-required", false, "https://docs.kick.com/", "Configuration-ready only pending approved access and channel allowlist."],
+  ].map(([id, sourceRegistryId, name, licensingStatus, credentialRequired, sourceUrl, limitations]) => ({
+    id, sourceRegistryId, name, domains: ["major-news"], categories: ["other"], official: false,
+    status: "configuration-required", implemented: true, credentialRequired, licensingStatus,
+    refreshInterval: "15-30 minutes when explicitly enabled", geographicCoverage: "Non-geographic discovery observations.",
+    sourceUrl, documentationUrl: sourceUrl, attribution: name, limitations,
+  })),
 ];
 
 export function providersForDomain(domainId) {

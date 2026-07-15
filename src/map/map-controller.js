@@ -239,7 +239,7 @@ export function createMapController(options = {}) {
       layer.on("click", () => onSelect?.(chokepoint));
       layer.addTo(chokepointLayer);
     });
-    chokepointLayer.bringToFront();
+    if (typeof chokepointLayer.bringToFront === "function") chokepointLayer.bringToFront();
   }
 
   function fitChokepoint(chokepoint) {

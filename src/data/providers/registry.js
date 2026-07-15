@@ -291,6 +291,20 @@ export const EVENT_PROVIDERS = [
     integrationType: "authenticated-api-boundary",
     freshnessMs: 6 * 60 * 60 * 1000,
   },
+  ...[
+    ["youtube", "YouTube Data API", "Video metadata from approved watchlists; no comments or transcripts are collected.", "https://developers.google.com/youtube/v3", "YOUTUBE_ENABLED", "YOUTUBE_API_KEY", "video"],
+    ["bluesky", "Bluesky AppView", "Public post metadata from bounded approved watchlists.", "https://docs.bsky.app/docs/api/app-bsky-feed-search-posts", "BLUESKY_ENABLED", null, "social"],
+    ["mastodon", "Mastodon API", "Public status metadata from an approved federated instance and watchlist.", "https://docs.joinmastodon.org/methods/search/", "MASTODON_ENABLED", "MASTODON_INSTANCE_URL", "social"],
+    ["hacker-news", "Hacker News API", "Public Hacker News story metadata from bounded approved watchlists.", "https://github.com/HackerNews/API", "HACKER_NEWS_ENABLED", null, "forum"],
+    ["wikimedia", "Wikimedia Recent Changes", "Public Wikimedia recent-change metadata for reference and trend context.", "https://www.mediawiki.org/wiki/API:RecentChanges", "WIKIMEDIA_ENABLED", null, "reference"],
+    ["twitch", "Twitch API", "Configuration-ready boundary for reviewed channel allowlists; no polling by default.", "https://dev.twitch.tv/docs/api/", "TWITCH_ENABLED", "TWITCH_CLIENT_ID", "video"],
+    ["kick", "Kick developer access", "Configuration-ready boundary pending approved API access and channel allowlists.", "https://docs.kick.com/", "KICK_ENABLED", null, "video"],
+  ].map(([id, name, description, homepageUrl, enableFlag, credential, observationType]) => ({
+    ...sourceMetadata(id), id, name, description, homepageUrl, attribution: name, enabled: true,
+    categories: ["other"], refreshIntervalMs: 15 * 60 * 1000, timeoutMs: 12000,
+    integrationType: "open-news-social-configuration-required", freshnessMs: 2 * 60 * 60 * 1000,
+    credentialRequired: Boolean(credential), environmentVariables: [enableFlag, ...(credential ? [credential] : [])], observationType,
+  })),
 ];
 
 export function providerById(id) {

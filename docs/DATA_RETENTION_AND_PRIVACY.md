@@ -10,3 +10,6 @@ Rules:
 - Prefer normalized metadata, source URLs, timestamps, and attribution.
 - Redact secrets and private identifiers from logs, screenshots, fixtures, and docs.
 
+# Open News and Social Retention
+
+Source observations retain only bounded metadata and use `rawRetention: none`. Do not persist raw feeds, posts, comments, chat, transcripts, or profiles without a provider-specific terms and privacy review.

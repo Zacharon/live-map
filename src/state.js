@@ -8,7 +8,7 @@ import { allowedParam, countryParam, listParam, safeSearchParams, textParam, tok
 import { CHOKEPOINT_STATUSES, CHOKEPOINT_TYPES, chokepointById } from "./data/strategic-chokepoints.js";
 
 const params = safeSearchParams();
-const ACTIVE_AREAS = ["explore", "feed", "chokepoints", "countries"];
+const ACTIVE_AREAS = ["explore", "feed", "latest-intelligence", "chokepoints", "countries"];
 const CARD_MODES = ["compact", "expanded"];
 const TRACKING_MODES = ["aircraft", "vessels"];
 const SORT_IDS = SORT_OPTIONS.map(([value]) => value);
@@ -35,7 +35,7 @@ export const state = {
   activeArea: allowedParam(params, "view", ACTIVE_AREAS, "explore"),
   interfaceMode: INTERFACE_MODES.includes(storedInterfaceMode) ? storedInterfaceMode : "standard",
   leftDrawerOpen: localStorage.getItem("live-map-left-drawer-v1") === "open",
-  rightDrawerOpen: localStorage.getItem("live-map-right-drawer-v1") !== "closed",
+  rightDrawerOpen: allowedParam(params, "view", ACTIVE_AREAS, "explore") === "latest-intelligence" || localStorage.getItem("live-map-right-drawer-v1") !== "closed",
   selectedPreset: storedPreset && /^[a-z0-9][a-z0-9_-]{0,79}$/i.test(storedPreset) ? storedPreset : "explore",
   onboardingComplete: localStorage.getItem("live-map-onboarding-v1") === "done",
   tracking: {
@@ -89,6 +89,9 @@ export const state = {
   sessionAlertHistory: [],
   collapsedGroups: new Set(safeJsonArray(localStorage.getItem("live-map-collapsed-groups-v1"))),
   incidents: [],
+  observations: [],
+  storylines: [],
+  observationSummary: {},
 };
 
 export function dashboardFilters(dashboardId = state.dashboard) {

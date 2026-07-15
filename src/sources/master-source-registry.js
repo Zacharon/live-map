@@ -792,6 +792,17 @@ const compactSources = [
   ["telegram-bot-api", "Telegram Bot API", "major-news", "social-discovery", "credential-required", "authentication-required", "tier-5-discovery-only", "https://core.telegram.org/bots/api", "Only authorized public channels or bot-accessible content."],
   ["mastodon-api", "Mastodon API", "major-news", "social-discovery", "open-api", "planned", "tier-5-discovery-only", "https://docs.joinmastodon.org/api/", "Public fediverse discovery; instance terms vary."],
   ["bluesky-api", "Bluesky API", "major-news", "social-discovery", "open-api", "planned", "tier-5-discovery-only", "https://docs.bsky.app/", "Public social discovery; not confirmation."],
+  ["youtube-data-api", "YouTube Data API", "major-news", "video-discovery", "credential-required", "authentication-required", "tier-5-discovery-only", "https://developers.google.com/youtube/v3", "Metadata-only video discovery through the official API and approved watchlists."],
+  ["hacker-news-api", "Hacker News API", "major-news", "forum-discovery", "open-api", "planned", "tier-5-discovery-only", "https://github.com/HackerNews/API", "Metadata-only story discovery; voting volume is not verification."],
+  ["wikimedia-recent-changes", "Wikimedia Recent Changes", "major-news", "reference-discovery", "open-api", "planned", "tier-5-discovery-only", "https://www.mediawiki.org/wiki/API:RecentChanges", "Metadata-only change signals for reference context."],
+  ["twitch-api", "Twitch API", "major-news", "video-discovery", "credential-required", "authentication-required", "tier-5-discovery-only", "https://dev.twitch.tv/docs/api/", "Configuration boundary only; use reviewed channel allowlists and official access."],
+  ["kick-api", "Kick developer access", "major-news", "video-discovery", "registration-required", "planned", "tier-5-discovery-only", "https://docs.kick.com/", "Configuration boundary only pending approved access and channel allowlists."],
+  ["x-platform", "X platform", "major-news", "social-discovery", "credential-required", "link-only", "tier-5-discovery-only", "https://developer.x.com/", "Registry and source links only; no scraping or bypasses."],
+  ["tiktok", "TikTok", "major-news", "social-discovery", "credential-required", "link-only", "tier-5-discovery-only", "https://developers.tiktok.com/", "Registry and source links only; no scraping or bypasses."],
+  ["instagram", "Instagram", "major-news", "social-discovery", "credential-required", "link-only", "tier-5-discovery-only", "https://developers.facebook.com/docs/instagram-api/", "Registry and source links only; no scraping or bypasses."],
+  ["facebook", "Facebook", "major-news", "social-discovery", "credential-required", "link-only", "tier-5-discovery-only", "https://developers.facebook.com/docs/graph-api/", "Registry and source links only; no scraping or bypasses."],
+  ["threads", "Threads", "major-news", "social-discovery", "credential-required", "link-only", "tier-5-discovery-only", "https://developers.facebook.com/docs/threads/", "Registry and source links only; no scraping or bypasses."],
+  ["rumble", "Rumble", "major-news", "video-discovery", "prohibited-or-unclear", "disabled", "tier-5-discovery-only", "https://rumble.com/", "Registry only until access, terms, and redistribution are reviewed."],
   ["shodan", "Shodan", "technology-cyber", "internet-exposure", "commercial-license", "license-required", "tier-2-structured-established", "https://developer.shodan.io/", "Licensed internet-exposure data; never query from browsers."],
   ["censys", "Censys", "technology-cyber", "internet-exposure", "commercial-license", "license-required", "tier-2-structured-established", "https://search.censys.io/api", "Licensed host and certificate data."],
   ["virustotal", "VirusTotal", "technology-cyber", "threat-intel", "commercial-license", "license-required", "tier-2-structured-established", "https://docs.virustotal.com/reference/overview", "Restricted threat-intelligence API; no malware redistribution."],
@@ -877,6 +888,15 @@ function compactToSource([id, name, domain, category, accessMode, status, source
     termsUrl: "https://www.aishub.net/",
     knownLimitations: ["Boundary only; access depends on AISHub participation and redistribution terms.", "Do not scrape the website."],
   } : {};
+  const openSignalFields = {
+    "youtube-data-api": { status: "configuration-required", implemented: true, adapterId: "youtube", environmentVariables: ["YOUTUBE_ENABLED", "YOUTUBE_API_KEY"], legalReviewRequired: false, commercialUse: "provider-terms-required", redistribution: "metadata and source links only", caching: "short metadata cache only", retention: "no raw video, transcript, comments, or user-profile retention" },
+    "bluesky-api": { status: "configuration-required", implemented: true, adapterId: "bluesky", environmentVariables: ["BLUESKY_ENABLED"], legalReviewRequired: false, commercialUse: "provider-terms-required", redistribution: "metadata and source links only", caching: "short metadata cache only", retention: "no raw post retention" },
+    "mastodon-api": { status: "configuration-required", implemented: true, adapterId: "mastodon", environmentVariables: ["MASTODON_ENABLED", "MASTODON_INSTANCE_URL"], legalReviewRequired: false, commercialUse: "instance-terms-required", redistribution: "metadata and source links only", caching: "short metadata cache only", retention: "no raw status retention" },
+    "hacker-news-api": { status: "configuration-required", implemented: true, adapterId: "hacker-news", environmentVariables: ["HACKER_NEWS_ENABLED"], legalReviewRequired: false, commercialUse: "provider-terms-required", redistribution: "metadata and source links only", caching: "short metadata cache only", retention: "no raw comment retention" },
+    "wikimedia-recent-changes": { status: "configuration-required", implemented: true, adapterId: "wikimedia", environmentVariables: ["WIKIMEDIA_ENABLED"], legalReviewRequired: false, commercialUse: "attribution-required", redistribution: "metadata and source links only", caching: "short metadata cache only", retention: "no raw revision retention" },
+    "twitch-api": { status: "configuration-required", implemented: true, adapterId: "twitch", environmentVariables: ["TWITCH_ENABLED", "TWITCH_CLIENT_ID"], legalReviewRequired: false, commercialUse: "provider-terms-required", redistribution: "metadata and source links only", caching: "disabled until channel allowlist review", retention: "no raw stream or chat retention" },
+    "kick-api": { status: "configuration-required", implemented: true, adapterId: "kick", environmentVariables: ["KICK_ENABLED"], legalReviewRequired: false, commercialUse: "provider-terms-required", redistribution: "metadata and source links only", caching: "disabled until access review", retention: "no raw stream or chat retention" },
+  }[id] || {};
   return source({
     id,
     name,
@@ -901,6 +921,7 @@ function compactToSource([id, name, domain, category, accessMode, status, source
     ...ripeStatFields,
     ...radarFields,
     ...aishubFields,
+    ...openSignalFields,
   });
 }
 
