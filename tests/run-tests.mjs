@@ -39,6 +39,10 @@ import { createMemoryProviderCache } from "../src/data/providers/cache.js";
 import { PROVIDER_SOURCE_REGISTRY, providersForDomain, DOMAIN_SOURCE_STATUS } from "../src/data/providers/source-registry.js";
 import { providerCapability, validateProviderCapabilities } from "../src/data/providers/capability-registry.js";
 import { CONSUMER_PRESETS, severitySetFromMinimum } from "../src/consumer/presets.js";
+import { CHOKEPOINT_STATUSES, CHOKEPOINT_TYPES, STRATEGIC_CHOKEPOINTS, chokepointById } from "../src/data/strategic-chokepoints.js";
+import { correlateEventToChokepoints, correlateEventsToChokepoints, enrichEventsWithChokepoints } from "../src/intelligence/chokepoint-correlation.js";
+import { assessChokepointCondition, assessChokepoints } from "../src/intelligence/chokepoint-condition.js";
+import { filterChokepoints, renderChokepointCards, renderChokepointDetail } from "../src/ui/chokepoints.js";
 import { buildGlobalSearchResults } from "../src/search/global-search.js";
 import { AIRPORTS } from "../src/data/airports.js";
 import { PORTS } from "../src/data/ports.js";
@@ -884,9 +888,11 @@ test("Detailed diagnostics are separated from the public dashboard", () => {
 test("Consumer shell exposes simple navigation, tools, onboarding, and drawers", () => {
   const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
-  assert.match(index, /Explore/);
-  assert.match(index, /Live Feed/);
-  assert.match(index, /Country Scores/);
+  assert.match(index, /Overview/);
+  assert.match(index, /Events/);
+  assert.match(index, /Chokepoints/);
+  assert.match(index, /Countries/);
+  assert.match(index, /Diagnostics/);
   assert.match(index, /id="toolsMenu"/);
   assert.match(index, /id="globalSearch"/);
   assert.match(index, /id="onboardingDialog"/);
@@ -1976,6 +1982,78 @@ test("Event drawer includes threat and connections sections", () => {
   assert.match(html, /Threat level v0|v2-threat-badge/);
   assert.match(html, /Connected events|Why am I seeing this/);
   assert.match(html, /OSINT artifact/);
+});
+
+test("Strategic chokepoint registry has valid controlled values and geometry", () => {
+  assert.ok(STRATEGIC_CHOKEPOINTS.length >= 30);
+  assert.equal(new Set(STRATEGIC_CHOKEPOINTS.map((item) => item.id)).size, STRATEGIC_CHOKEPOINTS.length);
+  for (const chokepoint of STRATEGIC_CHOKEPOINTS) {
+    assert.ok(CHOKEPOINT_TYPES.includes(chokepoint.type));
+    assert.ok(CHOKEPOINT_STATUSES.includes(chokepoint.status));
+    assert.ok(chokepoint.geometry?.type);
+    assert.ok(chokepoint.aliases.length);
+    assert.match(chokepoint.methodologyNotes, /approximate|generalized/i);
+  }
+  assert.equal(chokepointById("bab-el-mandeb")?.name, "Bab el-Mandeb Strait");
+  assert.equal(chokepointById("not-a-chokepoint"), null);
+});
+
+test("Chokepoint correlation is deterministic, evidence-led, and bounded", () => {
+  const now = Date.UTC(2026, 6, 15, 12, 0, 0);
+  const event = {
+    id: "mandeb-official",
+    title: "Authority reports disruption near Bab el-Mandeb Strait",
+    summary: "A route restriction was reported near the Red Sea transit.",
+    domain: "conflict-security",
+    category: "conflict",
+    severity: "high",
+    lat: 12.8,
+    lon: 43.0,
+    updatedAt: now,
+  };
+  const first = correlateEventToChokepoints(event, STRATEGIC_CHOKEPOINTS, { now });
+  const second = correlateEventToChokepoints(event, STRATEGIC_CHOKEPOINTS, { now });
+  assert.deepEqual(first, second);
+  const bab = first.find((item) => item.chokepointId === "bab-el-mandeb");
+  assert.ok(bab);
+  assert.equal(bab.relationship, "directly-references");
+  assert.ok(bab.confidence >= 40);
+  const distant = correlateEventToChokepoints({ ...event, id: "distant", title: "Earthquake near Japan", summary: "No named strategic passage.", lat: 36, lon: 140, domain: "natural-disaster", category: "earthquake" }, STRATEGIC_CHOKEPOINTS, { now });
+  assert.ok(!distant.some((item) => item.chokepointId === "bab-el-mandeb"));
+});
+
+test("Chokepoint condition scoring requires authoritative disruption evidence", () => {
+  const now = Date.UTC(2026, 6, 15, 12, 0, 0);
+  const chokepoint = chokepointById("suez-canal");
+  const event = {
+    id: "suez-closure",
+    title: "Suez Canal Authority announces canal closure",
+    summary: "Official notice says transit is closed.",
+    sourceName: "Suez Canal Authority",
+    sourceType: "Official authority",
+    verificationStatus: "primary-confirmed",
+    severity: "critical",
+    domain: "infrastructure",
+    category: "infrastructure",
+    updatedAt: now,
+  };
+  const correlations = [{ chokepointId: chokepoint.id, eventId: event.id, relationship: "directly-references", confidence: 90 }];
+  assert.equal(assessChokepointCondition(chokepoint, [event], correlations, { now }).status, "closed");
+  assert.equal(assessChokepointCondition(chokepoint, [], [], { now, sourceStatus: { provider: { ok: false, stale: true } } }).status, "unknown");
+  assert.equal(assessChokepoints([], [], { now }).find((item) => item.chokepointId === chokepoint.id).status, "normal");
+});
+
+test("Chokepoint UI filtering, rendering, and event enrichment remain safe", () => {
+  const now = Date.UTC(2026, 6, 15, 12, 0, 0);
+  const events = [{ id: "suez-event", title: "Suez Canal notice", sourceName: "Authority", sourceType: "Official", severity: "high", domain: "infrastructure", category: "infrastructure", updatedAt: now }];
+  const correlations = [{ chokepointId: "suez-canal", eventId: "suez-event", relationship: "directly-references", confidence: 86 }];
+  const enriched = enrichEventsWithChokepoints(events, correlations);
+  const assessments = assessChokepoints(enriched, correlations, { now });
+  const selected = filterChokepoints(STRATEGIC_CHOKEPOINTS, assessments, { query: "suez", sort: "name" });
+  assert.equal(selected.length, 1);
+  assert.match(renderChokepointCards(selected, assessments, "suez-canal"), /Suez Canal/);
+  assert.match(renderChokepointDetail(selected[0], assessments, new Map(enriched.map((item) => [item.id, item]))), /Current developments/);
+  assert.deepEqual(enriched[0].affectedChokepoints, ["Suez Canal"]);
 });
 
 await runPendingTests();

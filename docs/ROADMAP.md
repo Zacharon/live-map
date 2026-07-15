@@ -22,6 +22,7 @@
 - Phase 2C implemented: official status/RSS feeds, GDELT discovery leads, deeper provider state boundaries, and open news/infrastructure foundations.
 - Phase 2D implemented foundation: country navigation, `/countries`, CII v2 distribution controls, diagnostics separation, provider capability registry, provider scaffold generator, and independently gated open RSS provider groups.
 - Phase 3 implemented foundation: consumer navigation, Standard/Advanced modes, collapsible drawers, onboarding, presets, global search, moving-object API, OpenSky boundary, Global Fishing Watch boundary, AISHub boundary, and aviation/maritime reference registries.
+- Strategic chokepoints v1 implemented: generalized registry, deterministic event correlation, explainable local condition assessment, map layer, detail pane, URL state, and cross-domain display fields. Future provider work remains separately governed by `docs/STRATEGIC_DATA_SOURCE_ROADMAP.md`.
 - Later provider waves: ACLED, aircraft tracking, maritime tracking, and licensed finance/OSINT feeds after credentials, licensing, rate limits, and safety reviews are complete.
 - Cyber and infrastructure provider adapters beyond CISA KEV/NVD remain planned until each source has a registry entry, budget, cache policy, and safety notes.
 - Static infrastructure GeoJSON with attribution

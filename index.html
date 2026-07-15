@@ -16,7 +16,7 @@
   <div class="app-shell">
     <header class="topbar">
       <div class="brand"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Global news map</span></div></div>
-      <nav id="dashboardNav" class="dashboard-nav consumer-nav" aria-label="Main navigation"><button class="dashboard-tab active" type="button">Map</button><button class="dashboard-tab" type="button">Live Feed</button><a class="dashboard-tab" href="/sources" data-sources-link>Sources</a><a class="dashboard-tab" href="/about.html">About / Limits</a><a class="dashboard-tab" href="/countries">Country Scores</a></nav>
+      <nav id="dashboardNav" class="dashboard-nav consumer-nav" aria-label="Main navigation"><button class="dashboard-tab active" type="button">Overview</button><button class="dashboard-tab" type="button">Events</button><button class="dashboard-tab" type="button">Chokepoints</button><a class="dashboard-tab" href="/countries">Countries</a><a class="dashboard-tab" href="/sources" data-sources-link>Sources</a><a class="dashboard-tab" href="/diagnostics">Diagnostics</a></nav>
       <section class="global-search search-wrap" aria-label="Global search">
         <label for="globalSearch">Search</label>
         <input id="globalSearch" type="search" autocomplete="off" placeholder="Country, city, airport, event..." />
@@ -47,6 +47,11 @@
         <p class="panel-help advanced-only">Domains organize events by intelligence category. Layers control which concrete event types appear on the map.</p>
       </section>
       <section><div class="section-title"><span>Presets</span></div><div id="presetList" class="preset-list"></div></section>
+      <section id="chokepointControls" class="chokepoint-controls" hidden>
+        <div class="section-title"><span>Chokepoints</span><button id="resetChokepointFilters" type="button">Reset</button></div>
+        <label for="chokepointSearch">Search</label><input id="chokepointSearch" type="search" placeholder="Strait, canal, region..." />
+        <div class="chokepoint-filter-grid"><select id="chokepointRegion" aria-label="Chokepoint region"></select><select id="chokepointType" aria-label="Chokepoint type"></select><select id="chokepointStatus" aria-label="Chokepoint status"></select><select id="chokepointDomain" aria-label="Chokepoint event domain"></select><select id="chokepointSort" aria-label="Chokepoint sorting"></select></div>
+      </section>
       <section class="tracking-panel"><div class="section-title"><span>Live Tracking</span></div><label><input id="aircraftToggle" type="checkbox" /> Aircraft</label><label><input id="vesselToggle" type="checkbox" /> Vessels</label><label><input id="airportsToggle" type="checkbox" /> Airports</label><label><input id="portsToggle" type="checkbox" /> Ports</label><p id="trackingStatus" class="panel-help">Zoom in to view aircraft or vessel activity.</p></section>
       <section><div class="section-title"><span>Domains</span><button id="clearDomains">All</button></div><div id="domainFilters" class="filter-list"></div></section>
       <section><div class="section-title"><span>Event layers</span><button id="clearFilters">Reset</button></div><div id="layerFilters" class="filter-list"></div></section>
@@ -96,6 +101,7 @@
       </div>
       <button class="drawer-close" type="button" data-close-drawer="right">Hide feed</button>
       <div id="eventDetailDrawer" class="event-detail-drawer-host" hidden></div>
+      <div id="chokepointDetailDrawer" class="event-detail-drawer-host" hidden></div>
       <section class="search-wrap event-search"><label for="search">Search events, countries, or sources</label><input id="search" type="search" placeholder="Japan, M6.2, wildfire..." /></section>
       <div id="eventList" class="event-list"></div>
     </aside>

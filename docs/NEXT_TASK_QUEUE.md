@@ -4,10 +4,17 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 
 ## Context Updates
 
+- In review: Strategic chokepoints v1 on `feature/strategic-chokepoints-event-intelligence-v1`. Keep follow-on provider work separate from the local registry and do not label a source live without the source-registry contract.
 - Completed: PR #37 created the ICM memory pack and made `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/LAST_30_DAYS.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY_INVARIANTS.md`, and this queue the first-read context for future agents.
 - In progress: Future feature structure and feature-flag documentation on branch `feature/future-feature-structure`. Keep it docs/structure-only: no runtime imports, no fake UI, no unfinished feature activation.
 
 ## P0
+
+### Add governed official chokepoint notice adapters
+
+- Goal: evaluate official canal, port, and maritime authority notices one source at a time for terms, attribution, cache, retention, provider health, and public safety boundaries.
+- Touch first: `src/sources/master-source-registry.js`, `src/data/providers/`, `docs/STRATEGIC_DATA_SOURCE_ROADMAP.md`.
+- Test: adapter fixtures, source-status degradation, `npm run validate`, `npm run test:platform`.
 
 ### Rebase or close PR #32
 

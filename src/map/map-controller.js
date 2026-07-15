@@ -118,6 +118,7 @@ export function createMapController(options = {}) {
   const countryLayer = L.layerGroup().addTo(map);
   const movingObjectLayer = L.layerGroup().addTo(map);
   const referenceLayer = L.layerGroup().addTo(map);
+  const chokepointLayer = L.layerGroup().addTo(map);
 
   function switchBase(name) {
     Object.values(basemaps).forEach((layer) => map.hasLayer(layer) && map.removeLayer(layer));
@@ -222,6 +223,32 @@ export function createMapController(options = {}) {
     });
   }
 
+  function renderChokepoints(chokepoints = [], assessments = [], selectedId = null, onSelect = null) {
+    chokepointLayer.clearLayers();
+    const assessmentById = new Map(assessments.map((assessment) => [assessment.chokepointId, assessment]));
+    const colors = { normal: "#7d9aa8", watch: "#f6c453", disrupted: "#fb923c", "severely-disrupted": "#f97316", closed: "#fb7185", unknown: "#94a3b8" };
+    chokepoints.filter((item) => item.enabled && item.geometry).forEach((chokepoint) => {
+      const assessment = assessmentById.get(chokepoint.id) || { status: "unknown", activeEventCount: 0 };
+      const selected = chokepoint.id === selectedId;
+      const color = colors[assessment.status] || colors.unknown;
+      const layer = L.geoJSON(chokepoint.geometry, {
+        pointToLayer: (_, latlng) => L.circleMarker(latlng, { radius: selected ? 9 : 6, color, fillColor: color, fillOpacity: selected ? 0.78 : 0.45, weight: selected ? 3 : 1.5 }),
+        style: { color, fillColor: color, fillOpacity: selected ? 0.16 : 0.06, opacity: selected ? 1 : 0.72, weight: selected ? 4 : 2, dashArray: chokepoint.geometryType === "line" ? "5 4" : null },
+      });
+      layer.bindTooltip(`<strong>${chokepoint.shortName}</strong><br>${assessment.status.replace(/-/g, " ")} - ${assessment.activeEventCount} related event(s)`, { sticky: true });
+      layer.on("click", () => onSelect?.(chokepoint));
+      layer.addTo(chokepointLayer);
+    });
+    chokepointLayer.bringToFront();
+  }
+
+  function fitChokepoint(chokepoint) {
+    if (!chokepoint?.geometry) return;
+    const layer = L.geoJSON(chokepoint.geometry);
+    const bounds = layer.getBounds();
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [48, 48], maxZoom: chokepoint.geometryType === "point" ? 7 : 5 });
+  }
+
   const resizeObserver = "ResizeObserver" in window ? new ResizeObserver(invalidateMapSize) : null;
   resizeObserver?.observe(mapElement);
   window.addEventListener("resize", invalidateMapSize, { passive: true });
@@ -246,6 +273,8 @@ export function createMapController(options = {}) {
     selectCountry,
     renderMovingObjects,
     renderReferencePoints,
+    renderChokepoints,
+    fitChokepoint,
     currentBbox,
     invalidateMapSize,
     health: () => ({ ...health }),

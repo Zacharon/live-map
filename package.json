@@ -16,6 +16,7 @@
     "test:platform": "node tests/run-tests.mjs",
     "test:e2e": "node scripts/e2e-smoke.mjs",
     "test:sources": "node scripts/source-explorer-smoke-test.mjs",
-    "test": "npm run test:platform && npm run validate && npm run test:e2e && npm run test:sources"
+    "test": "npm run test:platform && npm run validate && npm run test:e2e && npm run test:sources",
+    "check:chokepoints": "node --check src/data/strategic-chokepoints.js && node --check src/intelligence/chokepoint-correlation.js && node --check src/intelligence/chokepoint-condition.js && node --check src/ui/chokepoints.js"
   }
 }

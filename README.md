@@ -17,6 +17,13 @@ OSINT Forge is a dark, tactical **operator console** for multi-source public eve
 - Event artifacts: Markdown/JSON export from the detail drawer
 - Operator guide: `docs/osint-dashboard-operator-guide.md`
 
+Strategic chokepoint intelligence v1
+- A maintained registry of generalized maritime passages and strategic regions, including the Red Sea, Hormuz, Suez, Panama, Malacca, South China Sea, and Arctic routes.
+- Deterministic local correlation of existing event records to chokepoints, with visible relationship reasons and conservative condition assessment.
+- Overview, Events, Chokepoints, Countries, Sources, and Diagnostics navigation; chokepoint filters and selections persist in the URL.
+- No new provider was activated for this feature. Chokepoint status is informational, source-aware, and not navigation or operational guidance.
+- Read `docs/STRATEGIC_CHOKEPOINTS_V1.md`, `docs/CHOKEPOINT_CORRELATION_METHODOLOGY.md`, `docs/CHOKEPOINT_STATUS_SCORING.md`, and `docs/STRATEGIC_WATCH_UI.md` for the scope and limitations.
+
 Current working layers
 USGS Earthquake Hazards Program earthquake feeds
 NASA EONET natural-hazard events
@@ -45,7 +52,7 @@ No fabricated live market prices
 Event-to-market correlation prototype using cautious language
 Local browser-stored alert-rule previews
 Compact public data-status interface and detailed `/diagnostics` provider-health page
-Consumer Explore, Live Feed, and Country Scores navigation
+Consumer Overview, Events, Chokepoints, Countries, Sources, and Diagnostics navigation
 Standard and Advanced interface modes
 Configuration-required aviation and maritime tracking prototypes
 API scaffolding for layers, countries, country risk, markets, infrastructure, source status, briefs, and alert testing

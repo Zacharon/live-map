@@ -154,6 +154,10 @@ export function createNormalizedEvent(input) {
     lastVerifiedAt,
     geometry: input.geometry || null,
     tags: Array.isArray(input.tags) ? [...new Set(input.tags.filter(Boolean).map(String))] : [],
+    strategicAreas: Array.isArray(input.strategicAreas) ? [...new Set(input.strategicAreas.filter(Boolean).map(String))] : [],
+    affectedChokepoints: Array.isArray(input.affectedChokepoints) ? [...new Set(input.affectedChokepoints.filter(Boolean).map(String))] : [],
+    impactTypes: Array.isArray(input.impactTypes) ? [...new Set(input.impactTypes.filter(Boolean).map(String))] : [],
+    chokepointCorrelations: Array.isArray(input.chokepointCorrelations) ? input.chokepointCorrelations : [],
     metadata: input.metadata && typeof input.metadata === "object" ? input.metadata : {},
   };
   Object.assign(event, computeQualityDimensions(event));
@@ -203,5 +207,9 @@ export function toLegacyEvent(event) {
     corroborationScore: event.corroborationScore,
     independentSourceCount: event.independentSourceCount,
     qualityReasons: event.qualityReasons,
+    strategicAreas: event.strategicAreas,
+    affectedChokepoints: event.affectedChokepoints,
+    impactTypes: event.impactTypes,
+    chokepointCorrelations: event.chokepointCorrelations,
   };
 }

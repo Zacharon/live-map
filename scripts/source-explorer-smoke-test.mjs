@@ -11,7 +11,8 @@ assert.match(html, /href="\/sources" aria-current="page"/);
 
 const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
 assert.match(index, /data-sources-link/);
-assert.match(index, /About \/ Limits/);
+assert.match(index, /Chokepoints/);
+assert.match(index, /Diagnostics/);
 
 const about = await readFile(new URL("../about.html", import.meta.url), "utf8");
 assert.match(about, /Public data only/);

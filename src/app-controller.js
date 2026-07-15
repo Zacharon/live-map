@@ -5,6 +5,7 @@ import { EXCHANGES } from "./data/exchanges.js";
 import { COUNTRIES, countryByCode, countryForEvent, countryFlag } from "./data/countries.js";
 import { AIRPORTS } from "./data/airports.js";
 import { PORTS } from "./data/ports.js";
+import { STRATEGIC_CHOKEPOINTS, CHOKEPOINT_TYPES, CHOKEPOINT_STATUSES, chokepointById } from "./data/strategic-chokepoints.js";
 import { state, dashboardFilters, resetDashboardFilters, setDashboard, syncUrlState } from "./state.js";
 import { normalizeEvent, escapeHtml, relativeTime } from "./events/event-normalizer.js";
 import { filteredEvents } from "./events/event-filters.js";
@@ -12,6 +13,8 @@ import { domainOptions } from "./events/taxonomy.js";
 import { GROUP_OPTIONS, SORT_OPTIONS, groupEvents } from "./events/feed-organization.js";
 import { annotateIncidents } from "./events/incident-clustering.js";
 import { correlateEventsToMarkets } from "./events/event-correlation.js";
+import { correlateEventsToChokepoints, enrichEventsWithChokepoints } from "./intelligence/chokepoint-correlation.js";
+import { assessChokepoints } from "./intelligence/chokepoint-condition.js";
 import { computeCountryRiskScores } from "./risk/country-risk.js";
 import { exchangeMarkers } from "./finance/finance-adapter.js";
 import { loadAlertRules, saveAlertRules, createLocalRule, validateAlertRule, previewAlerts } from "./alerts/alert-rules.js";
@@ -37,6 +40,7 @@ import {
 } from "./events/change-awareness.js";
 import { buildEventArtifact, buildClusterArtifact } from "./artifacts/event-artifacts.js";
 import { runArtifactExportAction } from "./ui/osint-dashboard-v2/artifact-export.js";
+import { filterChokepoints, renderChokepointCards, renderChokepointDetail, renderStrategicWatch } from "./ui/chokepoints.js";
 
 function ids(names) {
   return Object.fromEntries(names.map((id) => [id, document.getElementById(id)]));
@@ -195,10 +199,16 @@ function renderEventCard(event) {
   const summary = expanded ? `<p>${escapeHtml(event.summary)}</p>` : "";
   const details = expanded ? `<div class="event-facts"><span class="fact-chip">Occurred: ${escapeHtml(new Date(event.occurredAt).toLocaleString())}</span><span class="fact-chip">Reported: ${escapeHtml(new Date(event.firstReportedAt || event.occurredAt).toLocaleString())}</span><span class="fact-chip">Updated: ${escapeHtml(new Date(event.updatedAt || event.occurredAt).toLocaleString())}</span>${event.geographic === false ? `<span class="fact-chip">Not mapped: ${escapeHtml(event.nonGeographicReason || "no supported geography")}</span>` : ""}${event.incidentSize > 1 ? `<span class="fact-chip">Incident: ${escapeHtml(event.incidentSize)} linked events</span>` : ""}</div>` : "";
   const location = event.geographic === false ? "No map location" : event.place || event.country || "Location pending";
-  return `<article class="event-card ${expanded ? "expanded" : "compact"} record-${escapeHtml(event.recordKind || "event")}" data-id="${escapeHtml(event.id)}"><div class="event-meta"><span class="category-pill" style="--cat:${event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color}">${escapeHtml(event.domainLabel || CATEGORIES[event.category]?.label || "Other")}</span><span>${escapeHtml(event.typeLabel || event.category)}</span>${countryLabel}<span class="record-kind advanced-only">${escapeHtml(event.recordKind || "event")}</span><span class="severity-tag" style="--sev:${SEVERITIES[event.severity]?.color || SEVERITIES.low.color}">${SEVERITIES[event.severity]?.label || event.severity}</span></div><h2>${escapeHtml(event.title)}</h2><div class="consumer-card-line"><span>${escapeHtml(location)}</span><span>${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>${summary}${qualityBadges(event)}${details}<div class="source-row ${state.interfaceMode === "standard" ? "standard-source-row" : ""}"><span>${escapeHtml(event.sourceName || "Source")}</span><span>${escapeHtml(consumerVerificationLabel(event.verificationStatus))}</span>${event.incidentSize > 1 ? `<span class="advanced-only">${escapeHtml(event.incidentTitle || "Incident cluster")}</span>` : ""}${sourceButton(event)}<button type="button" class="mini-source-link event-detail-button" data-event-detail="${escapeHtml(event.id)}">View details</button></div><div class="event-foot advanced-only"><span>${relativeTime(event.occurredAt)} occurred - ${escapeHtml(event.sourceType)}</span><span class="confidence">${event.confidence}% confidence</span></div></article>`;
+  const chokepointContext = event.affectedChokepoints?.length ? `<p class="event-chokepoint-line">Strategic area: ${escapeHtml(event.affectedChokepoints.slice(0, 2).join(", "))}</p>` : "";
+  return `<article class="event-card ${expanded ? "expanded" : "compact"} record-${escapeHtml(event.recordKind || "event")}" data-id="${escapeHtml(event.id)}"><div class="event-meta"><span class="category-pill" style="--cat:${event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color}">${escapeHtml(event.domainLabel || CATEGORIES[event.category]?.label || "Other")}</span><span>${escapeHtml(event.typeLabel || event.category)}</span>${countryLabel}<span class="record-kind advanced-only">${escapeHtml(event.recordKind || "event")}</span><span class="severity-tag" style="--sev:${SEVERITIES[event.severity]?.color || SEVERITIES.low.color}">${SEVERITIES[event.severity]?.label || event.severity}</span></div><h2>${escapeHtml(event.title)}</h2><div class="consumer-card-line"><span>${escapeHtml(location)}</span><span>${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>${summary}${chokepointContext}${qualityBadges(event)}${details}<div class="source-row ${state.interfaceMode === "standard" ? "standard-source-row" : ""}"><span>${escapeHtml(event.sourceName || "Source")}</span><span>${escapeHtml(consumerVerificationLabel(event.verificationStatus))}</span>${event.incidentSize > 1 ? `<span class="advanced-only">${escapeHtml(event.incidentTitle || "Incident cluster")}</span>` : ""}${sourceButton(event)}<button type="button" class="mini-source-link event-detail-button" data-event-detail="${escapeHtml(event.id)}">View details</button></div><div class="event-foot advanced-only"><span>${relativeTime(event.occurredAt)} occurred - ${escapeHtml(event.sourceType)}</span><span class="confidence">${event.confidence}% confidence</span></div></article>`;
 }
 
 function renderList(els, events) {
+  if (state.activeArea === "chokepoints") {
+    const chokepoints = filterChokepoints(STRATEGIC_CHOKEPOINTS, state.chokepointAssessments, state.chokepointFilters);
+    els.eventList.innerHTML = renderChokepointCards(chokepoints, state.chokepointAssessments, state.selectedChokepointId);
+    return;
+  }
   if (!events.length) {
     const filters = dashboardFilters();
     const selectedDomain = filters.domains.size === 1 ? [...filters.domains][0] : null;
@@ -340,6 +350,9 @@ function applyPreset(presetId, renderAfter = true) {
   const preset = presetById(presetId);
   state.selectedPreset = preset.id;
   state.dashboard = preset.dashboard;
+  state.activeArea = preset.activeArea || "explore";
+  state.selectedChokepointId = preset.chokepointId || null;
+  if (preset.chokepointFilters) state.chokepointFilters = { ...state.chokepointFilters, ...preset.chokepointFilters };
   state.hours = preset.timeWindow;
   state.tracking.aircraft = Boolean(preset.aviationEnabled);
   state.tracking.vessels = Boolean(preset.maritimeEnabled);
@@ -397,6 +410,13 @@ function applyShellState(els) {
   if (els.airportsToggle) els.airportsToggle.checked = state.tracking.airports;
   if (els.portsToggle) els.portsToggle.checked = state.tracking.ports;
   if (els.trackingStatus) els.trackingStatus.textContent = renderTrackingStatus();
+  if (els.chokepointControls) els.chokepointControls.hidden = state.activeArea !== "chokepoints";
+  if (els.chokepointSearch) els.chokepointSearch.value = state.chokepointFilters.query || "";
+  if (els.chokepointRegion) els.chokepointRegion.value = state.chokepointFilters.region || "";
+  if (els.chokepointType) els.chokepointType.value = state.chokepointFilters.type || "";
+  if (els.chokepointStatus) els.chokepointStatus.value = state.chokepointFilters.status || "";
+  if (els.chokepointDomain) els.chokepointDomain.value = state.chokepointFilters.domain || "";
+  if (els.chokepointSort) els.chokepointSort.value = state.chokepointFilters.sort || "priority";
 }
 
 function bboxParam(mapController) {
@@ -418,18 +438,27 @@ function renderAlerts(events) {
 }
 
 export function bootLiveMap() {
-  const els = ids(["dashboardNav", "domainFilters", "layerFilters", "severityFilters", "eventList", "visibleCount", "highCount", "countryCount", "updatedAt", "search", "globalSearch", "globalSearchResults", "clearDomains", "clearFilters", "timeWindow", "sortOrder", "groupBy", "cardMode", "savedViews", "saveView", "fitWorld", "fitEvents", "themeToggle", "eventDialog", "dialogContent", "closeDialog", "methodologyDialog", "methodologyContent", "closeMethodology", "onboardingDialog", "mapLegend", "systemStatus", "feedAge", "baseMap", "refreshNow", "sourceHealth", "publicDataStatus", "countrySummaryPanel", "sourcesStatusPanel", "dashboardPanel", "dashboardEyebrow", "dashboardTitle", "mapMode", "mapHealth", "feedError", "ciiToggle", "sourcesLink", "filterDrawer", "eventDrawer", "presetList", "advancedMode", "aircraftToggle", "vesselToggle", "airportsToggle", "portsToggle", "trackingStatus", "mapListToggle", "locateMap", "resetWorkspace", "osintDashboardV2", "eventDetailDrawer"]);
+  const els = ids(["dashboardNav", "domainFilters", "layerFilters", "severityFilters", "eventList", "visibleCount", "highCount", "countryCount", "updatedAt", "search", "globalSearch", "globalSearchResults", "clearDomains", "clearFilters", "timeWindow", "sortOrder", "groupBy", "cardMode", "savedViews", "saveView", "fitWorld", "fitEvents", "themeToggle", "eventDialog", "dialogContent", "closeDialog", "methodologyDialog", "methodologyContent", "closeMethodology", "onboardingDialog", "mapLegend", "systemStatus", "feedAge", "baseMap", "refreshNow", "sourceHealth", "publicDataStatus", "countrySummaryPanel", "sourcesStatusPanel", "dashboardPanel", "dashboardEyebrow", "dashboardTitle", "mapMode", "mapHealth", "feedError", "ciiToggle", "sourcesLink", "filterDrawer", "eventDrawer", "presetList", "advancedMode", "aircraftToggle", "vesselToggle", "airportsToggle", "portsToggle", "trackingStatus", "mapListToggle", "locateMap", "resetWorkspace", "osintDashboardV2", "eventDetailDrawer", "chokepointDetailDrawer", "chokepointControls", "chokepointSearch", "chokepointRegion", "chokepointType", "chokepointStatus", "chokepointDomain", "chokepointSort", "resetChokepointFilters"]);
   const mapController = createMapController({ onHealthChange: (health) => { state.mapHealth = health; renderMapHealth(els.mapHealth, health); } });
   let refreshTimer = null;
   let retryAttempts = 0;
 
-  function currentEvents() {
+  function currentEvents(sourceEvents = state.intelligenceEvents.length ? state.intelligenceEvents : state.events) {
     const filters = dashboardFilters();
     const dashboard = getDashboard(state.dashboard);
-    const source = state.dashboard === "finance" ? [...state.events, ...exchangeMarkers().map(normalizeEvent)] : state.events;
+    const source = state.dashboard === "finance" ? [...sourceEvents, ...exchangeMarkers().map(normalizeEvent)] : sourceEvents;
     const byDashboard = source.filter((event) => dashboard.categories.includes(event.category) || state.dashboard === "primary");
     const byCountry = state.selectedCountryIso3 ? byDashboard.filter((event) => countryForEvent(event)?.iso3 === state.selectedCountryIso3) : byDashboard;
     return filteredEvents(byCountry.filter(standardEventVisible), filters, state.hours, state.sort);
+  }
+
+  function buildChokepointIntelligence() {
+    const correlations = correlateEventsToChokepoints(state.events, STRATEGIC_CHOKEPOINTS, { now: state.lastLoaded || Date.now() });
+    const events = enrichEventsWithChokepoints(state.events, correlations, STRATEGIC_CHOKEPOINTS);
+    const assessments = assessChokepoints(events, correlations, { now: state.lastLoaded || Date.now(), sourceStatus: state.sourceStatus });
+    state.intelligenceEvents = events;
+    state.chokepointAssessments = assessments;
+    return { correlations, events, assessments };
   }
 
   function selectCountry(value, zoom = true) {
@@ -442,7 +471,8 @@ export function bootLiveMap() {
   }
 
   function render() {
-    const events = currentEvents();
+    const intelligence = buildChokepointIntelligence();
+    const events = currentEvents(intelligence.events);
     updateCountDebug(events);
     const riskScores = computeCountryRiskScores(state.events);
     const correlations = correlateEventsToMarkets(state.events, EXCHANGES);
@@ -451,6 +481,8 @@ export function bootLiveMap() {
     const clusters = buildEventClusters(events);
     const selectedCluster = state.selectedClusterId ? findClusterById(clusters, state.selectedClusterId) : null;
     const highlightMemberIds = selectedCluster ? clusterMemberIds(selectedCluster) : null;
+    const selectedChokepoint = chokepointById(state.selectedChokepointId);
+    const relatedEventIds = selectedChokepoint ? new Set(intelligence.correlations.filter((item) => item.chokepointId === selectedChokepoint.id).map((item) => item.eventId)) : null;
     const { snapshot: changeSnapshot, corrupt: corruptSnapshot, unavailable: storageUnavailable } = loadSnapshotWithMeta();
     const changeSummary = computeChangeSummary(events, changeSnapshot, clusters);
     changeSummary.corruptSnapshot = corruptSnapshot;
@@ -461,12 +493,14 @@ export function bootLiveMap() {
     }, {
       selectedEventId: state.selectedEventId,
       clusterMemberIds: highlightMemberIds,
+      relatedEventIds,
       changeStatusById,
     });
     mapController.clearClusterHighlight();
     if (selectedCluster) renderClusterHighlight(mapController.clusterHighlightLayer, selectedCluster);
     mapController.renderCountryRisk(riskScores, state.ciiVisible);
     mapController.renderCountryBoundaries(COUNTRIES, riskScores, state.selectedCountryIso3, (country) => selectCountry(country.iso3, false));
+    mapController.renderChokepoints(STRATEGIC_CHOKEPOINTS, intelligence.assessments, state.selectedChokepointId, (chokepoint) => openChokepointInspector(chokepoint));
     mapController.renderMovingObjects(state.movingObjects, (object) => {
       state.selectedMovingObjectId = object.id;
       syncUrlState();
@@ -511,7 +545,7 @@ export function bootLiveMap() {
     els.countrySummaryPanel.innerHTML = renderCountrySummary(riskScores, state.events);
     els.sourcesStatusPanel.innerHTML = renderSourcesStatusPanel(state.events, state.sourceStatus);
     applyDashboardTitle(state.dashboard, els.dashboardEyebrow, els.dashboardTitle);
-    els.dashboardPanel.innerHTML = renderDashboardPanel(state.dashboard, { riskScores, correlations, events, sourceStatus: state.sourceStatus, providerResults: state.providerResults }) + renderLayerSummary(layers) + renderRiskTable(riskScores) + renderAlerts(events) + renderCountDebug();
+    els.dashboardPanel.innerHTML = renderStrategicWatch(intelligence.assessments, STRATEGIC_CHOKEPOINTS) + renderDashboardPanel(state.dashboard, { riskScores, correlations, events, sourceStatus: state.sourceStatus, providerResults: state.providerResults }) + renderLayerSummary(layers) + renderRiskTable(riskScores) + renderAlerts(events) + renderCountDebug();
     const selectedEvent = selectedCluster
       ? null
       : events.find((event) => event.id === state.selectedEventId) || state.events.find((event) => event.id === state.selectedEventId) || null;
@@ -531,18 +565,24 @@ export function bootLiveMap() {
       error: state.apiFailure?.message || null,
     });
     const selectedChangeStatus = selectedEvent ? changeStatusById.get(selectedEvent.id) || null : null;
-    renderOsintEventDetailDrawer(els.eventDetailDrawer, {
+    if (selectedChokepoint) {
+      els.eventDetailDrawer.hidden = true;
+      els.eventDetailDrawer.innerHTML = "";
+    } else renderOsintEventDetailDrawer(els.eventDetailDrawer, {
       event: selectedEvent,
       cluster: selectedCluster,
       changeStatus: selectedChangeStatus,
       allEvents: events,
       clusters,
     });
+    els.chokepointDetailDrawer.hidden = !selectedChokepoint;
+    els.chokepointDetailDrawer.innerHTML = selectedChokepoint ? renderChokepointDetail(selectedChokepoint, intelligence.assessments, new Map(intelligence.events.map((event) => [String(event.id), event]))) : "";
   }
 
   function clearInspectorSelection({ closeDrawer = false } = {}) {
     state.selectedEventId = null;
     state.selectedClusterId = null;
+    state.selectedChokepointId = null;
     if (els.eventDialog.open) els.eventDialog.close();
     if (closeDrawer) {
       state.rightDrawerOpen = false;
@@ -555,6 +595,7 @@ export function bootLiveMap() {
     if (!eventRecord) return;
     state.selectedEventId = eventRecord.id;
     state.selectedClusterId = null;
+    state.selectedChokepointId = null;
     state.rightDrawerOpen = true;
     localStorage.setItem("live-map-right-drawer-v1", "open");
     if (els.eventDialog.open) els.eventDialog.close();
@@ -569,6 +610,7 @@ export function bootLiveMap() {
     if (!cluster) return;
     state.selectedClusterId = cluster.clusterId;
     state.selectedEventId = null;
+    state.selectedChokepointId = null;
     state.rightDrawerOpen = true;
     localStorage.setItem("live-map-right-drawer-v1", "open");
     if (els.eventDialog.open) els.eventDialog.close();
@@ -576,17 +618,32 @@ export function bootLiveMap() {
     fitClusterOnMap(mapController.map, cluster);
   }
 
+  function openChokepointInspector(chokepoint) {
+    if (!chokepoint) return;
+    state.selectedChokepointId = chokepoint.id;
+    state.selectedEventId = null;
+    state.selectedClusterId = null;
+    state.activeArea = "chokepoints";
+    state.rightDrawerOpen = true;
+    localStorage.setItem("live-map-right-drawer-v1", "open");
+    syncUrlState();
+    renderNav();
+    render();
+    mapController.fitChokepoint(chokepoint);
+  }
+
   function renderNav() {
     const items = [
-      ["explore", "Map"],
-      ["feed", "Live Feed"],
+      ["explore", "Overview"],
+      ["feed", "Events"],
+      ["chokepoints", "Chokepoints"],
+      ["countries", "Countries"],
       ["sources", "Sources"],
-      ["limits", "About / Limits"],
-      ["countries", "Country Scores"],
+      ["diagnostics", "Diagnostics"],
     ];
     els.dashboardNav.innerHTML = items.map(([id, label]) => {
       if (id === "sources") return `<a class="dashboard-tab" href="/sources" data-sources-link>${label}</a>`;
-      if (id === "limits") return `<a class="dashboard-tab" href="/about.html">${label}</a>`;
+      if (id === "diagnostics") return `<a class="dashboard-tab" href="/diagnostics">${label}</a>`;
       if (id === "countries") return `<a class="dashboard-tab ${state.activeArea === id ? "active" : ""}" href="/countries">${label}</a>`;
       return `<button class="dashboard-tab ${state.activeArea === id ? "active" : ""}" data-area="${id}" type="button">${label}</button>`;
     }).join("");
@@ -599,6 +656,17 @@ export function bootLiveMap() {
     els.savedViews.innerHTML = '<option value="">Saved views</option>' + loadSavedViews().map((view) => `<option value="${escapeHtml(view.name)}">${escapeHtml(view.name)}</option>`).join("");
   }
 
+  function renderChokepointControls() {
+    const optionList = (label, values, selected) => `<option value="">${label}</option>${values.map((value) => `<option value="${escapeHtml(value)}" ${selected === value ? "selected" : ""}>${escapeHtml(value.replace(/-/g, " "))}</option>`).join("")}`;
+    const regions = [...new Set(STRATEGIC_CHOKEPOINTS.flatMap((item) => item.regions))].sort();
+    const domains = [...new Set(STRATEGIC_CHOKEPOINTS.flatMap((item) => item.domains))].sort();
+    els.chokepointRegion.innerHTML = optionList("All regions", regions, state.chokepointFilters.region);
+    els.chokepointType.innerHTML = optionList("All types", CHOKEPOINT_TYPES, state.chokepointFilters.type);
+    els.chokepointStatus.innerHTML = optionList("All conditions", CHOKEPOINT_STATUSES, state.chokepointFilters.status);
+    els.chokepointDomain.innerHTML = optionList("All event domains", domains, state.chokepointFilters.domain);
+    els.chokepointSort.innerHTML = [["priority", "Priority"], ["status", "Condition"], ["recency", "Recent"], ["name", "Name"]].map(([value, label]) => `<option value="${value}" ${state.chokepointFilters.sort === value ? "selected" : ""}>${label}</option>`).join("");
+  }
+
   function scheduleNextLoad(delayMs) {
     if (refreshTimer) window.clearTimeout(refreshTimer);
     refreshTimer = window.setTimeout(() => loadEvents(false), delayMs);
@@ -608,6 +676,7 @@ export function bootLiveMap() {
     const normalizedEvents = (result.events || []).map(normalizeEvent).filter((event) => event.geographic === false || (Number.isFinite(event.lat) && Number.isFinite(event.lon)));
     const incidentResult = annotateIncidents(normalizedEvents);
     state.events = incidentResult.events;
+    state.intelligenceEvents = [];
     state.incidents = incidentResult.incidents;
     state.lastLoaded = Number(result.generatedAt || Date.now());
     state.sources = result.sources || [];
@@ -712,13 +781,14 @@ export function bootLiveMap() {
 
   renderNav();
   renderFeedControls();
+  renderChokepointControls();
   if (!state.onboardingComplete && els.onboardingDialog) els.onboardingDialog.showModal();
   const startupParams = new URLSearchParams(window.location.search);
   if (state.selectedPreset === "explore" && !startupParams.has("tracking")) applyPreset("explore", false);
   if (els.timeWindow) els.timeWindow.value = String(state.hours);
   els.search.value = dashboardFilters().query;
   if (els.globalSearch) els.globalSearch.value = dashboardFilters().query;
-  window.addEventListener("live-map-render-request", () => { renderNav(); renderFeedControls(); render(); loadMovingObjects(); });
+  window.addEventListener("live-map-render-request", () => { renderNav(); renderFeedControls(); renderChokepointControls(); render(); loadMovingObjects(); });
   document.addEventListener("click", (event) => {
     if (event.target.closest("a")) return;
     const area = event.target.closest("[data-area]");
@@ -728,6 +798,17 @@ export function bootLiveMap() {
       localStorage.setItem("live-map-right-drawer-v1", state.rightDrawerOpen ? "open" : "closed");
       syncUrlState();
       renderNav();
+      render();
+      return;
+    }
+    const chokepointSelect = event.target.closest("[data-chokepoint-select]");
+    if (chokepointSelect) {
+      openChokepointInspector(chokepointById(chokepointSelect.dataset.chokepointSelect));
+      return;
+    }
+    if (event.target.closest("[data-chokepoint-clear]")) {
+      state.selectedChokepointId = null;
+      syncUrlState();
       render();
       return;
     }
@@ -947,6 +1028,12 @@ export function bootLiveMap() {
   });
 
   document.addEventListener("keydown", (event) => {
+    const chokepointCard = event.target.closest?.("[data-chokepoint-select]");
+    if (chokepointCard && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      openChokepointInspector(chokepointById(chokepointCard.dataset.chokepointSelect));
+      return;
+    }
     if (event.key === "Escape") {
       state.leftDrawerOpen = false;
       localStorage.setItem("live-map-left-drawer-v1", "closed");
@@ -958,6 +1045,25 @@ export function bootLiveMap() {
   els.search.addEventListener("input", (event) => {
     state.queryByDashboard.set(state.dashboard, event.target.value);
     syncUrlState();
+    render();
+  });
+  const updateChokepointFilter = (key, value) => {
+    state.chokepointFilters[key] = value;
+    state.selectedChokepointId = null;
+    syncUrlState();
+    render();
+  };
+  els.chokepointSearch?.addEventListener("input", (event) => updateChokepointFilter("query", event.target.value));
+  els.chokepointRegion?.addEventListener("change", (event) => updateChokepointFilter("region", event.target.value));
+  els.chokepointType?.addEventListener("change", (event) => updateChokepointFilter("type", event.target.value));
+  els.chokepointStatus?.addEventListener("change", (event) => updateChokepointFilter("status", event.target.value));
+  els.chokepointDomain?.addEventListener("change", (event) => updateChokepointFilter("domain", event.target.value));
+  els.chokepointSort?.addEventListener("change", (event) => updateChokepointFilter("sort", event.target.value));
+  els.resetChokepointFilters?.addEventListener("click", () => {
+    state.chokepointFilters = { query: "", region: "", type: "", status: "", domain: "", sort: "priority" };
+    state.selectedChokepointId = null;
+    syncUrlState();
+    renderChokepointControls();
     render();
   });
   els.globalSearch?.addEventListener("input", (event) => {
@@ -1047,6 +1153,7 @@ export function bootLiveMap() {
     state.selectedCountryIso3 = null;
     state.selectedEventId = null;
     state.selectedClusterId = null;
+    state.selectedChokepointId = null;
     state.tracking.aircraft = false;
     state.tracking.vessels = false;
     localStorage.setItem("live-map-left-drawer-v1", "closed");
