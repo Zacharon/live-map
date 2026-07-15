@@ -16,6 +16,8 @@ import { fetchGdeltDiscoveryLeads } from "./gdelt.js";
 import { fetchOfficialFeedEvents } from "./rss-feed.js";
 import { fetchStatuspageEvents } from "./statuspage.js";
 import { fetchRipestatEvents } from "./ripestat.js";
+import { fetchOpenNewsSocialSignals } from "./open-news-social.js";
+import { buildStorylines } from "../../intelligence/storyline-clustering.js";
 import { scheduleForProvider } from "./scheduling.js";
 import { createRequestBudgetStore } from "./request-budget.js";
 import { createProviderStateStore } from "./provider-state.js";
@@ -39,6 +41,13 @@ const ADAPTERS = {
   "positive-rss": fetchOfficialFeedEvents,
   statuspage: fetchStatuspageEvents,
   ripestat: fetchRipestatEvents,
+  youtube: fetchOpenNewsSocialSignals,
+  bluesky: fetchOpenNewsSocialSignals,
+  mastodon: fetchOpenNewsSocialSignals,
+  "hacker-news": fetchOpenNewsSocialSignals,
+  wikimedia: fetchOpenNewsSocialSignals,
+  twitch: fetchOpenNewsSocialSignals,
+  kick: fetchOpenNewsSocialSignals,
 };
 
 const lastSuccess = new Map();
@@ -278,6 +287,8 @@ export async function orchestrateProviders(options = {}) {
     events: dedupedEvents.map(toLegacyEvent),
     canonicalEvents: dedupedEvents,
     providerResults: providerResults.map((result) => ({ ...result, duplicateCount: duplicateCountByProvider[result.providerId] || 0 })),
+    observations: providerResults.flatMap((result) => result.observations || []).slice(0, 500),
+    storylines: buildStorylines(providerResults.flatMap((result) => result.observations || []).slice(0, 500), { now }),
     sourceStatus,
     systemStatus,
     mode: systemStatus === "operational" ? "netlify-function" : "partial-netlify-function",

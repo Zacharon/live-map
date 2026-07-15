@@ -133,3 +133,7 @@ Ship only after the data pipeline is reliable:
 - No emergency advice
 - No unsourced conclusions
 - Optional bring-your-own-key or local-only AI paths later
+# Open News and Social Signal Fusion v1
+
+- Completed: source observations, deterministic storylines, source-independence guardrails, RSS/Atom/JSON Feed support, and configuration-gated open social/video provider boundaries.
+- Next: reviewed watchlist configuration and provider-specific activation only after terms, attribution, quota, and retention review.

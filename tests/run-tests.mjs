@@ -29,6 +29,10 @@ import { PROVIDER_SCHEDULES, validateProviderSchedule } from "../src/data/provid
 import { createMemoryRequestBudgetStore, retryAfterMs } from "../src/data/providers/request-budget.js";
 import { createMemoryProviderStateStore } from "../src/data/providers/provider-state.js";
 import { normalizeGdeltArticle } from "../src/data/providers/gdelt.js";
+import { createSourceObservation, canonicalizeObservationUrl, validateSourceObservation } from "../src/intelligence/source-observations.js";
+import { sourceIndependence, independentObservationCount } from "../src/intelligence/source-independence.js";
+import { buildStorylines } from "../src/intelligence/storyline-clustering.js";
+import { normalizeOpenSignal } from "../src/data/providers/open-news-social.js";
 import { fetchOfficialFeedEvents, parseFeedItems, normalizeFeedItem } from "../src/data/providers/rss-feed.js";
 import { normalizeStatuspageIncident } from "../src/data/providers/statuspage.js";
 import { normalizeRipestatObservation } from "../src/data/providers/ripestat.js";
@@ -1145,6 +1149,33 @@ test("GDELT discovery leads stay unverified and non-geographic", () => {
   assert.equal(result.event.geographic, false);
   assert.equal(result.event.metadata.verificationStatus, "unverified");
   assert.equal(result.event.publicationPolicy.allowFullText, false);
+});
+
+test("Source observations retain bounded metadata and canonicalize tracking URLs", () => {
+  const observation = createSourceObservation({ provider: "test", url: "https://news.example/item?utm_source=x&id=1", title: "A report", excerpt: "x".repeat(800), sourceOrganizationId: "News Example", publishedAt: "2026-06-09T00:00:00Z" });
+  assert.equal(canonicalizeObservationUrl(observation.url), "https://news.example/item?id=1");
+  assert.equal(observation.excerpt.length, 360);
+  assert.equal(validateSourceObservation(observation).valid, true);
+});
+
+test("Storylines keep source independence and trend separate from verification", () => {
+  const observations = [
+    createSourceObservation({ provider: "a", url: "https://a.example/a", title: "Port disruption reported", sourceOrganizationId: "a", publishedAt: "2026-06-09T00:00:00Z" }),
+    createSourceObservation({ provider: "b", url: "https://b.example/a", title: "Port disruption reported", sourceOrganizationId: "b", publishedAt: "2026-06-09T01:00:00Z" }),
+    createSourceObservation({ provider: "c", url: "https://a.example/a?utm_source=c", title: "Port disruption reported", sourceOrganizationId: "a", publishedAt: "2026-06-09T02:00:00Z" }),
+  ];
+  assert.equal(sourceIndependence(observations[0], observations[2]).independent, false);
+  assert.equal(independentObservationCount(observations), 2);
+  const storylines = buildStorylines(observations, { now: Date.parse("2026-06-09T03:00:00Z") });
+  assert.equal(storylines[0].verification.state, "corroborated");
+  assert.equal(storylines[0].trend.state, "normal");
+});
+
+test("Open signal normalizers preserve metadata-only social boundaries", () => {
+  const observation = normalizeOpenSignal({ id: "1", url: "https://news.ycombinator.com/item?id=1", title: "Signal", by: "author", score: 12, created_at: "2026-06-09T00:00:00Z" }, { id: "hacker-news", name: "Hacker News", observationType: "forum", sourceTier: "tier-5-discovery-only" });
+  assert.equal(observation.observationType, "forum");
+  assert.equal(observation.rawRetention, "none");
+  assert.equal(observation.verificationState, "unverified");
 });
 
 test("Official feed parsing strips unsafe markup and rejects local feed URLs", () => {

@@ -63,6 +63,14 @@ Useful skill pipeline when available: `last30days-skill` for recent context, `Un
 
 ## Source Quality
 
+### Open News and Social Signals
+
+- Never scrape restricted platforms or use access-control bypasses; registry-only means registry-only.
+- Treat same organization, canonical URL, mirrors, and declared syndication as one source for corroboration.
+- Never let reposts, cross-posts, likes, views, or social volume create verification.
+- Keep social/video content metadata-only: no full text, comments, transcripts, chats, profiles, or raw payload retention without a documented review.
+- Keep feed URLs allowlisted and server-side; preserve SSRF redirect and body limits.
+
 - Every live event source must include attribution, source URL, provider freshness, and source status.
 - Every registry source must include access classification, implementation status, source tier, verification state, source URL, attribution, review dates, cache guidance, retention guidance, and limitations.
 - Provider failures must be visible in `sourceStatus` and must not be hidden behind a successful-looking workflow result.

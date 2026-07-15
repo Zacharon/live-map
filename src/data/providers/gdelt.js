@@ -3,6 +3,7 @@ import { applyPublicationPolicy, DISCOVERY_PUBLICATION_POLICY } from "./publicat
 import { GDELT_QUERY_PACKS } from "./gdelt-query-packs.js";
 import { clusterDiscoveryLeads, canonicalizeUrl } from "./news-clustering.js";
 import { evaluateLeadPromotion } from "./discovery-promotion.js";
+import { createSourceObservation } from "../../intelligence/source-observations.js";
 
 export const GDELT_DOC_API_URL = "https://api.gdeltproject.org/api/v2/doc/doc";
 
@@ -89,6 +90,25 @@ export function normalizeGdeltArticle(article = {}, pack = {}, now = new Date())
   return { event: result.valid ? result.event : null, errors: result.errors };
 }
 
+export function observationFromGdeltArticle(article = {}, pack = {}, now = new Date()) {
+  return createSourceObservation({
+    provider: "gdelt",
+    observationType: "news",
+    externalId: article.url,
+    url: article.url,
+    title: article.title,
+    excerpt: article.title,
+    publishedAt: article.seendate || article.date,
+    sourceOrganizationId: article.domain || publisherFromUrl(article.url),
+    sourceOrganizationName: article.domain || publisherFromUrl(article.url),
+    publisher: article.domain || publisherFromUrl(article.url),
+    language: article.language,
+    sourceTier: "tier-5-discovery-only",
+    verificationState: "unverified",
+    provenance: `gdelt-query-pack:${pack.id || "unknown"}`,
+  }, now);
+}
+
 export async function fetchGdeltDiscoveryLeads(context = {}) {
   if (!gdeltEnabled()) {
     return {
@@ -103,6 +123,7 @@ export async function fetchGdeltDiscoveryLeads(context = {}) {
 
   const now = new Date(context.now);
   const events = [];
+  const observations = [];
   const rejected = [];
   let receivedCount = 0;
   for (const pack of (context.gdeltQueryPacks || GDELT_QUERY_PACKS).slice(0, 3)) {
@@ -112,6 +133,7 @@ export async function fetchGdeltDiscoveryLeads(context = {}) {
     for (const article of articles) {
       const result = normalizeGdeltArticle(article, pack, now);
       if (result.event) events.push(result.event);
+      if (article?.url && article?.title) observations.push(observationFromGdeltArticle(article, pack, now));
       else rejected.push({ id: article?.url || null, errors: result.errors });
     }
   }
@@ -129,6 +151,7 @@ export async function fetchGdeltDiscoveryLeads(context = {}) {
 
   return {
     events,
+    observations,
     rejected,
     receivedCount,
     recordsClustered: clusters.length,

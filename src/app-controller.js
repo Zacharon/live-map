@@ -41,6 +41,7 @@ import {
 import { buildEventArtifact, buildClusterArtifact } from "./artifacts/event-artifacts.js";
 import { runArtifactExportAction } from "./ui/osint-dashboard-v2/artifact-export.js";
 import { filterChokepoints, renderChokepointCards, renderChokepointDetail, renderStrategicWatch } from "./ui/chokepoints.js";
+import { renderLatestIntelligence } from "./ui/latest-intelligence.js";
 
 function ids(names) {
   return Object.fromEntries(names.map((id) => [id, document.getElementById(id)]));
@@ -207,6 +208,10 @@ function renderList(els, events) {
   if (state.activeArea === "chokepoints") {
     const chokepoints = filterChokepoints(STRATEGIC_CHOKEPOINTS, state.chokepointAssessments, state.chokepointFilters);
     els.eventList.innerHTML = renderChokepointCards(chokepoints, state.chokepointAssessments, state.selectedChokepointId);
+    return;
+  }
+  if (state.activeArea === "latest-intelligence") {
+    els.eventList.innerHTML = renderLatestIntelligence(state.storylines, state.observations);
     return;
   }
   if (!events.length) {
@@ -545,7 +550,11 @@ export function bootLiveMap() {
     els.countrySummaryPanel.innerHTML = renderCountrySummary(riskScores, state.events);
     els.sourcesStatusPanel.innerHTML = renderSourcesStatusPanel(state.events, state.sourceStatus);
     applyDashboardTitle(state.dashboard, els.dashboardEyebrow, els.dashboardTitle);
-    els.dashboardPanel.innerHTML = renderStrategicWatch(intelligence.assessments, STRATEGIC_CHOKEPOINTS) + renderDashboardPanel(state.dashboard, { riskScores, correlations, events, sourceStatus: state.sourceStatus, providerResults: state.providerResults }) + renderLayerSummary(layers) + renderRiskTable(riskScores) + renderAlerts(events) + renderCountDebug();
+    if (state.activeArea === "latest-intelligence") {
+      els.dashboardEyebrow.textContent = "OPEN WEB";
+      els.dashboardTitle.textContent = "Latest Intelligence";
+    }
+    els.dashboardPanel.innerHTML = (state.activeArea === "latest-intelligence" ? renderLatestIntelligence(state.storylines, state.observations) : "") + renderStrategicWatch(intelligence.assessments, STRATEGIC_CHOKEPOINTS) + renderDashboardPanel(state.dashboard, { riskScores, correlations, events, sourceStatus: state.sourceStatus, providerResults: state.providerResults }) + renderLayerSummary(layers) + renderRiskTable(riskScores) + renderAlerts(events) + renderCountDebug();
     const selectedEvent = selectedCluster
       ? null
       : events.find((event) => event.id === state.selectedEventId) || state.events.find((event) => event.id === state.selectedEventId) || null;
@@ -636,6 +645,7 @@ export function bootLiveMap() {
     const items = [
       ["explore", "Overview"],
       ["feed", "Events"],
+      ["latest-intelligence", "Latest Intelligence"],
       ["chokepoints", "Chokepoints"],
       ["countries", "Countries"],
       ["sources", "Sources"],
@@ -683,6 +693,9 @@ export function bootLiveMap() {
     state.sourceStatus = result.sourceStatus || {};
     state.domainSourceStatus = result.domainSourceStatus || {};
     state.providerResults = result.providerResults || [];
+    state.observations = result.observations || [];
+    state.storylines = result.storylines || [];
+    state.observationSummary = result.observationSummary || {};
     state.systemStatus = result.systemStatus || result.mode || "unknown";
     state.errors = result.errors || [];
   }
@@ -784,7 +797,7 @@ export function bootLiveMap() {
   renderChokepointControls();
   if (!state.onboardingComplete && els.onboardingDialog) els.onboardingDialog.showModal();
   const startupParams = new URLSearchParams(window.location.search);
-  if (state.selectedPreset === "explore" && !startupParams.has("tracking")) applyPreset("explore", false);
+  if (state.selectedPreset === "explore" && !startupParams.has("tracking") && !startupParams.has("view")) applyPreset("explore", false);
   if (els.timeWindow) els.timeWindow.value = String(state.hours);
   els.search.value = dashboardFilters().query;
   if (els.globalSearch) els.globalSearch.value = dashboardFilters().query;
@@ -794,7 +807,7 @@ export function bootLiveMap() {
     const area = event.target.closest("[data-area]");
     if (area) {
       state.activeArea = area.dataset.area;
-      state.rightDrawerOpen = state.activeArea === "feed" ? true : state.rightDrawerOpen;
+      state.rightDrawerOpen = ["feed", "latest-intelligence"].includes(state.activeArea) ? true : state.rightDrawerOpen;
       localStorage.setItem("live-map-right-drawer-v1", state.rightDrawerOpen ? "open" : "closed");
       syncUrlState();
       renderNav();
