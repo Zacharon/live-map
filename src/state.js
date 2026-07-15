@@ -5,9 +5,10 @@ import { GROUP_OPTIONS, SORT_OPTIONS } from "./events/feed-organization.js";
 import { domainOptions } from "./events/taxonomy.js";
 import { safeJsonArray } from "./api/request-validation.js";
 import { allowedParam, countryParam, listParam, safeSearchParams, textParam, tokenParam } from "./url-params.js";
+import { CHOKEPOINT_STATUSES, CHOKEPOINT_TYPES, chokepointById } from "./data/strategic-chokepoints.js";
 
 const params = safeSearchParams();
-const ACTIVE_AREAS = ["explore", "feed", "countries"];
+const ACTIVE_AREAS = ["explore", "feed", "chokepoints", "countries"];
 const CARD_MODES = ["compact", "expanded"];
 const TRACKING_MODES = ["aircraft", "vessels"];
 const SORT_IDS = SORT_OPTIONS.map(([value]) => value);
@@ -73,6 +74,17 @@ export const state = {
   ciiVisible: false,
   selectedEventId: null,
   selectedClusterId: null,
+  selectedChokepointId: tokenParam(params, "chokepoint", "", { maxLength: 80 }) && chokepointById(params.get("chokepoint")) ? params.get("chokepoint") : null,
+  chokepointFilters: {
+    query: textParam(params, "chokepointQuery", "", 80),
+    region: textParam(params, "chokepointRegion", "", 60),
+    type: allowedParam(params, "chokepointType", CHOKEPOINT_TYPES, ""),
+    status: allowedParam(params, "chokepointStatus", CHOKEPOINT_STATUSES, ""),
+    domain: textParam(params, "chokepointDomain", "", 60),
+    sort: allowedParam(params, "chokepointSort", ["priority", "status", "recency", "name"], "priority"),
+  },
+  chokepointAssessments: [],
+  intelligenceEvents: [],
   selectedCountryIso3: countryParam(params, "country", countryByCode) || null,
   sessionAlertHistory: [],
   collapsedGroups: new Set(safeJsonArray(localStorage.getItem("live-map-collapsed-groups-v1"))),
@@ -120,6 +132,13 @@ export function syncUrlState() {
   else url.searchParams.delete("domains");
   if (state.selectedCountryIso3) url.searchParams.set("country", state.selectedCountryIso3);
   else url.searchParams.delete("country");
+  if (state.selectedChokepointId) url.searchParams.set("chokepoint", state.selectedChokepointId);
+  else url.searchParams.delete("chokepoint");
+  const chokepointFilters = state.chokepointFilters || {};
+  [["chokepointQuery", chokepointFilters.query], ["chokepointRegion", chokepointFilters.region], ["chokepointType", chokepointFilters.type], ["chokepointStatus", chokepointFilters.status], ["chokepointDomain", chokepointFilters.domain], ["chokepointSort", chokepointFilters.sort === "priority" ? "" : chokepointFilters.sort]].forEach(([key, value]) => {
+    if (value) url.searchParams.set(key, value);
+    else url.searchParams.delete(key);
+  });
   if (state.tracking.aircraft) url.searchParams.set("tracking", "aircraft");
   else if (state.tracking.vessels) url.searchParams.set("tracking", "vessels");
   else url.searchParams.delete("tracking");

@@ -24,6 +24,7 @@
 - OpenSky: viewport-limited aircraft tracking boundary is implemented but disabled until OAuth credentials are configured.
 - Global Fishing Watch: maritime activity boundary is implemented but disabled until API authorization and endpoint-specific terms are reviewed.
 - AISHub: AIS boundary is documented and configuration-required; participation/access requirements must be met before activation.
+- Strategic chokepoint registry: local generalized reference geometry informed by International Hydrographic Organization and International Maritime Organization public references. It is not a real-time provider or operational navigation feed.
 
 ## Registry or development fixture
 
@@ -70,4 +71,6 @@ See also:
 - `docs/GLOBAL_FISHING_WATCH_PROVIDER.md`
 - `docs/AISHUB_PROVIDER_BOUNDARY.md`
 - `docs/TRACKING_PRIVACY_AND_LIMITATIONS.md`
+- `docs/STRATEGIC_CHOKEPOINTS_V1.md`
+- `docs/STRATEGIC_DATA_SOURCE_ROADMAP.md`
 
