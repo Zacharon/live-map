@@ -1325,3 +1325,464 @@ body.view-latest-intelligence .tracking-panel {
     align-items: center;
   }
 }
+
+/* =============================================================================
+   Phase 7 — operator console visual jump
+   Dark elevation, map primacy, less panel competition, secondary-page parity
+   ============================================================================= */
+
+:root {
+  --of-bg: #03080e;
+  --of-bg-grid: #050c14;
+  --of-panel: #081018;
+  --of-panel-strong: #0c1824;
+  --of-panel-glass: rgba(6, 14, 22, 0.92);
+  --of-border: #1a2e3c;
+  --of-border-hot: #2f5a6c;
+  --of-text: #e8f4fa;
+  --of-text-muted: #7f9aab;
+  --of-text-faint: #5a7384;
+  --of-cyan: #2fe0c8;
+  --of-cyan-soft: #4fd4a8;
+  --of-shadow: 0 20px 56px rgba(0, 0, 0, 0.62);
+  --of-glow-cyan: 0 0 22px rgba(47, 224, 200, 0.22);
+  --of-elev-1: 0 1px 0 rgba(255, 255, 255, 0.04);
+  --of-elev-2: 0 8px 28px rgba(0, 0, 0, 0.4);
+  --of-elev-3: 0 16px 48px rgba(0, 0, 0, 0.55);
+  --bg: var(--of-bg);
+  --panel: var(--of-panel);
+  --panel2: var(--of-panel-strong);
+  --line: var(--of-border);
+  --text: var(--of-text);
+  --muted: var(--of-text-muted);
+  --accent: var(--of-cyan-soft);
+  --shadow: var(--of-shadow);
+}
+
+body {
+  --of-surface-0: #03080e;
+  --of-surface-1: #071018;
+  --of-surface-2: #0b1520;
+  --of-surface-3: #101e2c;
+  background: var(--of-surface-0);
+  color: var(--of-text);
+}
+
+/* Depth without muddy flat panels */
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 90% 50% at 50% -10%, rgba(47, 224, 200, 0.045), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(47, 100, 180, 0.04), transparent 50%);
+}
+
+.app-shell,
+.source-shell {
+  position: relative;
+  z-index: 1;
+}
+
+/* Top bar: terminal strip */
+.topbar {
+  background: linear-gradient(180deg, #0a141e 0%, #060e16 100%);
+  border-bottom: 1px solid rgba(47, 224, 200, 0.12);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), var(--of-elev-1);
+  backdrop-filter: blur(12px);
+}
+
+.brand-mark {
+  border-color: color-mix(in srgb, var(--of-cyan) 55%, transparent);
+  color: var(--of-cyan);
+  box-shadow: inset 0 0 12px rgba(47, 224, 200, 0.12);
+}
+
+.dashboard-tab {
+  color: var(--of-text-faint);
+  border: 1px solid transparent;
+}
+
+.dashboard-tab:hover {
+  color: var(--of-text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dashboard-tab.active {
+  color: var(--of-cyan);
+  background: color-mix(in srgb, var(--of-cyan) 9%, transparent);
+  border-color: color-mix(in srgb, var(--of-cyan) 28%, transparent);
+  box-shadow: inset 0 -2px 0 var(--of-cyan);
+}
+
+/* Map is the stage — stronger vignette, quieter chrome */
+.map-stage {
+  background:
+    radial-gradient(ellipse 95% 75% at 50% 48%, rgba(12, 40, 58, 0.5), transparent 62%),
+    radial-gradient(circle at 50% 100%, rgba(0, 0, 0, 0.45), transparent 45%),
+    linear-gradient(180deg, #041018 0%, #02060b 100%) !important;
+}
+
+.map-stage::after {
+  box-shadow:
+    inset 0 0 140px rgba(0, 0, 0, 0.65),
+    inset 0 0 2px rgba(47, 224, 200, 0.1) !important;
+}
+
+/* Drawers: recede, single elevation edge, no competing boxes */
+.drawer-left,
+.sidebar.left-panel {
+  background: rgba(5, 12, 18, 0.96) !important;
+  border-right: 1px solid rgba(26, 46, 60, 0.9) !important;
+  box-shadow: none !important;
+}
+
+.drawer-right,
+.event-panel {
+  background: rgba(5, 12, 18, 0.97) !important;
+  border-left: 1px solid rgba(26, 46, 60, 0.9) !important;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Collapse visual competition from sticky method/source walls */
+.method-note,
+.source-note,
+.sources-status-panel,
+.layer-summary {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(26, 46, 60, 0.65) !important;
+  box-shadow: none !important;
+}
+
+.stats-grid article {
+  background: var(--of-surface-2);
+  border: 1px solid rgba(26, 46, 60, 0.75);
+  box-shadow: none;
+}
+
+.filter-item {
+  background: rgba(0, 0, 0, 0.22);
+  border-color: rgba(26, 46, 60, 0.7);
+}
+
+.filter-item:hover {
+  border-color: color-mix(in srgb, var(--of-cyan) 30%, var(--of-border));
+}
+
+/* Floating map chrome: glass pills, not opaque boxes */
+.map-toolbar,
+.legend,
+.floating-controls button,
+.map-toggle {
+  background: rgba(4, 12, 18, 0.82) !important;
+  border-color: rgba(47, 224, 200, 0.14) !important;
+  backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: var(--of-elev-2);
+}
+
+.map-toolbar button,
+.map-toolbar select {
+  background: rgba(0, 0, 0, 0.25);
+  border-color: rgba(26, 46, 60, 0.85);
+}
+
+.map-toolbar button:hover,
+.floating-controls button:hover,
+.map-toggle:hover {
+  color: var(--of-cyan);
+  border-color: color-mix(in srgb, var(--of-cyan) 40%, transparent);
+}
+
+.map-toggle.active {
+  background: color-mix(in srgb, var(--of-cyan) 16%, rgba(4, 12, 18, 0.9)) !important;
+  color: var(--of-cyan);
+  border-color: color-mix(in srgb, var(--of-cyan) 50%, transparent) !important;
+  box-shadow: var(--of-glow-cyan);
+}
+
+/* Cards: dense console density */
+.event-card {
+  background: var(--of-surface-2) !important;
+  border: 1px solid rgba(26, 46, 60, 0.8) !important;
+  border-radius: 8px;
+  box-shadow: none !important;
+}
+
+.event-card:hover {
+  background: var(--of-surface-3) !important;
+  border-color: color-mix(in srgb, var(--of-cyan) 32%, var(--of-border)) !important;
+}
+
+.event-card.is-selected,
+.event-card[aria-current="true"] {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--of-cyan) 12%, transparent), transparent 50%),
+    var(--of-surface-3) !important;
+  border-color: color-mix(in srgb, var(--of-cyan) 50%, var(--of-border)) !important;
+  box-shadow: inset 3px 0 0 var(--of-cyan) !important;
+}
+
+.event-card.is-new,
+.event-card[data-change="new"] {
+  box-shadow: inset 3px 0 0 var(--of-change-new) !important;
+}
+
+.event-card.is-updated,
+.event-card[data-change="updated"] {
+  box-shadow: inset 3px 0 0 var(--of-change-updated) !important;
+}
+
+.panel-head {
+  background: linear-gradient(180deg, #0c1822, #081018) !important;
+  border-bottom: 1px solid rgba(47, 224, 200, 0.1);
+}
+
+.eyebrow {
+  color: var(--of-cyan);
+  text-shadow: 0 0 12px rgba(47, 224, 200, 0.25);
+}
+
+/* Standard mode: hide advanced chrome hard */
+.standard-mode .advanced-only,
+body:not(.advanced-mode) .advanced-only,
+.standard-mode .v2-connections-panel,
+.standard-mode .sources-status-panel details,
+.standard-mode .tracking-panel .advanced-tracking {
+  display: none !important;
+}
+
+.standard-mode .osint-dashboard-v2 {
+  opacity: 0.95;
+}
+
+.standard-mode .v2-shell {
+  gap: 8px;
+}
+
+/* v2 dashboard quieter */
+.v2-card,
+.v2-command-bar {
+  background: var(--of-surface-2);
+  border-color: rgba(26, 46, 60, 0.85);
+  box-shadow: none;
+}
+
+.v2-card-value {
+  font-family: var(--of-mono);
+  color: var(--of-text);
+}
+
+/* Reduce overlap: left drawer content spacing */
+.sidebar section + section {
+  border-top: 1px solid rgba(26, 46, 60, 0.45);
+  padding-top: 10px;
+}
+
+.section-title {
+  color: var(--of-text-faint);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+/* Scrollbars (webkit) denser console feel */
+.drawer-left::-webkit-scrollbar,
+.drawer-right::-webkit-scrollbar,
+.event-list::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.drawer-left::-webkit-scrollbar-thumb,
+.drawer-right::-webkit-scrollbar-thumb,
+.event-list::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(47, 224, 200, 0.18);
+  border-radius: 99px;
+}
+
+/* Focus ring single accent */
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--of-cyan) 80%, #fff) !important;
+  outline-offset: 2px;
+}
+
+/* ----- Secondary pages (Countries / Sources / Diagnostics) ----- */
+body.source-explorer-page,
+body.countries-page,
+body.diagnostics-page {
+  background: var(--of-surface-0);
+  color: var(--of-text);
+}
+
+body.source-explorer-page .source-shell,
+body.countries-page .source-shell,
+body.diagnostics-page .source-shell {
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(47, 224, 200, 0.04), transparent 55%),
+    var(--of-surface-0);
+}
+
+body.source-explorer-page .source-header,
+body.countries-page .source-header,
+body.diagnostics-page .source-header {
+  min-height: 52px;
+  padding: 10px 18px;
+  background: linear-gradient(180deg, #0a141e, #060e16);
+  border-bottom: 1px solid rgba(47, 224, 200, 0.12);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+body.source-explorer-page .source-links a,
+body.countries-page .source-links a,
+body.diagnostics-page .source-links a,
+body.source-explorer-page .source-actions a {
+  background: rgba(0, 0, 0, 0.25);
+  border-color: rgba(26, 46, 60, 0.9);
+  color: var(--of-text-muted);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+body.source-explorer-page .source-links a:hover,
+body.countries-page .source-links a:hover,
+body.source-explorer-page .source-links a[aria-current="page"] {
+  color: var(--of-cyan);
+  border-color: color-mix(in srgb, var(--of-cyan) 40%, transparent);
+  background: color-mix(in srgb, var(--of-cyan) 10%, transparent);
+  font-weight: 700;
+}
+
+body.source-explorer-page .source-controls,
+body.countries-page .source-controls {
+  border-bottom-color: rgba(26, 46, 60, 0.8);
+}
+
+body.source-explorer-page .source-status-row,
+body.countries-page .source-status-row,
+body.source-explorer-page .source-detail,
+body.countries-page .source-detail,
+body.source-explorer-page .source-summary,
+body.countries-page .source-summary {
+  background: var(--of-surface-2);
+  border: 1px solid rgba(26, 46, 60, 0.85);
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+body.countries-page .country-score-header {
+  background: var(--of-surface-2);
+  border-bottom: 1px solid rgba(26, 46, 60, 0.85);
+  color: var(--of-text-faint);
+}
+
+body.countries-page .country-score-row,
+body.countries-page .country-summary-card {
+  background: var(--of-surface-2);
+  border: 1px solid rgba(26, 46, 60, 0.75);
+  border-radius: 8px;
+}
+
+body.countries-page .country-score-row:hover {
+  border-color: color-mix(in srgb, var(--of-cyan) 30%, var(--of-border));
+}
+
+body.source-explorer-page input,
+body.source-explorer-page select,
+body.countries-page input,
+body.countries-page select,
+body.diagnostics-page input,
+body.diagnostics-page select {
+  background: var(--of-surface-0);
+  border: 1px solid rgba(26, 46, 60, 0.95);
+  color: var(--of-text);
+  border-radius: 8px;
+}
+
+body.source-explorer-page button,
+body.countries-page button,
+body.diagnostics-page button {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(26, 46, 60, 0.95);
+  color: var(--of-text-muted);
+  border-radius: 8px;
+}
+
+body.source-explorer-page button:hover,
+body.countries-page button:hover {
+  color: var(--of-cyan);
+  border-color: color-mix(in srgb, var(--of-cyan) 40%, transparent);
+}
+
+/* Diagnostics denser tables */
+body.diagnostics-page table,
+.diagnostics-page .diag-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+body.diagnostics-page th,
+body.diagnostics-page td {
+  border-bottom: 1px solid rgba(26, 46, 60, 0.7);
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+body.diagnostics-page th {
+  color: var(--of-text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+}
+
+/* Leaflet control glass (map primacy) */
+.leaflet-control-zoom a,
+.leaflet-bar a {
+  background: rgba(4, 12, 18, 0.9) !important;
+  color: var(--of-text-muted) !important;
+  border-color: rgba(26, 46, 60, 0.9) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  color: var(--of-cyan) !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(4, 12, 18, 0.75) !important;
+  color: var(--of-text-faint) !important;
+  font-size: 10px !important;
+}
+
+/* Light theme residual — do not break */
+:root.light {
+  --of-bg: #e8f0f4;
+  --of-panel: #ffffff;
+  --of-panel-strong: #edf3f6;
+  --of-border: #c9d7de;
+  --of-text: #10212c;
+  --of-text-muted: #536b78;
+  --of-text-faint: #6f8592;
+}
+
+:root.light body::before {
+  display: none;
+}
+
+:root.light .map-stage {
+  background: #d8e4ec !important;
+}
+
+@media (max-width: 900px) {
+  .drawer-right,
+  .event-panel {
+    box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .map-toolbar {
+    max-width: calc(100% - 16px);
+  }
+}

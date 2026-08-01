@@ -6,6 +6,8 @@ export const PROVIDER_SCHEDULES = {
   eonet: schedule("eonet", { refreshIntervalMs: 2 * 60 * 1000, cacheTtlMs: 5 * 60 * 1000, staleAfterMs: 30 * 60 * 1000, dailyRequestBudget: 720 }),
   "nws-alerts": schedule("nws-alerts", { refreshIntervalMs: 2 * 60 * 1000, cacheTtlMs: 2 * 60 * 1000, staleAfterMs: 10 * 60 * 1000, dailyRequestBudget: 720 }),
   gdacs: schedule("gdacs", { refreshIntervalMs: 10 * 60 * 1000, cacheTtlMs: 10 * 60 * 1000, staleAfterMs: 30 * 60 * 1000, dailyRequestBudget: 144 }),
+  "nasa-firms": schedule("nasa-firms", { refreshIntervalMs: 30 * 60 * 1000, cacheTtlMs: 30 * 60 * 1000, staleAfterMs: 6 * 60 * 60 * 1000, requestTimeoutMs: 20000, maximumRetries: 1, dailyRequestBudget: 48 }),
+  "noaa-swpc": schedule("noaa-swpc", { refreshIntervalMs: 15 * 60 * 1000, cacheTtlMs: 15 * 60 * 1000, staleAfterMs: 2 * 60 * 60 * 1000, requestTimeoutMs: 12000, dailyRequestBudget: 96 }),
   reliefweb: schedule("reliefweb", { refreshIntervalMs: 20 * 60 * 1000, cacheTtlMs: 15 * 60 * 1000, staleAfterMs: 4 * 60 * 60 * 1000, requestTimeoutMs: 15000, dailyRequestBudget: 144 }),
   "cisa-kev": schedule("cisa-kev", { refreshIntervalMs: 60 * 60 * 1000, cacheTtlMs: 60 * 60 * 1000, staleAfterMs: 24 * 60 * 60 * 1000, requestTimeoutMs: 15000, dailyRequestBudget: 48 }),
   nvd: schedule("nvd", { refreshIntervalMs: 2 * 60 * 60 * 1000, cacheTtlMs: 2 * 60 * 60 * 1000, staleAfterMs: 24 * 60 * 60 * 1000, requestTimeoutMs: 15000, dailyRequestBudget: 40 }),
