@@ -91,16 +91,22 @@
 
     <aside id="eventDrawer" class="event-panel right-panel drawer drawer-right open" aria-label="Event feed">
       <div class="panel-head">
-        <div><span id="dashboardEyebrow" class="eyebrow">EXPLORE</span><h1 id="dashboardTitle">World events</h1></div>
-        <div class="feed-controls">
-          <select id="sortOrder" aria-label="Sort events"></select>
-          <select id="groupBy" aria-label="Group events"></select>
-          <select id="cardMode" aria-label="Card density"><option value="compact">Compact</option><option value="expanded">Expanded</option></select>
-          <select id="savedViews" aria-label="Saved views"></select>
-          <button id="saveView" type="button">Save view</button>
+        <div class="panel-head-main">
+          <div><span id="dashboardEyebrow" class="eyebrow">EXPLORE</span><h1 id="dashboardTitle">World events</h1></div>
+          <button class="drawer-close feed-hide-btn" type="button" data-close-drawer="right">Hide</button>
+        </div>
+        <div class="feed-controls" role="group" aria-label="Feed controls">
+          <div class="feed-controls-primary">
+            <select id="sortOrder" aria-label="Sort events"></select>
+            <select id="cardMode" aria-label="Card density"><option value="compact">Compact</option><option value="expanded">Expanded</option></select>
+          </div>
+          <div class="feed-controls-secondary advanced-only">
+            <select id="groupBy" aria-label="Group events"></select>
+            <select id="savedViews" aria-label="Saved views"></select>
+            <button id="saveView" type="button">Save view</button>
+          </div>
         </div>
       </div>
-      <button class="drawer-close" type="button" data-close-drawer="right">Hide feed</button>
       <div id="eventDetailDrawer" class="event-detail-drawer-host" hidden></div>
       <div id="chokepointDetailDrawer" class="event-detail-drawer-host" hidden></div>
       <section class="search-wrap event-search"><label for="search">Search events, countries, or sources</label><input id="search" type="search" placeholder="Japan, M6.2, wildfire..." /></section>
