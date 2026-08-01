@@ -11,11 +11,12 @@
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="source-explorer.css" />
   <link rel="stylesheet" href="dashboard-v2.css" />
+  <link rel="stylesheet" href="operator-polish.css" />
 </head>
 <body>
   <div class="app-shell">
-    <header class="topbar">
-      <div class="brand"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Global news map</span></div></div>
+    <header class="topbar" role="banner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">LM</span><div><strong>LIVE MAP</strong><span>Operator console</span></div></div>
       <nav id="dashboardNav" class="dashboard-nav consumer-nav" aria-label="Main navigation"><button class="dashboard-tab active" type="button">Overview</button><button class="dashboard-tab" type="button">Events</button><button class="dashboard-tab" type="button">Latest Intelligence</button><button class="dashboard-tab" type="button">Chokepoints</button><a class="dashboard-tab" href="/countries">Countries</a><a class="dashboard-tab" href="/sources" data-sources-link>Sources</a><a class="dashboard-tab" href="/diagnostics">Diagnostics</a></nav>
       <section class="global-search search-wrap" aria-label="Global search">
         <label for="globalSearch">Search</label>
@@ -35,7 +36,7 @@
         </details>
         <span id="systemStatus" class="status" aria-live="polite"><i></i> Connecting</span>
         <span id="feedAge" class="feed-age">-</span>
-        <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">T</button>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle light or dark theme" title="Theme">Aa</button>
       </div>
     </header>
 
