@@ -1,5 +1,6 @@
 /**
  * Compact severity / domain / map legend for operator clarity.
+ * Aligned with docs/wayfinder-61-map-visual-grammar.md
  */
 export function renderLegendPanel() {
   return `<section class="v2-legend" aria-label="Map and severity legend">
@@ -13,13 +14,12 @@ export function renderLegendPanel() {
         <div class="v2-legend-row"><span class="severity-tag v2-legend-sev" style="--sev:#6ec6ff">Low</span><span class="v2-legend-note">Background</span></div>
       </div>
       <div class="v2-legend-block">
-        <span class="v2-legend-heading">Threat level v0</span>
-        <div class="v2-legend-row"><span class="v2-threat-badge v2-threat-critical">Critical</span></div>
-        <div class="v2-legend-row"><span class="v2-threat-badge v2-threat-high">High</span></div>
-        <div class="v2-legend-row"><span class="v2-threat-badge v2-threat-elevated">Elevated</span></div>
-        <div class="v2-legend-row"><span class="v2-threat-badge v2-threat-guarded">Guarded</span></div>
-        <div class="v2-legend-row"><span class="v2-threat-badge v2-threat-low">Low</span></div>
-        <p class="v2-empty">Heuristic only — not official warning levels.</p>
+        <span class="v2-legend-heading">Layer stack</span>
+        <div class="v2-legend-row"><span class="v2-legend-dot" style="background:#eaf6fc"></span><span class="v2-legend-note">Events (top attention)</span></div>
+        <div class="v2-legend-row"><span class="v2-legend-dot" style="background:#f6c453;border-radius:2px"></span><span class="v2-legend-note">Chokepoint condition</span></div>
+        <div class="v2-legend-row"><span class="v2-legend-dot" style="background:#93c5fd;opacity:.7"></span><span class="v2-legend-note">Reference (air/port)</span></div>
+        <div class="v2-legend-row"><span class="v2-legend-dot record-dot"></span><span class="v2-legend-note">Lead / observation</span></div>
+        <p class="v2-empty">No live territorial-control fills. Admin ≠ control.</p>
       </div>
       <div class="v2-legend-block">
         <span class="v2-legend-heading">Map / change</span>

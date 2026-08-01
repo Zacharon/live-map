@@ -251,9 +251,18 @@ function renderFilters(els) {
   els.severityFilters.innerHTML = Object.entries(SEVERITIES).map(([key, severity]) => `<button class="severity-btn ${filters.severities.has(key) ? "active" : ""}" style="--sev:${severity.color}" data-severity="${key}">${severity.label}</button>`).join("");
   const activeDomains = domainOptions().filter((domain) => state.events.some((event) => event.domain === domain.id));
   const recordLegend = state.events.some((event) => (event.recordKind || "event") !== "event")
-    ? '<div class="legend-row"><i class="dot record-dot"></i>Discovery/observation records</div>'
+    ? '<div class="legend-row"><i class="dot record-dot"></i>Lead / observation</div>'
     : "";
-  els.mapLegend.innerHTML = activeDomains.map((domain) => `<div class="legend-row"><i class="dot" style="--category:${domain.defaultColor}"></i>${domain.label}</div>`).join("") + recordLegend;
+  const chokepointLegend =
+    state.activeArea === "chokepoints" || document.body.classList.contains("view-chokepoints")
+      ? '<div class="legend-row legend-row-chokepoint"><i class="dot chokepoint-legend-dot"></i>Chokepoint condition</div><div class="legend-row legend-hint">Infrastructure context · not control</div>'
+      : "";
+  const domainRows = activeDomains
+    .slice(0, 6)
+    .map((domain) => `<div class="legend-row"><i class="dot" style="--category:${domain.defaultColor}"></i>${domain.label}</div>`)
+    .join("");
+  const more = activeDomains.length > 6 ? `<div class="legend-row legend-hint">+${activeDomains.length - 6} domains in filters</div>` : "";
+  els.mapLegend.innerHTML = `${domainRows}${more}${recordLegend}${chokepointLegend}`;
 }
 
 function renderMapHealth(element, health) {
