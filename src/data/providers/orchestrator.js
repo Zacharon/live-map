@@ -17,6 +17,8 @@ import { fetchOfficialFeedEvents } from "./rss-feed.js";
 import { fetchStatuspageEvents } from "./statuspage.js";
 import { fetchRipestatEvents } from "./ripestat.js";
 import { fetchOpenNewsSocialSignals } from "./open-news-social.js";
+import { fetchFirmsEvents } from "./firms.js";
+import { fetchSwpcEvents } from "./swpc.js";
 import { buildStorylines } from "../../intelligence/storyline-clustering.js";
 import { scheduleForProvider } from "./scheduling.js";
 import { createRequestBudgetStore } from "./request-budget.js";
@@ -41,6 +43,8 @@ const ADAPTERS = {
   "positive-rss": fetchOfficialFeedEvents,
   statuspage: fetchStatuspageEvents,
   ripestat: fetchRipestatEvents,
+  "nasa-firms": fetchFirmsEvents,
+  "noaa-swpc": fetchSwpcEvents,
   youtube: fetchOpenNewsSocialSignals,
   bluesky: fetchOpenNewsSocialSignals,
   mastodon: fetchOpenNewsSocialSignals,

@@ -732,19 +732,19 @@ const compactSources = [
   ["un-security-council", "UN Security Council", "conflict-security", "official-statements", "public-rss", "planned", "tier-1-primary-official", "https://press.un.org/en/security-council", "Official UN conflict and sanctions statements."],
   ["ukmto-advisories", "UKMTO Advisories", "maritime", "maritime-security", "link-only", "link-only", "tier-1-primary-official", "https://www.ukmto.org/", "Maritime security advisories; access and redistribution review required."],
   ["us-marad-advisories", "U.S. Maritime Administration Advisories", "maritime", "maritime-security", "open-api", "planned", "tier-1-primary-official", "https://www.maritime.dot.gov/msci-advisories", "Official maritime security advisories."],
-  ["noaa-nhc", "NOAA National Hurricane Center", "weather", "tropical-cyclone", "public-rss", "planned", "tier-1-primary-official", "https://www.nhc.noaa.gov/", "Tropical cyclone advisories and forecast products."],
-  ["noaa-spc", "NOAA Storm Prediction Center", "weather", "severe-weather", "public-rss", "planned", "tier-1-primary-official", "https://www.spc.noaa.gov/", "Convective outlooks, watches, and severe weather reports."],
-  ["noaa-swpc", "NOAA Space Weather Prediction Center", "weather", "space-weather", "public-rss", "planned", "tier-1-primary-official", "https://www.swpc.noaa.gov/", "Space weather alerts, watches, and warnings."],
+  ["noaa-nhc", "NOAA National Hurricane Center", "weather", "tropical-cyclone", "public-rss", "planned", "tier-1-primary-official", "https://www.nhc.noaa.gov/", "Tropical cyclone advisories via weather-rss allowlist (Atlantic + Pacific)."],
+  ["noaa-spc", "NOAA Storm Prediction Center", "weather", "severe-weather", "public-rss", "planned", "tier-1-primary-official", "https://www.spc.noaa.gov/", "Convective outlooks via weather-rss allowlist."],
+  ["noaa-swpc", "NOAA Space Weather Prediction Center", "weather", "space-weather", "open-api", "partial", "tier-1-primary-official", "https://www.swpc.noaa.gov/", "JSON alerts adapter wired (noaa-swpc); RSS also allowlisted under weather-rss."],
   ["meteoalarm", "MeteoAlarm", "weather", "weather-alerts", "public-rss", "planned", "tier-2-structured-established", "https://meteoalarm.org/", "European official weather alert aggregation."],
   ["dwd-open-data", "DWD Open Data", "weather", "weather-observations", "open-bulk-data", "planned", "tier-1-primary-official", "https://www.dwd.de/EN/ourservices/opendata/opendata.html", "German weather and climate open data."],
   ["jma", "Japan Meteorological Agency", "weather", "weather-alerts", "public-rss", "planned", "tier-1-primary-official", "https://www.jma.go.jp/jma/indexe.html", "Official Japan weather, earthquake, and tsunami information."],
-  ["nasa-firms", "NASA FIRMS", "natural-disaster", "wildfire", "registration-required", "planned", "tier-1-primary-official", "https://firms.modaps.eosdis.nasa.gov/", "Fire and thermal anomaly data; token and terms review needed."],
+  ["nasa-firms", "NASA FIRMS", "natural-disaster", "wildfire", "registration-required", "configuration-required", "tier-1-primary-official", "https://firms.modaps.eosdis.nasa.gov/", "Adapter implemented; requires free NASA_FIRMS_MAP_KEY. Sensor detections, not confirmed incidents."],
   ["inciweb", "InciWeb", "natural-disaster", "wildfire", "public-rss", "planned", "tier-1-primary-official", "https://inciweb.wildfire.gov/", "U.S. wildfire incident information."],
   ["smithsonian-gvp", "Smithsonian Global Volcanism Program", "natural-disaster", "volcano", "open-bulk-data", "planned", "tier-2-structured-established", "https://volcano.si.edu/", "Volcano activity reports and reference data."],
   ["glofas", "GloFAS", "natural-disaster", "flood", "registration-required", "planned", "tier-2-structured-established", "https://global-flood.emergency.copernicus.eu/", "Global flood awareness products."],
   ["fema-openfema", "OpenFEMA", "natural-disaster", "disaster-declarations", "open-api", "planned", "tier-1-primary-official", "https://www.fema.gov/openfema-data-hub", "U.S. disaster declarations and public assistance data."],
-  ["who-disease-outbreak-news", "WHO Disease Outbreak News", "health", "public-health", "public-rss", "planned", "tier-1-primary-official", "https://www.who.int/emergencies/disease-outbreak-news", "Official outbreak updates; avoid patient-level data."],
-  ["cdc", "CDC", "health", "public-health", "public-rss", "planned", "tier-1-primary-official", "https://www.cdc.gov/", "U.S. public-health updates and datasets."],
+  ["who-disease-outbreak-news", "WHO Disease Outbreak News", "health", "public-health", "public-rss", "planned", "tier-1-primary-official", "https://www.who.int/emergencies/disease-outbreak-news", "Allowlisted under health-rss; metadata only; avoid patient-level data."],
+  ["cdc", "CDC", "health", "public-health", "public-rss", "planned", "tier-1-primary-official", "https://www.cdc.gov/", "CDC newsroom RSS allowlisted under health-rss (Phase 7)."],
   ["pro-med", "ProMED", "health", "public-health", "commercial-license", "license-required", "tier-3-reputable-reporting", "https://promedmail.org/", "Disease-event reporting; licensing review required."],
   ["un-ocha-hdx", "UN OCHA HDX", "humanitarian", "humanitarian-data", "open-api", "planned", "tier-2-structured-established", "https://data.humdata.org/", "Humanitarian datasets with per-dataset license review."],
   ["unhcr-refugee-data", "UNHCR Refugee Data Finder", "humanitarian", "displacement", "open-api", "planned", "tier-1-primary-official", "https://www.unhcr.org/refugee-statistics/", "Refugee and displacement statistics at safe aggregation."],
@@ -819,6 +819,40 @@ const compactSources = [
 
 function compactToSource([id, name, domain, category, accessMode, status, sourceTier, sourceUrl, description]) {
   const official = sourceTier === "tier-1-primary-official";
+  const phase7ProviderFields =
+    id === "nasa-firms"
+      ? {
+          status: "configuration-required",
+          implemented: true,
+          adapterId: "nasa-firms",
+          credentialRequired: true,
+          environmentVariables: ["NASA_FIRMS_MAP_KEY"],
+          commercialUse: "permitted with attribution",
+          redistribution: "metadata and detection points with attribution; follow NASA FIRMS terms",
+          legalReviewRequired: false,
+          caching: "server-side provider cache; cluster detections before display",
+          retention: "short-lived thermal anomaly cells only; not raw continuous CSV archive",
+          lastTechnicalVerification: TODAY,
+          knownLimitations: [
+            "Requires free NASA_FIRMS_MAP_KEY server-side.",
+            "VIIRS detections are sensor products, not confirmed wildfire incidents.",
+            "Display is grid-clustered to limit density.",
+          ],
+        }
+      : id === "noaa-swpc"
+        ? {
+            status: "partial",
+            implemented: true,
+            adapterId: "noaa-swpc",
+            commercialUse: "permitted with attribution",
+            redistribution: "permitted with attribution",
+            legalReviewRequired: false,
+            caching: "server-side provider cache",
+            retention: "short-lived official alert metadata",
+            lastTechnicalVerification: TODAY,
+            knownLimitations: ["Space weather products are non-geographic by default."],
+          }
+        : {};
   const adsbExchangeFields = id === "adsb-exchange" ? {
     bestUse: "Licensed aircraft-position reference after commercial access approval; not a browser-scraped source.",
     input: "licensed server-side adapter only",
@@ -922,6 +956,7 @@ function compactToSource([id, name, domain, category, accessMode, status, source
     ...radarFields,
     ...aishubFields,
     ...openSignalFields,
+    ...phase7ProviderFields,
   });
 }
 
