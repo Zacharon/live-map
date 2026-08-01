@@ -40,6 +40,22 @@ export function createMapController(options = {}) {
   const map = L.map("map", { zoomControl: false, minZoom: 2, worldCopyJump: true, preferCanvas: true }).setView([22, 10], 2.35);
   L.control.zoom({ position: "bottomright" }).addTo(map);
 
+  // Visual grammar panes (bottom → top). See docs/wayfinder-61-map-visual-grammar.md
+  const paneDefs = [
+    ["of-country", 350],
+    ["of-reference", 370],
+    ["of-chokepoint", 400],
+    ["of-events", 450],
+    ["of-moving", 470],
+    ["of-highlight", 490],
+  ];
+  paneDefs.forEach(([name, zIndex]) => {
+    map.createPane(name);
+    map.getPane(name).style.zIndex = String(zIndex);
+    // Keep SVG/canvas panes clickable where expected
+    map.getPane(name).style.pointerEvents = "auto";
+  });
+
   const basemaps = {
     satellite: L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
       maxZoom: 19,
@@ -110,15 +126,30 @@ export function createMapController(options = {}) {
   basemaps.satellite.addTo(map);
   basemaps.labels.addTo(map);
 
+  // Events stay above chokepoints/reference (grammar stack §1)
   const markerLayer = typeof L.markerClusterGroup === "function"
-    ? L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 44, spiderfyOnMaxZoom: true, disableClusteringAtZoom: 7 }).addTo(map)
-    : L.layerGroup().addTo(map);
-  const clusterHighlightLayer = L.layerGroup().addTo(map);
-  const ciiLayer = L.layerGroup().addTo(map);
-  const countryLayer = L.layerGroup().addTo(map);
-  const movingObjectLayer = L.layerGroup().addTo(map);
-  const referenceLayer = L.layerGroup().addTo(map);
-  const chokepointLayer = L.layerGroup().addTo(map);
+    ? L.markerClusterGroup({
+        showCoverageOnHover: false,
+        // Wider radius reduces spaghetti at world scale; spiderfy when zoomed in
+        maxClusterRadius: 52,
+        spiderfyOnMaxZoom: true,
+        disableClusteringAtZoom: 8,
+        polygonOptions: { weight: 1, color: "#2fe0c8", opacity: 0.35, fillOpacity: 0.04 },
+      }).addTo(map)
+    : L.layerGroup({ pane: "of-events" }).addTo(map);
+  const clusterHighlightLayer = L.layerGroup({ pane: "of-highlight" }).addTo(map);
+  const ciiLayer = L.layerGroup({ pane: "of-country" }).addTo(map);
+  const countryLayer = L.layerGroup({ pane: "of-country" }).addTo(map);
+  const movingObjectLayer = L.layerGroup({ pane: "of-moving" }).addTo(map);
+  const referenceLayer = L.layerGroup({ pane: "of-reference" }).addTo(map);
+  const chokepointLayer = L.layerGroup({ pane: "of-chokepoint" }).addTo(map);
+
+  function restackAttentionLayers() {
+    // Events and selection must remain readable over infrastructure/chokepoints
+    if (typeof markerLayer.bringToFront === "function") markerLayer.bringToFront();
+    if (typeof movingObjectLayer.bringToFront === "function") movingObjectLayer.bringToFront();
+    if (typeof clusterHighlightLayer.bringToFront === "function") clusterHighlightLayer.bringToFront();
+  }
 
   function switchBase(name) {
     Object.values(basemaps).forEach((layer) => map.hasLayer(layer) && map.removeLayer(layer));
@@ -130,7 +161,7 @@ export function createMapController(options = {}) {
     } else {
       basemaps[name].addTo(map);
     }
-    markerLayer.bringToFront();
+    restackAttentionLayers();
     invalidateMapSize();
   }
 
@@ -154,10 +185,11 @@ export function createMapController(options = {}) {
     if (!visible) return;
     scores.filter((score) => score.coordinates).slice(0, 30).forEach((score) => {
       const circle = L.circleMarker([score.coordinates.lat, score.coordinates.lon], {
+        pane: "of-country",
         radius: 8 + score.score / 12,
         color: score.color,
         fillColor: score.color,
-        fillOpacity: 0.22,
+        fillOpacity: 0.18,
         weight: 2,
       });
       circle.bindTooltip(`<strong>${score.countryName}</strong><br>CII ${score.score} - ${score.levelLabel}<br>${score.confidence}% confidence`);
@@ -174,18 +206,19 @@ export function createMapController(options = {}) {
       const selected = selectedIso3 === country.iso3;
       const bounds = [[country.bounds.south, country.bounds.west], [country.bounds.north, country.bounds.east]];
       const rectangle = L.rectangle(bounds, {
+        pane: "of-country",
         color: selected ? "#38e0a3" : score?.color || "#8fb3c7",
         weight: selected ? 3 : 1,
-        opacity: selected ? 0.9 : 0.32,
+        opacity: selected ? 0.9 : 0.28,
         fillColor: score?.color || "#8fb3c7",
-        fillOpacity: selected ? 0.12 : 0.025,
+        fillOpacity: selected ? 0.1 : 0.02,
         interactive: true,
       });
       rectangle.bindTooltip(`<strong>${country.name}</strong><br>CII ${score?.score ?? "-"} - ${score?.levelLabel || "unknown"}`);
       rectangle.on("click", () => onSelect?.(country));
       rectangle.addTo(countryLayer);
     });
-    markerLayer.bringToFront();
+    restackAttentionLayers();
   }
 
   function selectCountry(country) {
@@ -198,6 +231,7 @@ export function createMapController(options = {}) {
     objects.forEach((object) => {
       const color = object.objectType === "aircraft" ? "#7dd3fc" : "#38e0a3";
       const marker = L.circleMarker([object.latitude, object.longitude], {
+        pane: "of-moving",
         radius: object.objectType === "aircraft" ? 5 : 6,
         color,
         fillColor: color,
@@ -214,32 +248,79 @@ export function createMapController(options = {}) {
   function renderReferencePoints({ airports = [], ports = [] } = {}) {
     referenceLayer.clearLayers();
     const zoom = map.getZoom();
+    // Grammar: hide infrastructure pins at world scale to reduce clutter
     if (zoom < 4) return;
-    airports.slice(0, 50).forEach((airport) => {
-      L.circleMarker([airport.latitude, airport.longitude], { radius: 4, color: "#93c5fd", fillOpacity: 0.35, weight: 1 }).bindTooltip(`<strong>${airport.iata || airport.icao}</strong><br>${airport.name}`).addTo(referenceLayer);
+    const cap = zoom < 6 ? 24 : 50;
+    airports.slice(0, cap).forEach((airport) => {
+      L.circleMarker([airport.latitude, airport.longitude], {
+        pane: "of-reference",
+        radius: 3.5,
+        color: "#93c5fd",
+        fillOpacity: 0.28,
+        weight: 1,
+        opacity: 0.75,
+      })
+        .bindTooltip(`<strong>${airport.iata || airport.icao}</strong><br>${airport.name}`)
+        .addTo(referenceLayer);
     });
-    ports.slice(0, 50).forEach((port) => {
-      L.circleMarker([port.latitude, port.longitude], { radius: 4, color: "#2dd4bf", fillOpacity: 0.35, weight: 1 }).bindTooltip(`<strong>${port.unlocode}</strong><br>${port.name}`).addTo(referenceLayer);
+    ports.slice(0, cap).forEach((port) => {
+      L.circleMarker([port.latitude, port.longitude], {
+        pane: "of-reference",
+        radius: 3.5,
+        color: "#2dd4bf",
+        fillOpacity: 0.28,
+        weight: 1,
+        opacity: 0.75,
+      })
+        .bindTooltip(`<strong>${port.unlocode}</strong><br>${port.name}`)
+        .addTo(referenceLayer);
     });
+    restackAttentionLayers();
   }
 
   function renderChokepoints(chokepoints = [], assessments = [], selectedId = null, onSelect = null) {
     chokepointLayer.clearLayers();
     const assessmentById = new Map(assessments.map((assessment) => [assessment.chokepointId, assessment]));
+    // Condition palette (orthogonal to event category colors) — not territorial control
     const colors = { normal: "#7d9aa8", watch: "#f6c453", disrupted: "#fb923c", "severely-disrupted": "#f97316", closed: "#fb7185", unknown: "#94a3b8" };
+    const zoom = map.getZoom();
+    const worldSoft = zoom <= 3;
     chokepoints.filter((item) => item.enabled && item.geometry).forEach((chokepoint) => {
       const assessment = assessmentById.get(chokepoint.id) || { status: "unknown", activeEventCount: 0 };
       const selected = chokepoint.id === selectedId;
       const color = colors[assessment.status] || colors.unknown;
+      const isLine = chokepoint.geometryType === "line";
       const layer = L.geoJSON(chokepoint.geometry, {
-        pointToLayer: (_, latlng) => L.circleMarker(latlng, { radius: selected ? 9 : 6, color, fillColor: color, fillOpacity: selected ? 0.78 : 0.45, weight: selected ? 3 : 1.5 }),
-        style: { color, fillColor: color, fillOpacity: selected ? 0.16 : 0.06, opacity: selected ? 1 : 0.72, weight: selected ? 4 : 2, dashArray: chokepoint.geometryType === "line" ? "5 4" : null },
+        pane: "of-chokepoint",
+        pointToLayer: (_, latlng) =>
+          L.circleMarker(latlng, {
+            pane: "of-chokepoint",
+            radius: selected ? 9 : worldSoft ? 5 : 6,
+            color,
+            fillColor: color,
+            fillOpacity: selected ? 0.78 : worldSoft ? 0.32 : 0.42,
+            weight: selected ? 3 : 1.5,
+            opacity: selected ? 1 : 0.85,
+          }),
+        style: {
+          color,
+          fillColor: color,
+          // Soft fills so event markers remain the primary attention layer
+          fillOpacity: selected ? 0.14 : worldSoft ? 0.03 : 0.055,
+          opacity: selected ? 1 : worldSoft ? 0.45 : 0.68,
+          weight: selected ? 4 : worldSoft ? 1.25 : 2,
+          dashArray: isLine || assessment.status === "unknown" ? "5 4" : null,
+        },
       });
-      layer.bindTooltip(`<strong>${chokepoint.shortName}</strong><br>${assessment.status.replace(/-/g, " ")} - ${assessment.activeEventCount} related event(s)`, { sticky: true });
+      layer.bindTooltip(
+        `<strong>${chokepoint.shortName}</strong><br>Condition: ${assessment.status.replace(/-/g, " ")} · ${assessment.activeEventCount} related<br><em>Infrastructure context — not territorial control</em>`,
+        { sticky: true }
+      );
       layer.on("click", () => onSelect?.(chokepoint));
       layer.addTo(chokepointLayer);
     });
-    if (typeof chokepointLayer.bringToFront === "function") chokepointLayer.bringToFront();
+    // Do not raise chokepoints above events — restack keeps markers on top
+    restackAttentionLayers();
   }
 
   function fitChokepoint(chokepoint) {
