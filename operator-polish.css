@@ -888,3 +888,223 @@ a:focus-visible,
     transform: none;
   }
 }
+
+/* =============================================================================
+   Usability overhaul layer — hierarchy, view context, map primacy, density
+   ============================================================================= */
+
+.view-section-hidden,
+[hidden].view-section-hidden {
+  display: none !important;
+}
+
+/* Quieter surfaces: elevation via tone, fewer heavy borders */
+body {
+  --of-surface-0: #050b12;
+  --of-surface-1: #0a121a;
+  --of-surface-2: #0e1822;
+  --of-surface-3: #13202c;
+  --of-accent-1: var(--of-cyan);
+  --of-accent-2: var(--of-amber);
+}
+
+body.view-chokepoints .filter-item,
+body.view-latest-intelligence .tracking-panel {
+  /* safety net if JS misses a section */
+}
+
+/* Primary: map stage takes visual weight */
+.right-drawer-open .map-stage,
+.left-drawer-open .map-stage {
+  transition: margin var(--of-ease);
+}
+
+.map-stage {
+  background:
+    radial-gradient(ellipse 85% 70% at 50% 45%, rgba(14, 36, 52, 0.55), transparent 68%),
+    linear-gradient(180deg, #061018 0%, #050b12 100%);
+}
+
+.map-stage::after {
+  box-shadow:
+    inset 0 0 120px rgba(0, 0, 0, 0.55),
+    inset 0 0 1px rgba(62, 224, 200, 0.08);
+}
+
+/* Secondary chrome: drawers are quieter than map */
+.drawer-left,
+.sidebar.left-panel {
+  background: var(--of-surface-1);
+  border-right: 1px solid rgba(36, 57, 71, 0.85);
+  box-shadow: none;
+}
+
+.drawer-right,
+.event-panel {
+  background: var(--of-surface-1);
+  border-left: 1px solid rgba(36, 57, 71, 0.85);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.18);
+}
+
+/* Tertiary: method notes / source walls quieter */
+.method-note,
+.source-note,
+.sources-status-panel {
+  opacity: 0.92;
+  border-color: rgba(36, 57, 71, 0.7);
+}
+
+.view-chrome .section-title {
+  color: var(--of-text);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.view-chrome .panel-help {
+  margin-top: 4px;
+  color: var(--of-text-faint);
+}
+
+/* Feed head cleaner */
+.panel-head {
+  background: var(--of-surface-2);
+  padding: 14px 14px 12px;
+}
+
+.panel-head h1 {
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.feed-controls select,
+.feed-controls button {
+  background: var(--of-surface-0);
+  border-color: rgba(36, 57, 71, 0.95);
+}
+
+/* Cards: denser, calmer, clearer selection */
+.event-list {
+  padding: 10px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.12));
+}
+
+.event-card {
+  background: var(--of-surface-2);
+  border-color: rgba(36, 57, 71, 0.75);
+  box-shadow: none;
+}
+
+.event-card:hover {
+  background: var(--of-surface-3);
+  transform: none;
+  border-color: color-mix(in srgb, var(--of-cyan) 28%, var(--of-border));
+}
+
+.event-card.is-selected {
+  background: color-mix(in srgb, var(--of-cyan) 8%, var(--of-surface-2));
+}
+
+/* Chokepoint filter grid polish */
+.chokepoint-filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chokepoint-controls label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--of-text-faint);
+  margin: 8px 0 4px;
+}
+
+.chokepoint-controls input,
+.chokepoint-controls select {
+  width: 100%;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--of-border);
+  background: var(--of-surface-0);
+  color: var(--of-text);
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/* Top bar more terminal-like */
+.topbar {
+  background: #070f16;
+  border-bottom: 1px solid rgba(36, 57, 71, 0.95);
+}
+
+.dashboard-tab.active {
+  background: color-mix(in srgb, var(--of-cyan) 10%, transparent);
+  color: var(--of-cyan);
+}
+
+/* Floating controls less noisy */
+.floating-controls button {
+  background: rgba(7, 15, 22, 0.88);
+  color: var(--of-text-muted);
+  border-color: rgba(36, 57, 71, 0.9);
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+
+.map-toolbar {
+  background: rgba(7, 15, 22, 0.9);
+  border-color: rgba(36, 57, 71, 0.95);
+}
+
+/* Detail drawer investigation surface */
+.v2-event-detail,
+.event-detail-drawer-host:not([hidden]) > * {
+  border-color: rgba(62, 224, 200, 0.18);
+}
+
+/* Mobile: intentional stack, not broken chrome */
+@media (max-width: 900px) {
+  .drawer-right {
+    background: var(--of-surface-1);
+  }
+
+  .panel-head h1 {
+    font-size: 16px;
+  }
+
+  .floating-controls {
+    gap: 4px;
+  }
+
+  .floating-controls button {
+    font-size: 10px;
+    padding: 0 8px;
+  }
+
+  body.view-chokepoints .map-toolbar {
+    max-width: calc(100% - 16px);
+  }
+}
+
+/* Reduce competing accent: prefer cyan + amber only for hot states */
+.filter-item.active {
+  box-shadow: inset 3px 0 var(--category);
+}
+
+.preset-chip.active {
+  background: color-mix(in srgb, var(--of-cyan) 16%, transparent);
+  color: var(--of-cyan);
+  border-color: color-mix(in srgb, var(--of-cyan) 45%, var(--of-border));
+  font-weight: 700;
+}
+
+/* Empty states calmer */
+.empty {
+  border-style: solid;
+  border-color: rgba(36, 57, 71, 0.8);
+  background: var(--of-surface-2);
+}

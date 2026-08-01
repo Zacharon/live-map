@@ -404,11 +404,74 @@ function renderTrackingStatus() {
   return "Zoom in to view aircraft or vessel activity.";
 }
 
+/**
+ * View context for left-drawer sections.
+ * Only sections relevant to the active main tab remain visible.
+ */
+function viewContextForArea(area) {
+  if (area === "chokepoints") {
+    return {
+      showOsintSummary: true,
+      showPresets: true,
+      showChokepoints: true,
+      showTracking: false,
+      showDomains: false,
+      showLayers: false,
+      showSeverity: false,
+      showStats: true,
+      showSourceNotes: false,
+      showCountrySummary: false,
+      showDashboardExtras: true,
+    };
+  }
+  if (area === "latest-intelligence") {
+    return {
+      showOsintSummary: true,
+      showPresets: false,
+      showChokepoints: false,
+      showTracking: false,
+      showDomains: true,
+      showLayers: false,
+      showSeverity: false,
+      showStats: true,
+      showSourceNotes: true,
+      showCountrySummary: false,
+      showDashboardExtras: true,
+    };
+  }
+  // explore + feed (default operator workspace)
+  return {
+    showOsintSummary: true,
+    showPresets: true,
+    showChokepoints: false,
+    showTracking: true,
+    showDomains: true,
+    showLayers: true,
+    showSeverity: true,
+    showStats: true,
+    showSourceNotes: true,
+    showCountrySummary: true,
+    showDashboardExtras: true,
+  };
+}
+
+function setSectionVisible(element, visible) {
+  if (!element) return;
+  element.hidden = !visible;
+  element.classList.toggle("view-section-hidden", !visible);
+}
+
 function applyShellState(els) {
+  const area = state.activeArea || "explore";
+  const ctx = viewContextForArea(area);
+  document.body.dataset.activeArea = area;
   document.body.classList.toggle("advanced-mode", state.interfaceMode === "advanced");
   document.body.classList.toggle("standard-mode", state.interfaceMode !== "advanced");
   document.body.classList.toggle("left-drawer-open", state.leftDrawerOpen);
   document.body.classList.toggle("right-drawer-open", state.rightDrawerOpen);
+  document.body.classList.toggle("view-chokepoints", area === "chokepoints");
+  document.body.classList.toggle("view-latest-intelligence", area === "latest-intelligence");
+  document.body.classList.toggle("view-feed", area === "feed" || area === "explore");
   els.filterDrawer?.classList.toggle("open", state.leftDrawerOpen);
   els.eventDrawer?.classList.toggle("open", state.rightDrawerOpen);
   if (els.advancedMode) els.advancedMode.checked = state.interfaceMode === "advanced";
@@ -417,13 +480,40 @@ function applyShellState(els) {
   if (els.airportsToggle) els.airportsToggle.checked = state.tracking.airports;
   if (els.portsToggle) els.portsToggle.checked = state.tracking.ports;
   if (els.trackingStatus) els.trackingStatus.textContent = renderTrackingStatus();
-  if (els.chokepointControls) els.chokepointControls.hidden = state.activeArea !== "chokepoints";
+
+  // Left-drawer context switch (critical: chokepoints must not stick open)
+  setSectionVisible(els.osintDashboardV2, ctx.showOsintSummary);
+  setSectionVisible(els.presetList?.closest("section"), ctx.showPresets);
+  setSectionVisible(els.chokepointControls, ctx.showChokepoints);
+  setSectionVisible(els.aircraftToggle?.closest(".tracking-panel") || els.aircraftToggle?.closest("section"), ctx.showTracking);
+  setSectionVisible(els.domainFilters?.closest("section"), ctx.showDomains);
+  setSectionVisible(els.layerFilters?.closest("section"), ctx.showLayers);
+  setSectionVisible(els.severityFilters?.closest("section"), ctx.showSeverity);
+  setSectionVisible(els.visibleCount?.closest(".stats-grid") || els.visibleCount?.closest("section"), ctx.showStats);
+  setSectionVisible(els.sourcesStatusPanel, ctx.showSourceNotes);
+  setSectionVisible(els.sourceHealth?.closest("section"), ctx.showSourceNotes);
+  setSectionVisible(els.publicDataStatus, ctx.showSourceNotes);
+  document.querySelectorAll("[data-view-section='method-note']").forEach((node) => setSectionVisible(node, ctx.showSourceNotes));
+  setSectionVisible(els.countrySummaryPanel, ctx.showCountrySummary && Boolean(state.selectedCountryIso3));
+  setSectionVisible(els.dashboardPanel, ctx.showDashboardExtras);
+
   if (els.chokepointSearch) els.chokepointSearch.value = state.chokepointFilters.query || "";
   if (els.chokepointRegion) els.chokepointRegion.value = state.chokepointFilters.region || "";
   if (els.chokepointType) els.chokepointType.value = state.chokepointFilters.type || "";
   if (els.chokepointStatus) els.chokepointStatus.value = state.chokepointFilters.status || "";
   if (els.chokepointDomain) els.chokepointDomain.value = state.chokepointFilters.domain || "";
   if (els.chokepointSort) els.chokepointSort.value = state.chokepointFilters.sort || "priority";
+
+  const leftTitle = document.getElementById("leftPanelTitle");
+  if (leftTitle) {
+    leftTitle.textContent = area === "chokepoints"
+      ? "Chokepoint tools"
+      : area === "latest-intelligence"
+        ? "Open-web tools"
+        : area === "feed"
+          ? "Feed filters"
+          : "Workspace filters";
+  }
 }
 
 function bboxParam(mapController) {
@@ -555,8 +645,25 @@ export function bootLiveMap() {
     if (state.activeArea === "latest-intelligence") {
       els.dashboardEyebrow.textContent = "OPEN WEB";
       els.dashboardTitle.textContent = "Latest Intelligence";
+    } else if (state.activeArea === "chokepoints") {
+      els.dashboardEyebrow.textContent = "STRATEGIC";
+      els.dashboardTitle.textContent = "Chokepoints";
+    } else if (state.activeArea === "feed") {
+      els.dashboardEyebrow.textContent = "EVENTS";
+      els.dashboardTitle.textContent = "Event feed";
     }
-    els.dashboardPanel.innerHTML = (state.activeArea === "latest-intelligence" ? renderLatestIntelligence(state.storylines, state.observations) : "") + renderStrategicWatch(intelligence.assessments, STRATEGIC_CHOKEPOINTS) + renderDashboardPanel(state.dashboard, { riskScores, correlations, events, sourceStatus: state.sourceStatus, providerResults: state.providerResults }) + renderLayerSummary(layers) + renderRiskTable(riskScores) + renderAlerts(events) + renderCountDebug();
+
+    // Context-specific left extras — do not leave chokepoint watch stuck on other tabs
+    if (state.activeArea === "chokepoints") {
+      els.dashboardPanel.innerHTML = renderStrategicWatch(intelligence.assessments, STRATEGIC_CHOKEPOINTS) + renderCountDebug();
+    } else if (state.activeArea === "latest-intelligence") {
+      els.dashboardPanel.innerHTML = renderLatestIntelligence(state.storylines, state.observations) + renderCountDebug();
+    } else if (state.activeArea === "feed") {
+      els.dashboardPanel.innerHTML = renderAlerts(events) + renderCountDebug();
+    } else {
+      els.dashboardPanel.innerHTML = renderDashboardPanel(state.dashboard, { riskScores, correlations, events, sourceStatus: state.sourceStatus, providerResults: state.providerResults }) + renderLayerSummary(layers) + renderRiskTable(riskScores) + renderAlerts(events) + renderCountDebug();
+    }
+
     const selectedEvent = selectedCluster
       ? null
       : events.find((event) => event.id === state.selectedEventId) || state.events.find((event) => event.id === state.selectedEventId) || null;
@@ -576,18 +683,57 @@ export function bootLiveMap() {
       error: state.apiFailure?.message || null,
     });
     const selectedChangeStatus = selectedEvent ? changeStatusById.get(selectedEvent.id) || null : null;
-    if (selectedChokepoint) {
+    const chokepointActive = state.activeArea === "chokepoints" && selectedChokepoint;
+    if (chokepointActive) {
       els.eventDetailDrawer.hidden = true;
       els.eventDetailDrawer.innerHTML = "";
-    } else renderOsintEventDetailDrawer(els.eventDetailDrawer, {
-      event: selectedEvent,
-      cluster: selectedCluster,
-      changeStatus: selectedChangeStatus,
-      allEvents: events,
-      clusters,
-    });
-    els.chokepointDetailDrawer.hidden = !selectedChokepoint;
-    els.chokepointDetailDrawer.innerHTML = selectedChokepoint ? renderChokepointDetail(selectedChokepoint, intelligence.assessments, new Map(intelligence.events.map((event) => [String(event.id), event]))) : "";
+    } else {
+      renderOsintEventDetailDrawer(els.eventDetailDrawer, {
+        event: selectedEvent,
+        cluster: selectedCluster,
+        changeStatus: selectedChangeStatus,
+        allEvents: events,
+        clusters,
+      });
+    }
+    els.chokepointDetailDrawer.hidden = !chokepointActive;
+    els.chokepointDetailDrawer.innerHTML = chokepointActive
+      ? renderChokepointDetail(selectedChokepoint, intelligence.assessments, new Map(intelligence.events.map((event) => [String(event.id), event])))
+      : "";
+  }
+
+  /**
+   * Switch main workspace tab and clear stuck inspector context.
+   * Leaving chokepoints always clears chokepoint selection so filters/detail do not linger.
+   */
+  function setActiveArea(nextArea, { forceRightOpen = false } = {}) {
+    const area = String(nextArea || "explore");
+    const previous = state.activeArea;
+    state.activeArea = area;
+
+    if (area !== "chokepoints") {
+      state.selectedChokepointId = null;
+    }
+    if (area === "chokepoints") {
+      state.selectedEventId = null;
+      state.selectedClusterId = null;
+    }
+    if (area === "latest-intelligence") {
+      state.selectedClusterId = null;
+    }
+
+    if (forceRightOpen || ["feed", "latest-intelligence", "chokepoints"].includes(area)) {
+      state.rightDrawerOpen = true;
+      localStorage.setItem("live-map-right-drawer-v1", "open");
+    }
+
+    // Leaving a specialized view: ensure left panel context is re-evaluated
+    if (previous !== area && els.filterDrawer) {
+      // Keep drawer open state; content visibility handled in applyShellState
+    }
+
+    syncUrlState();
+    renderNav();
   }
 
   function clearInspectorSelection({ closeDrawer = false } = {}) {
@@ -634,11 +780,7 @@ export function bootLiveMap() {
     state.selectedChokepointId = chokepoint.id;
     state.selectedEventId = null;
     state.selectedClusterId = null;
-    state.activeArea = "chokepoints";
-    state.rightDrawerOpen = true;
-    localStorage.setItem("live-map-right-drawer-v1", "open");
-    syncUrlState();
-    renderNav();
+    setActiveArea("chokepoints", { forceRightOpen: true });
     render();
     mapController.fitChokepoint(chokepoint);
   }
@@ -808,12 +950,9 @@ export function bootLiveMap() {
     if (event.target.closest("a")) return;
     const area = event.target.closest("[data-area]");
     if (area) {
-      state.activeArea = area.dataset.area;
-      state.rightDrawerOpen = ["feed", "latest-intelligence"].includes(state.activeArea) ? true : state.rightDrawerOpen;
-      localStorage.setItem("live-map-right-drawer-v1", state.rightDrawerOpen ? "open" : "closed");
-      syncUrlState();
-      renderNav();
+      setActiveArea(area.dataset.area);
       render();
+      mapController.invalidateMapSize();
       return;
     }
     const chokepointSelect = event.target.closest("[data-chokepoint-select]");

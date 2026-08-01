@@ -41,29 +41,29 @@
     </header>
 
     <aside id="filterDrawer" class="sidebar left-panel drawer drawer-left" aria-label="Filters">
-      <section id="osintDashboardV2" class="osint-dashboard-v2 panel-sticky" aria-label="OSINT dashboard"></section>
-      <section class="panel-sticky">
-        <div class="section-title"><span>Filters</span><button type="button" data-close-drawer="left">Close</button></div>
-        <p class="panel-help standard-copy">Choose the kinds of world events you want to see.</p>
+      <section id="osintDashboardV2" class="osint-dashboard-v2 panel-sticky" data-view-section="summary" aria-label="OSINT dashboard"></section>
+      <section class="panel-sticky view-chrome" data-view-section="chrome">
+        <div class="section-title"><span id="leftPanelTitle">Workspace</span><button type="button" data-close-drawer="left">Close</button></div>
+        <p class="panel-help standard-copy">Filters and tools for the current view.</p>
         <p class="panel-help advanced-only">Domains organize events by intelligence category. Layers control which concrete event types appear on the map.</p>
       </section>
-      <section><div class="section-title"><span>Presets</span></div><div id="presetList" class="preset-list"></div></section>
-      <section id="chokepointControls" class="chokepoint-controls" hidden>
-        <div class="section-title"><span>Chokepoints</span><button id="resetChokepointFilters" type="button">Reset</button></div>
+      <section data-view-section="presets"><div class="section-title"><span>Presets</span></div><div id="presetList" class="preset-list"></div></section>
+      <section id="chokepointControls" class="chokepoint-controls" data-view-section="chokepoints" hidden>
+        <div class="section-title"><span>Chokepoint filters</span><button id="resetChokepointFilters" type="button">Reset</button></div>
         <label for="chokepointSearch">Search</label><input id="chokepointSearch" type="search" placeholder="Strait, canal, region..." />
         <div class="chokepoint-filter-grid"><select id="chokepointRegion" aria-label="Chokepoint region"></select><select id="chokepointType" aria-label="Chokepoint type"></select><select id="chokepointStatus" aria-label="Chokepoint status"></select><select id="chokepointDomain" aria-label="Chokepoint event domain"></select><select id="chokepointSort" aria-label="Chokepoint sorting"></select></div>
       </section>
-      <section class="tracking-panel"><div class="section-title"><span>Live Tracking</span></div><label><input id="aircraftToggle" type="checkbox" /> Aircraft</label><label><input id="vesselToggle" type="checkbox" /> Vessels</label><label><input id="airportsToggle" type="checkbox" /> Airports</label><label><input id="portsToggle" type="checkbox" /> Ports</label><p id="trackingStatus" class="panel-help">Zoom in to view aircraft or vessel activity.</p></section>
-      <section><div class="section-title"><span>Domains</span><button id="clearDomains">All</button></div><div id="domainFilters" class="filter-list"></div></section>
-      <section><div class="section-title"><span>Event layers</span><button id="clearFilters">Reset</button></div><div id="layerFilters" class="filter-list"></div></section>
-      <section><div class="section-title"><span>Severity</span></div><div id="severityFilters" class="severity-row"></div></section>
-      <section class="stats-grid"><article><span>Visible</span><strong id="visibleCount">0</strong></article><article><span>High / critical</span><strong id="highCount">0</strong></article><article><span>Countries</span><strong id="countryCount">0</strong></article><article><span>Last refresh</span><strong id="updatedAt">-</strong></article></section>
-      <section id="sourcesStatusPanel" class="sources-status-panel"></section>
-      <section class="method-note"><strong>Source-aware reporting</strong><p>Public-information awareness only. Verify with original sources; data may be delayed, incomplete, or unavailable and is not emergency or professional advice.</p></section>
-      <section class="method-note source-note"><strong>Source health</strong><p id="sourceHealth">Waiting for live feeds...</p></section>
-      <section id="publicDataStatus" class="method-note"></section>
-      <section id="countrySummaryPanel" class="country-summary-panel"></section>
-      <section id="dashboardPanel" class="dashboard-panel"></section>
+      <section class="tracking-panel" data-view-section="tracking"><div class="section-title"><span>Live Tracking</span></div><label><input id="aircraftToggle" type="checkbox" /> Aircraft</label><label><input id="vesselToggle" type="checkbox" /> Vessels</label><label><input id="airportsToggle" type="checkbox" /> Airports</label><label><input id="portsToggle" type="checkbox" /> Ports</label><p id="trackingStatus" class="panel-help">Zoom in to view aircraft or vessel activity.</p></section>
+      <section data-view-section="domains"><div class="section-title"><span>Domains</span><button id="clearDomains">All</button></div><div id="domainFilters" class="filter-list"></div></section>
+      <section data-view-section="layers"><div class="section-title"><span>Event layers</span><button id="clearFilters">Reset</button></div><div id="layerFilters" class="filter-list"></div></section>
+      <section data-view-section="severity"><div class="section-title"><span>Severity</span></div><div id="severityFilters" class="severity-row"></div></section>
+      <section class="stats-grid" data-view-section="stats"><article><span>Visible</span><strong id="visibleCount">0</strong></article><article><span>High / critical</span><strong id="highCount">0</strong></article><article><span>Countries</span><strong id="countryCount">0</strong></article><article><span>Last refresh</span><strong id="updatedAt">-</strong></article></section>
+      <section id="sourcesStatusPanel" class="sources-status-panel" data-view-section="sources"></section>
+      <section class="method-note" data-view-section="method-note"><strong>Source-aware reporting</strong><p>Public-information awareness only. Verify with original sources; data may be delayed, incomplete, or unavailable and is not emergency or professional advice.</p></section>
+      <section class="method-note source-note" data-view-section="method-note"><strong>Source health</strong><p id="sourceHealth">Waiting for live feeds...</p></section>
+      <section id="publicDataStatus" class="method-note" data-view-section="method-note"></section>
+      <section id="countrySummaryPanel" class="country-summary-panel" data-view-section="country"></section>
+      <section id="dashboardPanel" class="dashboard-panel" data-view-section="dashboard"></section>
     </aside>
 
     <main class="map-stage">
