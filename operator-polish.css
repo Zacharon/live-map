@@ -1108,3 +1108,220 @@ body.view-latest-intelligence .tracking-panel {
   border-color: rgba(36, 57, 71, 0.8);
   background: var(--of-surface-2);
 }
+
+/* =============================================================================
+   Phase 6 — feed density, Advanced chrome, change badges, map primacy
+   ============================================================================= */
+
+/* Feed controls: primary always visible; advanced secondary row */
+.panel-head {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.panel-head-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.feed-hide-btn {
+  margin: 0 !important;
+  flex: 0 0 auto;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--of-text-faint);
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.feed-hide-btn:hover {
+  color: var(--of-text);
+  border-color: var(--of-border);
+}
+
+.feed-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.feed-controls-primary,
+.feed-controls-secondary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  min-width: 0;
+}
+
+.feed-controls-secondary {
+  grid-template-columns: 1fr 1fr auto;
+}
+
+.feed-controls select,
+.feed-controls button {
+  min-width: 0;
+  width: 100%;
+  height: 30px;
+  font-size: 11px;
+}
+
+.feed-controls-secondary button {
+  width: auto;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+/* Standard mode: quieter chrome */
+.standard-mode .advanced-only {
+  display: none !important;
+}
+
+.standard-mode .method-note.source-note,
+.standard-mode #sourcesStatusPanel,
+.standard-mode .provider-health-panel,
+.standard-mode .count-debug {
+  display: none !important;
+}
+
+.standard-mode .v2-shell .v2-provider-health,
+.standard-mode .v2-legend {
+  opacity: 0.95;
+}
+
+.standard-mode .tools-menu summary {
+  opacity: 0.85;
+}
+
+.standard-mode .dashboard-tab[href="/diagnostics"] {
+  display: none;
+}
+
+.standard-mode .event-card {
+  padding: 10px 11px;
+}
+
+.standard-mode .event-card h2 {
+  font-size: 13px;
+  margin: 6px 0 4px;
+}
+
+.standard-mode .quality-row {
+  display: none;
+}
+
+/* Advanced still available but denser */
+.advanced-mode .feed-controls-secondary {
+  display: grid;
+}
+
+/* Change badges on cards */
+.change-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-family: var(--of-mono);
+}
+
+.change-badge-new {
+  color: var(--of-green, #4fd18a);
+  border-color: color-mix(in srgb, var(--of-green, #4fd18a) 45%, transparent);
+  background: color-mix(in srgb, var(--of-green, #4fd18a) 12%, transparent);
+}
+
+.change-badge-updated {
+  color: var(--of-amber, #f0b84a);
+  border-color: color-mix(in srgb, var(--of-amber, #f0b84a) 45%, transparent);
+  background: color-mix(in srgb, var(--of-amber, #f0b84a) 12%, transparent);
+}
+
+.event-card.is-new {
+  box-shadow: inset 3px 0 0 var(--of-green, #4fd18a);
+}
+
+.event-card.is-updated {
+  box-shadow: inset 3px 0 0 var(--of-amber, #f0b84a);
+}
+
+.event-card.is-selected.is-new,
+.event-card.is-selected.is-updated {
+  box-shadow:
+    inset 3px 0 0 var(--of-cyan),
+    0 0 0 1px color-mix(in srgb, var(--of-cyan) 18%, transparent);
+}
+
+/* Map marker change rings (if not already strong) */
+.event-marker-new {
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--of-green, #4fd18a) 55%, transparent),
+    0 4px 12px rgba(0, 0, 0, 0.45) !important;
+}
+
+.event-marker-updated {
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--of-amber, #f0b84a) 50%, transparent),
+    0 4px 12px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Map primacy: slightly larger stage presence when right drawer open */
+@media (min-width: 901px) {
+  .right-drawer-open .map-stage {
+    /* keep map dominant; drawer is secondary chrome */
+  }
+
+  .drawer-right {
+    width: min(360px, 32vw);
+    min-width: 300px;
+  }
+
+  .right-drawer-open .map-stage {
+    margin-right: min(360px, 32vw);
+  }
+}
+
+/* Instant-feeling tab chrome */
+.dashboard-tab {
+  transition: color 120ms ease, background 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.dashboard-tab:active {
+  transform: translateY(1px);
+}
+
+/* Reduce left panel noise further */
+.sidebar section {
+  margin-bottom: 12px;
+}
+
+.standard-mode .tracking-panel label {
+  min-height: 40px;
+  padding: 6px 9px;
+}
+
+@media (max-width: 900px) {
+  .feed-controls-primary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .feed-controls-secondary {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-head-main {
+    align-items: center;
+  }
+}

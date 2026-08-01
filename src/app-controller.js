@@ -193,6 +193,15 @@ function consumerVerificationLabel(value = "") {
   return "Reported";
 }
 
+/** Latest change-status map for feed cards (set each render from change-awareness). */
+let activeChangeStatusById = new Map();
+
+function changeBadgeHtml(changeStatus) {
+  if (changeStatus === "new") return '<span class="change-badge change-badge-new" title="New since last mark seen">New</span>';
+  if (changeStatus === "updated") return '<span class="change-badge change-badge-updated" title="Updated since last mark seen">Updated</span>';
+  return "";
+}
+
 function renderEventCard(event) {
   const expanded = state.cardMode === "expanded";
   const country = countryForDisplay(event);
@@ -203,7 +212,11 @@ function renderEventCard(event) {
   const chokepointContext = event.affectedChokepoints?.length ? `<p class="event-chokepoint-line">Strategic area: ${escapeHtml(event.affectedChokepoints.slice(0, 2).join(", "))}</p>` : "";
   const kind = event.recordKind || "event";
   const isSelected = state.selectedEventId && String(state.selectedEventId) === String(event.id);
-  return `<article class="event-card ${expanded ? "expanded" : "compact"} record-${escapeHtml(kind)}${isSelected ? " is-selected" : ""}" data-id="${escapeHtml(event.id)}"${isSelected ? ' aria-current="true"' : ""}><div class="event-meta"><span class="category-pill" style="--cat:${event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color}">${escapeHtml(event.domainLabel || CATEGORIES[event.category]?.label || "Other")}</span><span>${escapeHtml(event.typeLabel || event.category)}</span>${countryLabel}<span class="record-kind advanced-only">${escapeHtml(kind)}</span><span class="severity-tag" style="--sev:${SEVERITIES[event.severity]?.color || SEVERITIES.low.color}">${SEVERITIES[event.severity]?.label || event.severity}</span></div><h2>${escapeHtml(event.title)}</h2><div class="consumer-card-line"><span>${escapeHtml(location)}</span><span>${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>${summary}${chokepointContext}${qualityBadges(event)}${details}<div class="source-row ${state.interfaceMode === "standard" ? "standard-source-row" : ""}"><span>${escapeHtml(event.sourceName || "Source")}</span><span>${escapeHtml(consumerVerificationLabel(event.verificationStatus))}</span>${event.incidentSize > 1 ? `<span class="advanced-only">${escapeHtml(event.incidentTitle || "Incident cluster")}</span>` : ""}${sourceButton(event)}<button type="button" class="mini-source-link event-detail-button" data-event-detail="${escapeHtml(event.id)}">View details</button></div><div class="event-foot advanced-only"><span>${relativeTime(event.occurredAt)} occurred - ${escapeHtml(event.sourceType)}</span><span class="confidence">${event.confidence}% confidence</span></div></article>`;
+  const changeStatus = activeChangeStatusById.get(String(event.id))
+    || activeChangeStatusById.get(event.id)
+    || null;
+  const changeClass = changeStatus === "new" ? " is-new" : changeStatus === "updated" ? " is-updated" : "";
+  return `<article class="event-card ${expanded ? "expanded" : "compact"} record-${escapeHtml(kind)}${isSelected ? " is-selected" : ""}${changeClass}" data-id="${escapeHtml(event.id)}" data-change="${escapeHtml(changeStatus || "")}"${isSelected ? ' aria-current="true"' : ""}><div class="event-meta"><span class="category-pill" style="--cat:${event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color}">${escapeHtml(event.domainLabel || CATEGORIES[event.category]?.label || "Other")}</span><span>${escapeHtml(event.typeLabel || event.category)}</span>${countryLabel}${changeBadgeHtml(changeStatus)}<span class="record-kind advanced-only">${escapeHtml(kind)}</span><span class="severity-tag" style="--sev:${SEVERITIES[event.severity]?.color || SEVERITIES.low.color}">${SEVERITIES[event.severity]?.label || event.severity}</span></div><h2>${escapeHtml(event.title)}</h2><div class="consumer-card-line"><span>${escapeHtml(location)}</span><span>${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>${summary}${chokepointContext}${qualityBadges(event)}${details}<div class="source-row ${state.interfaceMode === "standard" ? "standard-source-row" : ""}"><span>${escapeHtml(event.sourceName || "Source")}</span><span>${escapeHtml(consumerVerificationLabel(event.verificationStatus))}</span>${event.incidentSize > 1 ? `<span class="advanced-only">${escapeHtml(event.incidentTitle || "Incident cluster")}</span>` : ""}${sourceButton(event)}<button type="button" class="mini-source-link event-detail-button" data-event-detail="${escapeHtml(event.id)}">View details</button></div><div class="event-foot advanced-only"><span>${relativeTime(event.occurredAt)} occurred - ${escapeHtml(event.sourceType)}</span><span class="confidence">${event.confidence}% confidence</span></div></article>`;
 }
 
 function renderList(els, events) {
@@ -585,6 +598,7 @@ export function bootLiveMap() {
     changeSummary.corruptSnapshot = corruptSnapshot;
     changeSummary.storageUnavailable = storageUnavailable;
     const changeStatusById = buildChangeStatusMap(changeSummary);
+    activeChangeStatusById = changeStatusById;
     renderMarkers(mapController.markerLayer, events, (event) => {
       openEventInspector(event);
     }, {
