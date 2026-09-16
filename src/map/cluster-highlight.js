@@ -16,23 +16,25 @@ export function renderClusterHighlight(layer, cluster) {
   const east = bounds.east + lonPad;
 
   L.rectangle([[south, west], [north, east]], {
+    pane: "of-highlight",
     color: "#38e0a3",
     weight: 2,
     opacity: 0.9,
     fillColor: "#38e0a3",
-    fillOpacity: 0.1,
+    fillOpacity: 0.08,
     interactive: false,
     className: "cluster-highlight-ring",
   }).addTo(layer);
 
   if (bounds.count === 1) {
     L.circle(bounds.center, {
+      pane: "of-highlight",
       radius: 28000,
       color: "#38e0a3",
       weight: 2,
       opacity: 0.75,
       fillColor: "#38e0a3",
-      fillOpacity: 0.08,
+      fillOpacity: 0.06,
       interactive: false,
       className: "cluster-highlight-ring",
     }).addTo(layer);

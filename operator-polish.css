@@ -1786,3 +1786,256 @@ body.diagnostics-page th {
     max-width: calc(100% - 16px);
   }
 }
+
+/* =============================================================================
+   Phase 9 — map visual grammar polish (chrome + markers + declutter)
+   Spec: docs/wayfinder-61-map-visual-grammar.md
+   ============================================================================= */
+
+/* Compact floating legend — decode only, not a second dashboard */
+.legend {
+  bottom: 14px !important;
+  left: 14px !important;
+  max-width: min(200px, 38vw) !important;
+  max-height: min(42vh, 280px);
+  overflow: auto;
+  padding: 8px 10px !important;
+  font-size: 10px !important;
+  line-height: 1.35;
+  background: rgba(4, 12, 18, 0.86) !important;
+  border: 1px solid rgba(47, 224, 200, 0.14) !important;
+  border-radius: 10px !important;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: var(--of-text-muted, #7f9aab);
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 3px 0 !important;
+}
+
+.legend-row .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--category, var(--of-cyan, #2fe0c8));
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.legend-row .dot.record-dot {
+  border-radius: 2px;
+  background: #7dd3fc;
+}
+
+.chokepoint-legend-dot {
+  background: #f6c453 !important;
+  border-radius: 2px !important;
+}
+
+.legend-hint {
+  font-size: 9px !important;
+  color: var(--of-text-faint, #5a7384) !important;
+  font-style: italic;
+  margin: 2px 0 4px !important;
+  padding-left: 16px;
+}
+
+/* Map toolbar: single strip, less boxy */
+.map-toolbar {
+  top: 10px !important;
+  left: 10px !important;
+  gap: 4px !important;
+  padding: 5px !important;
+  max-width: min(640px, calc(100% - 20px)) !important;
+  background: rgba(4, 12, 18, 0.84) !important;
+  border: 1px solid rgba(47, 224, 200, 0.12) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42) !important;
+}
+
+.map-toolbar button,
+.map-toolbar select {
+  height: 28px !important;
+  font-size: 10px !important;
+  padding: 0 8px !important;
+}
+
+/* Floating controls sit under toolbar, never stacked over legend */
+.floating-controls {
+  left: 10px !important;
+  top: 52px !important;
+  bottom: auto !important;
+  gap: 4px !important;
+  max-width: min(320px, calc(100% - 20px));
+}
+
+.floating-controls button {
+  height: 28px !important;
+  font-size: 10px !important;
+  padding: 0 9px !important;
+  background: rgba(4, 12, 18, 0.84) !important;
+  border-color: rgba(26, 46, 60, 0.9) !important;
+}
+
+.map-toggle {
+  right: 12px !important;
+  bottom: 52px !important;
+  height: 28px !important;
+  font-size: 10px !important;
+  background: rgba(4, 12, 18, 0.84) !important;
+}
+
+/* Leaflet chrome quieter */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+  margin-right: 12px !important;
+  margin-bottom: 12px !important;
+}
+
+.leaflet-control-zoom a {
+  width: 30px !important;
+  height: 30px !important;
+  line-height: 30px !important;
+  background: rgba(4, 12, 18, 0.88) !important;
+  color: var(--of-text-muted, #8eacbc) !important;
+  border: 1px solid rgba(26, 46, 60, 0.95) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  color: var(--of-cyan, #2fe0c8) !important;
+  border-color: rgba(47, 224, 200, 0.35) !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(4, 12, 18, 0.72) !important;
+  color: var(--of-text-faint, #5a7384) !important;
+  font-size: 9px !important;
+  max-width: min(48vw, 320px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Event markers — hierarchy, color-blind assist via ring weight */
+.event-marker {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--marker, #2fe0c8);
+  border: 2px solid rgba(5, 12, 18, 0.85);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--marker, #2fe0c8) 55%, transparent);
+}
+
+.event-marker.record-marker {
+  border-radius: 2px;
+  width: 11px;
+  height: 11px;
+  opacity: 0.88;
+}
+
+.event-marker-selected {
+  width: 14px;
+  height: 14px;
+  border-color: #2fe0c8;
+  box-shadow:
+    0 0 0 2px rgba(47, 224, 200, 0.55),
+    0 0 14px rgba(47, 224, 200, 0.35);
+}
+
+.event-marker-new {
+  box-shadow:
+    0 0 0 2px rgba(79, 209, 138, 0.65),
+    0 0 10px rgba(79, 209, 138, 0.25);
+}
+
+.event-marker-updated {
+  box-shadow:
+    0 0 0 2px rgba(240, 184, 74, 0.6),
+    0 0 10px rgba(240, 184, 74, 0.22);
+}
+
+.event-marker-cluster {
+  box-shadow: 0 0 0 2px rgba(47, 224, 200, 0.4);
+}
+
+.event-marker-dimmed {
+  opacity: 0.22 !important;
+  filter: grayscale(0.35);
+}
+
+/* MarkerCluster badges — dense console, not candy */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background: rgba(47, 224, 200, 0.18) !important;
+}
+
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background: rgba(8, 18, 26, 0.92) !important;
+  color: #eaf6fc !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(47, 224, 200, 0.35) !important;
+}
+
+/* Reduce left-drawer visual competition against map */
+.drawer-left .method-note,
+.sidebar .method-note {
+  font-size: 10px;
+  opacity: 0.85;
+}
+
+.standard-mode .drawer-left .sources-status-panel,
+.standard-mode .drawer-left .layer-summary {
+  display: none;
+}
+
+/* Map health / feed error less shouty */
+.map-health,
+.feed-error {
+  max-width: min(360px, calc(100% - 24px));
+  background: rgba(8, 14, 20, 0.92) !important;
+  border: 1px solid rgba(240, 184, 74, 0.35) !important;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* Mobile: legend optional, controls stack cleanly */
+@media (max-width: 900px) {
+  .legend {
+    max-width: min(160px, 42vw) !important;
+    max-height: 28vh;
+    bottom: 56px !important;
+  }
+
+  .floating-controls {
+    top: auto !important;
+    bottom: 12px !important;
+    left: 8px !important;
+  }
+
+  .map-toggle {
+    bottom: 12px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .legend {
+    display: none !important;
+  }
+}
+
+/* Prefer reduced motion: no marker pulse if any */
+@media (prefers-reduced-motion: reduce) {
+  .event-marker-selected,
+  .event-marker-new,
+  .event-marker-updated {
+    transition: none;
+  }
+}
