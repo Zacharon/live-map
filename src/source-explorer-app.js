@@ -1,4 +1,5 @@
 import { DOMAIN_LABELS, IMPLEMENTATION_STATUSES, MASTER_SOURCE_REGISTRY, SOURCE_ACCESS_CLASSIFICATIONS, SOURCE_DOMAINS, SOURCE_QUALITY_TIERS, filterSources, sourceById, sourceRegistryStats } from "./sources/master-source-registry.js";
+import { resourceById } from "./intelligence/resource-catalog.js";
 import { escapeHtml, relativeTime } from "./events/event-normalizer.js";
 import { allowedParam, safeSearchParams, textParam, tokenParam } from "./url-params.js";
 
@@ -146,6 +147,7 @@ function renderDetail(sourceRecord) {
       ${row("Best use", sourceRecord.bestUse)}
       ${row("Implemented", sourceRecord.implemented ? "Yes" : "No")}
       ${row("Why not live", sourceRecord.status === "live" ? "Live adapter is implemented." : sourceRecord.disableReason || sourceRecord.knownLimitations?.[0] || "Adapter, credentials, licensing, or validation are incomplete.")}
+      ${(() => { const catalog = resourceById(sourceRecord.id); return catalog ? `${row("Catalog kind", catalog.resourceKind)}${row("Upstream status", catalog.upstreamStatus || "not imported")}${row("Local automation", catalog.automationEnabled ? "enabled" : "off — directory live ≠ provider live")}${row("T/D/R/M flags", catalog.tdrmFlags.length ? catalog.tdrmFlags.join(" ") : "none")}` : ""; })()}
       ${row("Category", sourceRecord.category)}
       ${row("Source tier", sourceRecord.sourceTier)}
       ${row("Official", sourceRecord.official ? "Yes" : "No")}

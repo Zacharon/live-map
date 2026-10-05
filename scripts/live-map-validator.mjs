@@ -13,6 +13,7 @@ import {
 const root = process.cwd();
 const args = new Set(process.argv.slice(2));
 const reporter = createReporter();
+if(args.has('--offline')) await import('../tests/offline-network.mjs');
 
 try {
   if (!args.has("--security-only")) {
@@ -24,7 +25,8 @@ try {
   if (!args.has("--security-only")) {
     const payload = await loadLocalEventPayload(root);
     validateEventPayload(payload, reporter, { label: "local /api/events" });
-    await checkUrls(collectSourceUrls(payload), reporter, "local /api/events source URLs");
+    if(args.has('--offline')) reporter.warn('Source URL reachability','Not checked in offline fixture mode');
+    else await checkUrls(collectSourceUrls(payload), reporter, "local /api/events source URLs");
   }
 } catch (error) {
   reporter.fail("validator execution", error.stack || error.message);

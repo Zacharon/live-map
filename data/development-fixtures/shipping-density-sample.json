@@ -1,0 +1,15 @@
+{
+  "id": "world-bank-shipping-density-sample",
+  "live": false,
+  "category": "all-commercial",
+  "observationPeriod": { "start": "2015-01-01", "end": "2021-02-28" },
+  "license": "CC BY 4.0",
+  "attribution": "Format sample for the historical AIS-position density overlay. Cell values are illustrative of the compact grid, not an extracted World Bank raster. Observation period remains January 2015–February 2021. Not a current vessel count.",
+  "unit": "illustrative relative density (not live, not World Bank measured cells)",
+  "extent": [24, 54, 28, 58],
+  "cells": [
+    { "lat": 26.2, "lon": 56.2, "value": 0.4 },
+    { "lat": 26.4, "lon": 56.4, "value": 0.8 },
+    { "lat": 26.5, "lon": 56.6, "value": 0.6 }
+  ]
+}

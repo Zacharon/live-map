@@ -112,10 +112,10 @@ export function normalizeReliefWebRecord(record, now = new Date()) {
   return { event: result.valid ? result.event : null, errors: result.errors };
 }
 
-export function reliefWebQuery(hours, now = Date.now()) {
+export function reliefWebQuery(hours, now = Date.now(), runtimeEnv = globalThis?.process?.env ?? {}) {
   const changedAfter = new Date(now - Math.max(24, hours || 72) * 3600000).toISOString();
   return {
-    appname: globalThis?.process?.env?.RELIEFWEB_APPNAME,
+    appname: runtimeEnv.RELIEFWEB_APPNAME,
     limit: 100,
     fields: { include: ["id", "title", "body", "date", "url", "url_alias", "source", "country", "primary_country", "disaster", "disaster_type", "theme", "format", "language", "type"] },
     filter: { field: "date.changed", value: { from: changedAfter } },
@@ -124,7 +124,8 @@ export function reliefWebQuery(hours, now = Date.now()) {
 }
 
 export async function fetchReliefWebEvents(context) {
-  const appname = globalThis?.process?.env?.RELIEFWEB_APPNAME;
+  const runtimeEnv = context.env ?? globalThis?.process?.env ?? {};
+  const appname = runtimeEnv.RELIEFWEB_APPNAME;
   if (!appname) {
     return {
       events: [],
@@ -138,7 +139,7 @@ export async function fetchReliefWebEvents(context) {
   const response = await fetch(`${RELIEFWEB_BASE_URL}/reports`, {
     method: "POST",
     headers: { "content-type": "application/json", accept: "application/json" },
-    body: JSON.stringify(reliefWebQuery(Math.min(context.hours || 72, 72), context.now)),
+    body: JSON.stringify(reliefWebQuery(Math.min(context.hours || 72, 72), context.now, runtimeEnv)),
   });
   if (response.status === 429) throw new Error("ReliefWeb returned 429");
   if (!response.ok) throw new Error(`ReliefWeb returned ${response.status}`);

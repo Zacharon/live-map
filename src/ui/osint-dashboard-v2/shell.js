@@ -77,9 +77,21 @@ export function renderOsintEventDetailDrawer(container, {
 } = {}) {
   if (!container) return;
   const active = Boolean(event || cluster);
-  container.innerHTML = cluster
+  const markup = cluster
     ? renderClusterDetailDrawer(cluster, { allEvents })
     : renderEventDetailDrawer(event, { changeStatus, allEvents, clusters });
+  // Camera changes must not replace a focused inspector or collapse its disclosures.
+  if (container.dataset.renderedMarkup !== markup) {
+    const focused = container.contains(document.activeElement) ? document.activeElement : null;
+    const focusAttribute = focused?.hasAttribute('data-v2-close-detail') ? 'data-v2-close-detail' : null;
+    const openSummaries = [...container.querySelectorAll('details[open] > summary')].map((item) => item.textContent);
+    container.innerHTML = markup;
+    container.dataset.renderedMarkup = markup;
+    for (const details of container.querySelectorAll('details')) {
+      if (openSummaries.includes(details.querySelector('summary')?.textContent)) details.open = true;
+    }
+    if (focusAttribute) container.querySelector(`[${focusAttribute}]`)?.focus({ preventScroll: true });
+  }
   container.hidden = !active;
   container.classList.toggle("open", active);
 }

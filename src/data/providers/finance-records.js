@@ -1,5 +1,8 @@
+import { normalizeEnergyEvidence } from '../../intelligence/energy-state.js';
+import { finiteNumber } from '../../events/value-semantics.js';
 export function createSeriesObservation(input = {}) {
   return {
+    provider: input.provider ?? null,
     recordKind: "observation",
     domain: input.domain,
     category: input.category,
@@ -15,6 +18,8 @@ export function createSeriesObservation(input = {}) {
     change: input.change ?? null,
     changePercent: input.changePercent ?? null,
     units: input.units || null,
+    energy: normalizeEnergyEvidence(input.energy ?? input.metadata?.energy),
+    ingestedAt: input.ingestedAt ?? null,
     sourceName: input.sourceName,
     sourceUrl: input.sourceUrl,
     verificationStatus: input.verificationStatus || "primary-confirmed",
@@ -26,9 +31,9 @@ export function createSeriesObservation(input = {}) {
 }
 
 export function numericChange(value, previousValue) {
-  const current = Number(value);
-  const previous = Number(previousValue);
-  if (!Number.isFinite(current) || !Number.isFinite(previous)) return { change: null, changePercent: null };
+  const current = finiteNumber(value);
+  const previous = finiteNumber(previousValue);
+  if (current === null || previous === null) return { change: null, changePercent: null };
   const change = current - previous;
   const changePercent = previous === 0 ? null : (change / Math.abs(previous)) * 100;
   return { change, changePercent };

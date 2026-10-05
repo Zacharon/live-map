@@ -11,7 +11,7 @@ const ENABLE_FLAGS = {
 };
 
 function enabled(context, providerId) {
-  return String(context.env?.[ENABLE_FLAGS[providerId]] || globalThis?.process?.env?.[ENABLE_FLAGS[providerId]] || "").toLowerCase() === "true";
+  return String((context.env ?? globalThis?.process?.env ?? {})[ENABLE_FLAGS[providerId]] || "").toLowerCase() === "true";
 }
 
 export function normalizeOpenSignal(record = {}, provider = {}, now = new Date()) {

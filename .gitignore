@@ -16,3 +16,8 @@ secrets/
 # Generated local artifacts
 /artifacts/
 /qa-artifacts/
+.gstack/
+node_modules/
+/outputs/
+/hosting/beta/dist/
+/hosting/beta/deno.lock

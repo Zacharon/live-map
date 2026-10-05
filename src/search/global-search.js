@@ -1,6 +1,7 @@
 import { COUNTRIES } from "../data/countries.js";
 import { AIRPORTS } from "../data/airports.js";
 import { PORTS } from "../data/ports.js";
+import { STRATEGIC_CHOKEPOINTS } from "../data/strategic-chokepoints.js";
 import { PROVIDER_SOURCE_REGISTRY } from "../data/providers/source-registry.js";
 
 function matchText(query, values) {
@@ -34,7 +35,15 @@ export function buildGlobalSearchResults(query, events = [], movingObjects = [])
   const sources = PROVIDER_SOURCE_REGISTRY.filter((source) => matchText(q, [source.name, source.id, source.domains?.join(" "), source.status]))
     .slice(0, 8)
     .map((source) => result("Sources", source.name, source.status, { action: "source", id: source.id, url: source.documentationUrl || source.homepageUrl }));
-  return [...countries, ...airports, ...ports, ...objectResults, ...eventResults, ...sources];
+  const chokepoints = STRATEGIC_CHOKEPOINTS.filter((item) => matchText(q, [item.name, item.shortName, item.id, ...(item.aliases || [])]))
+    .slice(0, 8)
+    .map((item) => result("Chokepoints", item.name, (item.regions || []).join(" / "), { action: "chokepoint", id: item.id, lat: item.center?.lat, lon: item.center?.lon }));
+  const cases = [
+    { id: "portwatch-hormuz-2025-01", title: "Historical PortWatch Hormuz 2025-01", chokepointId: "strait-of-hormuz" },
+    { id: "synthetic-hormuz-2026-06", title: "Synthetic Hormuz fixture", chokepointId: "strait-of-hormuz" },
+  ].filter((item) => matchText(q, [item.title, item.id, "hormuz"]))
+    .map((item) => result("Cases", item.title, "Local investigation case", { action: "case", id: item.id, chokepointId: item.chokepointId }));
+  return [...countries, ...airports, ...ports, ...chokepoints, ...cases, ...objectResults, ...eventResults, ...sources];
 }
 
 export function groupSearchResults(results = []) {

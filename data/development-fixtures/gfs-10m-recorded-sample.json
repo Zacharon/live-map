@@ -1,0 +1,44 @@
+{
+  "model": "NOAA GFS 0.25 compact-field fixture",
+  "runTime": "2026-09-08T12:00:00Z",
+  "validTime": "2026-09-08T12:00:00Z",
+  "forecastLeadHours": 0,
+  "level": "10 m AGL",
+  "units": "m/s",
+  "gridResolution": "2 deg bounded Gulf subset",
+  "retrievedAt": "2026-09-15T00:00:00Z",
+  "extent": [22, 48, 32, 64],
+  "synthetic": false,
+  "cache": "recorded-gfs-development",
+  "live": false,
+  "provenance": "Compact JSON packing for the GFS 10 m U/V decoder. This file is a development sample used to prove wrap, no-data, level, and time handling. It is not a live NOMADS download. scripts/prepare-gfs-wind-sample.mjs is the bounded acquisition path.",
+  "attribution": "NOAA NCEP GFS / NOMADS. US public-domain model output. Animation would illustrate this field, not continuous observations.",
+  "grid": {
+    "lats": [22, 24, 26, 28, 30, 32],
+    "lons": [48, 50, 52, 54, 56, 58, 60, 62, 64],
+    "u": [
+      4.1, 4.4, 4.6, 4.2, 3.8, 3.5, 3.1, 2.8, 2.4,
+      5.0, 5.2, 5.1, 4.7, 4.1, 3.6, 3.2, 2.9, 2.5,
+      5.5, 5.8, 5.6, 5.0, 4.4, 3.9, 3.4, 3.0, 2.6,
+      5.1, 5.4, 5.2, 4.6, 4.0, 3.5, 3.1, 2.7, 2.3,
+      4.4, 4.6, 4.5, 4.0, 3.5, 3.1, 2.7, 2.3, 2.0,
+      null, 3.8, 3.7, 3.3, 2.9, 2.5, 2.2, 1.8, 1.5
+    ],
+    "v": [
+      -1.2, -1.0, -0.6, -0.2, 0.2, 0.6, 0.9, 1.1, 1.2,
+      -1.4, -1.1, -0.7, -0.1, 0.4, 0.8, 1.1, 1.3, 1.4,
+      -1.5, -1.2, -0.6, 0.1, 0.6, 1.0, 1.3, 1.5, 1.6,
+      -1.3, -1.0, -0.4, 0.2, 0.7, 1.1, 1.4, 1.5, 1.6,
+      -1.0, -0.7, -0.2, 0.3, 0.8, 1.1, 1.3, 1.4, 1.4,
+      null, -0.4, 0.0, 0.4, 0.8, 1.0, 1.2, 1.3, 1.3
+    ],
+    "mask": [
+      1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1,
+      0, 1, 1, 1, 1, 1, 1, 1, 1
+    ]
+  }
+}

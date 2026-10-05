@@ -3,9 +3,11 @@ import { clampMovingObjectLimit, movingObjectPublicView, validateBbox } from "..
 import { fetchOpenSkyAircraft, openskyStatus } from "../../src/data/providers/opensky.js";
 import { fetchGfwVessels, gfwStatus } from "../../src/data/providers/global-fishing-watch.js";
 import { aishubStatus } from "../../src/data/providers/aishub.js";
+import { createRequestCoordinator } from '../../src/moving-objects/request-coordinator.js';
 
 const CACHE = new Map();
 const CACHE_TTL_MS = 25000;
+const coordinateRequest=createRequestCoordinator();
 
 function cacheKey(type, bbox, limit) {
   const rounded = bbox ? [bbox.south, bbox.west, bbox.north, bbox.east].map((value) => Math.round(value * 10) / 10).join(",") : "none";
@@ -24,6 +26,10 @@ async function loadObjects(type, bbox, limit, now) {
   const key = cacheKey(type, bbox, limit);
   const cached = CACHE.get(key);
   if (cached && now - cached.generatedAt < CACHE_TTL_MS) return { ...cached, cached: true };
+  return coordinateRequest(key,()=>loadUncached(type,bbox,limit,now,key),()=>({objects:[],providerStatus:{opensky:{...openskyStatus(),status:'rate-limited'},'global-fishing-watch':{...gfwStatus(),status:'rate-limited'}},warnings:['Shared tracking request budget exhausted; retry after one minute.'],truncated:false,generatedAt:now}));
+}
+
+async function loadUncached(type,bbox,limit,now,key) {
   const parts = splitBbox(bbox);
   const statuses = {};
   const warnings = [];
@@ -49,6 +55,7 @@ async function loadObjects(type, bbox, limit, now) {
   objects = objects.slice(0, limit).map(movingObjectPublicView);
   const payload = { objects, providerStatus: statuses, warnings, truncated, generatedAt: now };
   CACHE.set(key, payload);
+  while(CACHE.size>128)CACHE.delete(CACHE.keys().next().value);
   return payload;
 }
 

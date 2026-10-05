@@ -1,0 +1,3 @@
+# The preserved candidate contains mixed historical line endings. Keep source
+# bytes reproducible across platforms instead of silently converting them.
+* -text

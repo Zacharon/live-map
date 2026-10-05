@@ -23,4 +23,4 @@ assert.ok(payload.sourceRegistry?.["nws-alerts"]);
 assert.ok(payload.providerSourceRegistry?.gdelt);
 assert.ok(payload.domainSourceStatus?.weather);
 
-console.log("E2E smoke checks passed.");
+console.log("Static HTML/CSS and handler smoke checks passed (no browser journey).");

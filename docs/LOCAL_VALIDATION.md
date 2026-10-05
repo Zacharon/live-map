@@ -1,5 +1,19 @@
 # Local Validation
 
+For deterministic local validation without outbound provider requests:
+
+```powershell
+node tests/foundation-tests.mjs
+node tests/operational-evidence-tests.mjs
+node tests/semantic-globe-weather-tests.mjs
+node --import ./tests/offline-network.mjs tests/run-tests.mjs
+node scripts/live-map-validator.mjs --offline
+node --import ./tests/offline-network.mjs scripts/e2e-smoke.mjs
+node --import ./tests/offline-network.mjs scripts/source-explorer-smoke-test.mjs
+```
+
+The explicit test preload stubs USGS/EONET/NWS and returns unavailable for other upstreams. Offline validation skips source-URL reachability and reports that omission. It is not production smoke evidence.
+
 Live Map expects Node.js 20 or newer and npm. The repository has no required package lockfile or install step for the built-in validation commands; the checks run with standard Node/npm commands from `package.json`.
 
 ## Standard Commands

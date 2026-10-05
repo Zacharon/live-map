@@ -1,5 +1,7 @@
 # Project Handoff
 
+Current Systems Desk source route: [October 5 reproducible USGS baseline](USGS_BASELINE_20261005.md). Older pending PR lists are historical; use dated LAST/NEXT entries and exact source evidence before selecting follow-on work.
+
 Live Map is a static frontend plus server-side provider orchestration for public-information events, source transparency, country risk context, diagnostics, and bounded aviation/maritime prototypes.
 
 ## What It Is

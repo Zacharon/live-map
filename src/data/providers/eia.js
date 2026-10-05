@@ -1,12 +1,13 @@
 import { createNormalizedEvent } from "../../events/normalized-event.js";
 import { EIA_DATASETS } from "./finance-commodity-config.js";
 import { createSeriesObservation, numericChange } from "./finance-records.js";
+import { finiteNumber } from '../../events/value-semantics.js';
+import { energyTimestamp } from '../../intelligence/energy-state.js';
 
 export const EIA_BASE_URL = "https://api.eia.gov/v2";
 
 function numeric(value) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
+  return finiteNumber(value);
 }
 
 export function classifyEiaRecord(dataset, record, previousRecord = null) {
@@ -21,7 +22,9 @@ export function classifyEiaRecord(dataset, record, previousRecord = null) {
     datasetId: dataset.id,
     seriesId: record?.series || dataset.seriesId,
     commodity: dataset.commodity,
-    type: material ? dataset.type : revised ? "production-level-revised" : "official-energy-observation",
+    // Storage-level changes do not establish an emergency withdrawal.
+    type: material ? dataset.type==='inventory-release'?'inventory-level-change':dataset.type : revised ? "energy-series-revised" : "official-energy-observation",
+    energy: dataset.energy ? {...dataset.energy,value,units:record?.units||dataset.units,commodity:dataset.commodity,period:record?.period||record?.date} : null,
     period: record?.period || record?.date,
     value,
     previousValue,
@@ -38,18 +41,21 @@ export function classifyEiaRecord(dataset, record, previousRecord = null) {
 export function normalizeEiaRecord(dataset, record, previousRecord = null, now = new Date()) {
   const signal = classifyEiaRecord(dataset, record, previousRecord);
   const observation = createSeriesObservation({
+    provider: 'eia',
     domain: "commodity-supply-chain",
     category: "energy",
     type: signal.type,
     seriesId: signal.seriesId,
-    occurredAt: signal.period,
-    publishedAt: signal.publishedAt,
+    occurredAt: energyTimestamp(signal.period)===null?null:signal.period,
+    publishedAt: energyTimestamp(signal.publishedAt)===null?null:signal.publishedAt,
     updatedAt: signal.revisedAt || signal.publishedAt,
     value: signal.value,
     previousValue: signal.previousValue,
     change: signal.change,
     changePercent: signal.changePercent,
     units: signal.units,
+    energy: signal.energy,
+    ingestedAt: now.toISOString(),
     sourceName: "U.S. Energy Information Administration",
     sourceUrl: signal.sourceUrl,
     geographic: false,
@@ -64,21 +70,22 @@ export function normalizeEiaRecord(dataset, record, previousRecord = null, now =
     category: "commodity",
     type: signal.type,
     subtype: signal.commodity,
+    energy: signal.energy,
     title: `${signal.commodity}: ${signal.type.replace(/-/g, " ")}`,
     description: `EIA reported ${signal.value ?? "missing"} ${signal.units || ""} for ${signal.seriesId}. This is an official data signal and does not claim market causality.`,
     geographic: false,
     mapDisplayStatus: "not-mapped",
     nonGeographicReason: "EIA series observations are official time-series records; only facility or regional grid records should be mapped.",
-    startedAt: signal.period || now,
+    startedAt: energyTimestamp(signal.period),
     updatedAt: signal.revisedAt || signal.publishedAt || now,
     ingestedAt: now,
-    severity: signal.type === "production-level-revised" ? 45 : 58,
+    severity: signal.type === "energy-series-revised" ? 45 : 58,
     confidence: 90,
     status: "monitoring",
     sourceName: "U.S. Energy Information Administration",
     sourceUrl: signal.sourceUrl,
     sourceType: "Official",
-    sourcePublishedAt: signal.publishedAt || null,
+    sourcePublishedAt: energyTimestamp(signal.publishedAt),
     tags: ["EIA", signal.commodity, signal.seriesId, signal.type],
     metadata: {
       ...signal,
@@ -102,7 +109,7 @@ export function normalizeEiaRecord(dataset, record, previousRecord = null, now =
 }
 
 export async function fetchEiaEvents(context = {}) {
-  const apiKey = globalThis?.process?.env?.EIA_API_KEY;
+  const apiKey = (context.env ?? globalThis?.process?.env ?? {}).EIA_API_KEY;
   if (!apiKey) {
     return {
       events: [],
