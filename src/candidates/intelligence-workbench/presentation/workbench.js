@@ -166,8 +166,8 @@ async function refreshLive(){
     const response=await fetch('/api/events',{signal:AbortSignal.timeout(15000),cache:'no-cache'});
     const envelope=await response.json();if(!response.ok&&!Object.keys(envelope.sourceStatus||{}).length)throw new Error('API unavailable');const next=liveRecords(envelope);
     const previous=records.find(r=>state.selected&&referenceKey(r.ref)===referenceKey(state.selected));
-    if(previous&&!next.some(r=>referenceKey(r.ref)===referenceKey(previous.ref)))next.push({...previous,withdrawn:true,stale:true});
-    records=next;sourceStatus=envelope.sourceStatus;sourceRevision=envelope.sourceRevision||null;layerMarkup();loadError=response.ok?null:'Public snapshot unavailable. Last successful records remain labeled stale.';
+    if(previous&&!next.some(r=>referenceKey(r.ref)===referenceKey(previous.ref)))next.push({...previous,withdrawn:true,stale:true,source:{...previous.source,availability:'Stale'}});
+    records=next;sourceStatus=envelope.sourceStatus;sourceRevision=envelope.sourceRevision||null;layerMarkup();loadError=response.ok?null:records.length?'Public snapshot unavailable. Last successful records remain labeled stale.':'Public snapshot unavailable. No source records have been acquired.';
     const wasNow=Number($('time').value)===Number($('time').max);NOW=Number.isFinite(envelope.generatedAt)?envelope.generatedAt:Date.now();
     state=reduceWorkspace(state,{type:'time',asOf:wasNow?NOW:state.asOf,knownAt:NOW,mode:'situation'});
     DATA_VERSION=`public-beta/1 · ${envelope.generatedAt}`;
