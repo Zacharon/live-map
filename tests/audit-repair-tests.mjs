@@ -14,7 +14,7 @@ import { renderChokepointDetail } from "../src/ui/chokepoints.js";
 import { STRATEGIC_CHOKEPOINTS } from "../src/data/strategic-chokepoints.js";
 import { buildEventArtifact, resolveConfidence } from "../src/artifacts/event-artifacts.js";
 import { computeThreatLevel } from "../src/intelligence/threat-level.js";
-import { groupEvents, sortEvents } from "../src/events/feed-organization.js";
+import { groupEvents, groupStats, sortEvents } from "../src/events/feed-organization.js";
 import { timelineBucketForEvent } from "../src/events/timeline.js";
 import { filteredEvents } from "../src/events/event-filters.js";
 import { buildIncidents, shouldCluster } from "../src/events/incident-clustering.js";
@@ -33,6 +33,7 @@ import { normalizeFirmsRow } from "../src/data/providers/firms.js";
 import { normalizeGdacsFeature } from "../src/data/providers/gdacs.js";
 import { normalizeRipestatObservation } from "../src/data/providers/ripestat.js";
 import { createSeriesObservation } from "../src/data/providers/finance-records.js";
+import { normalizeStatuspageIncident } from "../src/data/providers/statuspage.js";
 import { assertValidUrl } from "../scripts/lib/live-map-checks.mjs";
 
 const now = new Date("2026-10-12T12:00:00Z");
@@ -204,6 +205,34 @@ test("Series observations share URL/confidence validation without inventing cloc
   assert.equal(unknown.updatedAt, null);
   assert.equal(createSeriesObservation({ confidence: 0, occurredAt: "2026-10-11" }).confidence, 0);
   assert.equal(createSeriesObservation({ occurredAt: "2026-10-11" }).occurredAt, "2026-10-11");
+});
+
+test("Statuspage absence never becomes ingestion recency; valid source clocks are retained", () => {
+  const page = { id: "fixture", name: "Synthetic", domain: "technology-cyber", category: "cyber", type: "service-outage", homepageUrl: "https://example.com/" };
+  const incident = { id: "undated", name: "Synthetic incident", status: "investigating", impact: "minor" };
+  const missing = normalizeStatuspageIncident(incident, page, now).event;
+  assert.ok(missing);
+  for (const key of ["startedAt", "updatedAt", "sourcePublishedAt"]) assert.equal(missing[key], null, key);
+  assert.equal(missing.ingestedAt, now.toISOString());
+  assert.equal(missing.freshnessScore, null);
+  const event = normalizeEvent(toLegacyEvent(missing));
+  const filters = { categories: new Set([event.category]), severities: new Set([event.severity]), query: "" };
+  assert.equal(filteredEvents([event], filters, 168, "newest").length, 0);
+  const dated = normalizeStatuspageIncident({ ...incident, created_at: "2026-10-11T08:00:00Z", updated_at: "2026-10-11T09:00:00Z" }, page, now).event;
+  assert.equal(dated.startedAt, "2026-10-11T08:00:00.000Z");
+  assert.equal(dated.sourcePublishedAt, dated.startedAt);
+  assert.equal(dated.updatedAt, "2026-10-11T09:00:00.000Z");
+  assert.equal(normalizeStatuspageIncident({ ...incident, created_at: dated.startedAt }, page, now).event.updatedAt, null);
+});
+
+test("Grouped update summaries only report actual updates, with unknown and epoch retained", () => {
+  const event = { ...normalizeEvent(input), occurredAt: Date.now(), updatedAt: null };
+  assert.equal(groupStats([event]).newestUpdate, "unknown");
+  assert.equal(groupEvents([event], "domain")[0].stats.newestUpdate, "unknown");
+  assert.equal(groupStats([]).newestUpdate, "unknown");
+  assert.equal(groupStats([{ ...event, updatedAt: 0 }]).newestUpdate, relativeTime(0));
+  const actual = Date.now();
+  assert.equal(groupStats([event, { ...event, updatedAt: actual }]).newestUpdate, relativeTime(actual));
 });
 
 test("Obsolete USGS docs references are removed while the functional feed is unchanged", () => {

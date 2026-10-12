@@ -97,13 +97,14 @@ export function groupEvents(events, groupBy = "none", providerWarnings = {}) {
 }
 
 export function groupStats(events, providerWarnings = {}) {
-  const newest = Math.max(...events.map((event) => Number(event.updatedAt || event.occurredAt || 0)), 0);
+  const updates = events.map((event) => timestampMs(event.updatedAt)).filter((value) => value !== null);
+  const newest = updates.length ? Math.max(...updates) : null;
   const providerWarning = events.some((event) => providerWarnings[event.provider]?.ok === false || providerWarnings[event.provider]?.stale);
   return {
     total: events.length,
     highCount: events.filter((event) => ["critical", "high"].includes(event.severity)).length,
     newCount: events.filter((event) => Date.now() - Number(event.firstReportedAt || event.occurredAt) < 3600000).length,
-    newestUpdate: newest ? relativeTime(newest) : "unknown",
+    newestUpdate: newest === null ? "unknown" : relativeTime(newest),
     providerWarning,
   };
 }
