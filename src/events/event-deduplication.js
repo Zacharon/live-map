@@ -1,3 +1,5 @@
+import { timestampMs, confidenceValue } from "./event-values.js";
+
 function normalizeTitle(title) {
   return String(title || "")
     .toLowerCase()
@@ -30,7 +32,10 @@ function titleSimilarity(a, b) {
 export function arePotentialDuplicates(a, b) {
   if (a.provider === b.provider && a.providerEventId && a.providerEventId === b.providerEventId) return true;
   if (a.category !== b.category) return false;
-  const timeDelta = Math.abs(new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
+  const leftTime = timestampMs(a.startedAt);
+  const rightTime = timestampMs(b.startedAt);
+  if (leftTime === null || rightTime === null) return false;
+  const timeDelta = Math.abs(leftTime - rightTime);
   if (timeDelta > 6 * 3600000) return false;
   if (distanceKm(a, b) > 35) return false;
   return titleSimilarity(a.title, b.title) >= 0.55;
@@ -50,10 +55,13 @@ export function mergeDuplicateEvents(events) {
       });
       continue;
     }
-    existing.startedAt = new Date(existing.startedAt) < new Date(event.startedAt) ? existing.startedAt : event.startedAt;
-    existing.updatedAt = new Date(existing.updatedAt || existing.startedAt) > new Date(event.updatedAt || event.startedAt) ? existing.updatedAt : event.updatedAt;
+    const earliest = [timestampMs(existing.startedAt), timestampMs(event.startedAt)].filter((value) => value !== null);
+    const latest = [timestampMs(existing.updatedAt), timestampMs(event.updatedAt)].filter((value) => value !== null);
+    existing.startedAt = earliest.length ? new Date(Math.min(...earliest)).toISOString() : null;
+    existing.updatedAt = latest.length ? new Date(Math.max(...latest)).toISOString() : null;
     existing.severity = Math.max(existing.severity, event.severity);
-    existing.confidence = Math.max(existing.confidence, event.confidence);
+    const confidence = [confidenceValue(existing.confidence), confidenceValue(event.confidence)].filter((value) => value !== null);
+    existing.confidence = confidence.length ? Math.max(...confidence) : null;
     existing.metadata.mergedSources = [
       ...(existing.metadata.mergedSources || []),
       { provider: event.provider, providerEventId: event.providerEventId, sourceUrl: event.sourceUrl },

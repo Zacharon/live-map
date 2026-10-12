@@ -1,3 +1,4 @@
+import { sourceLink } from "./sources/source-url.js";
 import { escapeHtml, relativeTime } from "./events/event-normalizer.js";
 
 const els = {
@@ -34,7 +35,7 @@ function providerCard(provider) {
       <dt>Adapter</dt><dd>${escapeHtml(provider.adapterVersion)}</dd>
     </dl>
     <p>${escapeHtml(provider.sanitizedError || "No sanitized provider error.")}</p>
-    ${provider.sourceRegistryUrl ? `<a href="${escapeHtml(provider.sourceRegistryUrl)}" target="_blank" rel="noopener noreferrer">Source registry link</a>` : ""}
+    ${sourceLink(provider.sourceRegistryUrl, "Source registry link")}
   </article>`;
 }
 

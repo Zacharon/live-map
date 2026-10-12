@@ -1,3 +1,5 @@
+import { confidenceText } from "./events/event-values.js";
+import { sourceLink } from "./sources/source-url.js";
 import { CONFIG, CATEGORIES, SEVERITIES } from "./config.js";
 import { DASHBOARDS, getDashboard } from "./data/dashboards.js";
 import { LAYER_CATALOG, layersForDashboard } from "./data/layers.js";
@@ -7,7 +9,7 @@ import { AIRPORTS } from "./data/airports.js";
 import { PORTS } from "./data/ports.js";
 import { STRATEGIC_CHOKEPOINTS, CHOKEPOINT_TYPES, CHOKEPOINT_STATUSES, chokepointById } from "./data/strategic-chokepoints.js";
 import { state, dashboardFilters, resetDashboardFilters, setDashboard, syncUrlState } from "./state.js";
-import { normalizeEvent, escapeHtml, relativeTime } from "./events/event-normalizer.js";
+import { normalizeEvent, escapeHtml, relativeTime, exactTime } from "./events/event-normalizer.js";
 import { filteredEvents } from "./events/event-filters.js";
 import { domainOptions } from "./events/taxonomy.js";
 import { GROUP_OPTIONS, SORT_OPTIONS, groupEvents } from "./events/feed-organization.js";
@@ -76,7 +78,7 @@ function normalizeUSGS(feature) {
     source: "USGS Earthquake Hazards Program",
     sourceUrl: properties.url,
     sourceType: "Official",
-    providerUrl: "https://earthquake.usgs.gov/earthquakes/feed/",
+    providerUrl: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php",
     confidence: properties.status === "reviewed" ? 98 : 90,
     verificationStatus: properties.status === "reviewed" ? "Provider reviewed" : "Preliminary",
     coordinateMethod: "official epicenter",
@@ -170,8 +172,8 @@ async function directFallback() {
 }
 
 function sourceButton(event) {
-  if (!event.sourceUrl) return "";
-  return `<a class="mini-source-link" href="${escapeHtml(event.sourceUrl)}" target="_blank" rel="noopener noreferrer">Source</a>`;
+  if (!event.sourceUrl) return sourceLink(null, "Source", "mini-source-link");
+  return sourceLink(event.sourceUrl, "Source", "mini-source-link");
 }
 
 function countryForDisplay(event) {
@@ -181,7 +183,7 @@ function countryForDisplay(event) {
 function qualityBadges(event) {
   const kind = (event.recordKind || "event").replace(/-/g, " ");
   const verification = consumerVerificationLabel(event.verificationStatus || event.verification?.state || "reported");
-  return `<div class="quality-row"><span class="advanced-only">Content type: ${escapeHtml(kind)}</span><span>Severity: ${escapeHtml(event.severity)}</span><span class="advanced-only">Confidence: ${Math.round(event.confidence || 0)}%</span><span>${escapeHtml(verification)}</span><span>Sources: ${escapeHtml(event.independentSourceCount || 1)}</span><span>Last updated: ${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>`;
+  return `<div class="quality-row"><span class="advanced-only">Content type: ${escapeHtml(kind)}</span><span>Severity: ${escapeHtml(event.severity)}</span><span class="advanced-only">Confidence: ${escapeHtml(confidenceText(event.confidence))}</span><span>${escapeHtml(verification)}</span><span>Sources: ${escapeHtml(event.independentSourceCount || 1)}</span><span>Last updated: ${escapeHtml(relativeTime(event.updatedAt))}</span></div>`;
 }
 
 function consumerVerificationLabel(value = "") {
@@ -207,7 +209,7 @@ function renderEventCard(event) {
   const country = countryForDisplay(event);
   const countryLabel = country ? `<button type="button" class="country-badge" data-country-select="${country.iso3}">${escapeHtml(country.shortName || country.name)}</button>` : `<span>${escapeHtml(event.country)}</span>`;
   const summary = expanded ? `<p>${escapeHtml(event.summary)}</p>` : "";
-  const details = expanded ? `<div class="event-facts"><span class="fact-chip">Occurred: ${escapeHtml(new Date(event.occurredAt).toLocaleString())}</span><span class="fact-chip">Reported: ${escapeHtml(new Date(event.firstReportedAt || event.occurredAt).toLocaleString())}</span><span class="fact-chip">Updated: ${escapeHtml(new Date(event.updatedAt || event.occurredAt).toLocaleString())}</span>${event.geographic === false ? `<span class="fact-chip">Not mapped: ${escapeHtml(event.nonGeographicReason || "no supported geography")}</span>` : ""}${event.incidentSize > 1 ? `<span class="fact-chip">Incident: ${escapeHtml(event.incidentSize)} linked events</span>` : ""}</div>` : "";
+  const details = expanded ? `<div class="event-facts"><span class="fact-chip">Occurred: ${escapeHtml(exactTime(event.occurredAt))}</span><span class="fact-chip">Reported: ${escapeHtml(exactTime(event.firstReportedAt))}</span><span class="fact-chip">Updated: ${escapeHtml(exactTime(event.updatedAt))}</span>${event.geographic === false ? `<span class="fact-chip">Not mapped: ${escapeHtml(event.nonGeographicReason || "no supported geography")}</span>` : ""}${event.incidentSize > 1 ? `<span class="fact-chip">Incident: ${escapeHtml(event.incidentSize)} linked events</span>` : ""}</div>` : "";
   const location = event.geographic === false ? "No map location" : event.place || event.country || "Location pending";
   const chokepointContext = event.affectedChokepoints?.length ? `<p class="event-chokepoint-line">Strategic area: ${escapeHtml(event.affectedChokepoints.slice(0, 2).join(", "))}</p>` : "";
   const kind = event.recordKind || "event";
@@ -216,7 +218,7 @@ function renderEventCard(event) {
     || activeChangeStatusById.get(event.id)
     || null;
   const changeClass = changeStatus === "new" ? " is-new" : changeStatus === "updated" ? " is-updated" : "";
-  return `<article class="event-card ${expanded ? "expanded" : "compact"} record-${escapeHtml(kind)}${isSelected ? " is-selected" : ""}${changeClass}" data-id="${escapeHtml(event.id)}" data-change="${escapeHtml(changeStatus || "")}"${isSelected ? ' aria-current="true"' : ""}><div class="event-meta"><span class="category-pill" style="--cat:${event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color}">${escapeHtml(event.domainLabel || CATEGORIES[event.category]?.label || "Other")}</span><span>${escapeHtml(event.typeLabel || event.category)}</span>${countryLabel}${changeBadgeHtml(changeStatus)}<span class="record-kind advanced-only">${escapeHtml(kind)}</span><span class="severity-tag" style="--sev:${SEVERITIES[event.severity]?.color || SEVERITIES.low.color}">${SEVERITIES[event.severity]?.label || event.severity}</span></div><h2>${escapeHtml(event.title)}</h2><div class="consumer-card-line"><span>${escapeHtml(location)}</span><span>${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>${summary}${chokepointContext}${qualityBadges(event)}${details}<div class="source-row ${state.interfaceMode === "standard" ? "standard-source-row" : ""}"><span>${escapeHtml(event.sourceName || "Source")}</span><span>${escapeHtml(consumerVerificationLabel(event.verificationStatus))}</span>${event.incidentSize > 1 ? `<span class="advanced-only">${escapeHtml(event.incidentTitle || "Incident cluster")}</span>` : ""}${sourceButton(event)}<button type="button" class="mini-source-link event-detail-button" data-event-detail="${escapeHtml(event.id)}">View details</button></div><div class="event-foot advanced-only"><span>${relativeTime(event.occurredAt)} occurred - ${escapeHtml(event.sourceType)}</span><span class="confidence">${event.confidence}% confidence</span></div></article>`;
+  return `<article class="event-card ${expanded ? "expanded" : "compact"} record-${escapeHtml(kind)}${isSelected ? " is-selected" : ""}${changeClass}" data-id="${escapeHtml(event.id)}" data-change="${escapeHtml(changeStatus || "")}"${isSelected ? ' aria-current="true"' : ""}><div class="event-meta"><span class="category-pill" style="--cat:${event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color}">${escapeHtml(event.domainLabel || CATEGORIES[event.category]?.label || "Other")}</span><span>${escapeHtml(event.typeLabel || event.category)}</span>${countryLabel}${changeBadgeHtml(changeStatus)}<span class="record-kind advanced-only">${escapeHtml(kind)}</span><span class="severity-tag" style="--sev:${SEVERITIES[event.severity]?.color || SEVERITIES.low.color}">${SEVERITIES[event.severity]?.label || event.severity}</span></div><h2>${escapeHtml(event.title)}</h2><div class="consumer-card-line"><span>${escapeHtml(location)}</span><span>${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>${summary}${chokepointContext}${qualityBadges(event)}${details}<div class="source-row ${state.interfaceMode === "standard" ? "standard-source-row" : ""}"><span>${escapeHtml(event.sourceName || "Source")}</span><span>${escapeHtml(consumerVerificationLabel(event.verificationStatus))}</span>${event.incidentSize > 1 ? `<span class="advanced-only">${escapeHtml(event.incidentTitle || "Incident cluster")}</span>` : ""}${sourceButton(event)}<button type="button" class="mini-source-link event-detail-button" data-event-detail="${escapeHtml(event.id)}">View details</button></div><div class="event-foot advanced-only"><span>${relativeTime(event.occurredAt)} occurred - ${escapeHtml(event.sourceType)}</span><span class="confidence">${escapeHtml(confidenceText(event.confidence))} confidence</span></div></article>`;
 }
 
 function renderList(els, events) {

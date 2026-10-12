@@ -23,7 +23,7 @@ function layer(id, name, category, dashboard, sourceName, sourceUrl, overrides =
 }
 
 export const LAYER_CATALOG = [
-  layer("earthquakes", "Earthquakes", "Natural hazards", "primary", "USGS Earthquake Hazards Program", "https://earthquake.usgs.gov/earthquakes/feed/", { implemented: true, enabled: true, sourceType: "Official", refreshInterval: "120 seconds", status: "Live", legalNotes: "USGS public earthquake feeds with attribution." }),
+  layer("earthquakes", "Earthquakes", "Natural hazards", "primary", "USGS Earthquake Hazards Program", "https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php", { implemented: true, enabled: true, sourceType: "Official", refreshInterval: "120 seconds", status: "Live", legalNotes: "USGS public earthquake feeds with attribution." }),
   layer("eonet-hazards", "NASA EONET hazards", "Natural hazards", "primary", "NASA EONET", "https://eonet.gsfc.nasa.gov/docs/v3", { implemented: true, enabled: true, sourceType: "Official", refreshInterval: "120 seconds", status: "Partially available", legalNotes: "NASA EONET public API; upstream outages are shown as partial data." }),
   layer("armed-conflict", "Armed conflict", "Conflict and security", "primary", "ACLED", "https://acleddata.com/", { credentialRequired: true }),
   layer("civil-unrest", "Civil unrest", "Conflict and security", "primary", "ACLED", "https://acleddata.com/", { credentialRequired: true }),

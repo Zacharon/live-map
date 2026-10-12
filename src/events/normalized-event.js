@@ -1,5 +1,7 @@
 import { computeQualityDimensions } from "./event-quality.js";
 import { classifyEvent } from "./taxonomy.js";
+import { safeSourceUrl } from "../sources/source-url.js";
+import { timestampMs, confidenceValue } from "./event-values.js";
 
 const SEVERITY_LABELS = ["low", "moderate", "high", "critical"];
 const VALID_STATUS = new Set(["active", "monitoring", "resolved", "unknown"]);
@@ -42,8 +44,8 @@ export function scoreFromLegacySeverity(severity) {
 
 export function toIsoString(value, fallback = null) {
   if (value === null || value === undefined || value === "") return fallback;
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isFinite(date.getTime()) ? date.toISOString() : fallback;
+  const timestamp = timestampMs(value);
+  return timestamp === null ? fallback : new Date(timestamp).toISOString();
 }
 
 export function isValidCoordinate(latitude, longitude) {
@@ -78,25 +80,21 @@ export function validateNormalizedEvent(event) {
   if (!event?.title) errors.push("title is required");
   if (!event?.category) errors.push("category is required");
   if (event?.geographic !== false && !isValidCoordinate(event?.latitude, event?.longitude)) errors.push("latitude/longitude must be valid");
-  if (!toIsoString(event?.startedAt)) errors.push("startedAt must be a valid timestamp");
+  if (event?.startedAt != null && !toIsoString(event.startedAt)) errors.push("startedAt must be a valid timestamp or null");
   if (!toIsoString(event?.ingestedAt)) errors.push("ingestedAt must be a valid timestamp");
   if (!SEVERITY_LABELS.includes(event?.severityLabel)) errors.push("severityLabel is invalid");
   if (!VALID_STATUS.has(event?.status)) errors.push("status is invalid");
   if (!RECORD_KINDS.includes(event?.recordKind)) errors.push("recordKind is invalid");
-  try {
-    new URL(event?.sourceUrl || "");
-  } catch {
-    errors.push("sourceUrl must be a valid URL");
-  }
+  if (event?.sourceUrl != null && !safeSourceUrl(event.sourceUrl)) errors.push("sourceUrl must be an absolute HTTP(S) URL without credentials or null");
   return { valid: errors.length === 0, errors };
 }
 
 export function createNormalizedEvent(input) {
   const nowIso = toIsoString(input.ingestedAt, new Date().toISOString());
-  const startedAt = toIsoString(input.startedAt ?? input.occurredAt ?? input.sourcePublishedAt, nowIso);
-  const updatedAt = toIsoString(input.updatedAt, startedAt);
-  const sourcePublishedAt = toIsoString(input.sourcePublishedAt, startedAt);
-  const lastVerifiedAt = toIsoString(input.lastVerifiedAt, updatedAt);
+  const startedAt = toIsoString(timestampMs(input.startedAt, input.occurredAt, input.sourcePublishedAt));
+  const updatedAt = toIsoString(input.updatedAt);
+  const sourcePublishedAt = toIsoString(input.sourcePublishedAt);
+  const lastVerifiedAt = toIsoString(input.lastVerifiedAt);
   const severity =
     typeof input.severity === "number"
       ? clamp(input.severity, 0, 100)
@@ -139,10 +137,10 @@ export function createNormalizedEvent(input) {
     ingestedAt: nowIso,
     severity,
     severityLabel,
-    confidence: clamp(input.confidence ?? 70, 0, 100),
+    confidence: confidenceValue(input.confidence),
     status: normalizeStatus(input.status),
     sourceName: input.sourceName || input.source || input.providerName || input.provider,
-    sourceUrl: input.sourceUrl || input.providerUrl,
+    sourceUrl: safeSourceUrl(input.sourceUrl ?? input.providerUrl),
     sourceType: input.sourceType || "Official",
     sourceTier: input.sourceTier || input.metadata?.sourceTier || null,
     publisher: input.publisher || input.sourceName || input.provider,
@@ -162,12 +160,15 @@ export function createNormalizedEvent(input) {
   };
   Object.assign(event, computeQualityDimensions(event));
   const validation = validateNormalizedEvent(event);
+  const suppliedUrl = input.sourceUrl ?? input.providerUrl;
+  if (suppliedUrl != null && suppliedUrl !== "" && !safeSourceUrl(suppliedUrl)) validation.errors.push("sourceUrl rejected: absolute HTTP(S) URL without credentials required");
+  validation.valid = validation.errors.length === 0;
   return { event, errors: validation.errors, valid: validation.valid };
 }
 
 export function toLegacyEvent(event) {
-  const occurredAt = new Date(event.startedAt).getTime();
-  const updatedAt = event.updatedAt ? new Date(event.updatedAt).getTime() : occurredAt;
+  const occurredAt = timestampMs(event.startedAt);
+  const updatedAt = timestampMs(event.updatedAt);
   const uiSeverity = uiSeverityFromScore(event.severity);
   return {
     ...event,
@@ -186,9 +187,9 @@ export function toLegacyEvent(event) {
     location: event.locationName || event.countryName || "Unknown location",
     occurredAt,
     updatedAt,
-    firstReportedAt: event.sourcePublishedAt ? new Date(event.sourcePublishedAt).getTime() : occurredAt,
-    ingestedAt: event.ingestedAt ? new Date(event.ingestedAt).getTime() : updatedAt,
-    lastVerifiedAt: event.lastVerifiedAt ? new Date(event.lastVerifiedAt).getTime() : updatedAt,
+    firstReportedAt: timestampMs(event.sourcePublishedAt),
+    ingestedAt: timestampMs(event.ingestedAt),
+    lastVerifiedAt: timestampMs(event.lastVerifiedAt),
     summary: event.description || "",
     source: event.sourceName,
     providerName: event.sourceName,

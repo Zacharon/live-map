@@ -1,15 +1,8 @@
+import { safeSourceUrl as safeUrl } from "../sources/source-url.js";
 import { escapeHtml, relativeTime } from "../events/event-normalizer.js";
 
 const STATUS_ORDER = { closed: 0, "severely-disrupted": 1, disrupted: 2, watch: 3, unknown: 4, normal: 5 };
 
-function safeUrl(value) {
-  try {
-    const url = new URL(value);
-    return ["http:", "https:"].includes(url.protocol) ? url.href : null;
-  } catch {
-    return null;
-  }
-}
 
 function assessmentFor(id, assessments) {
   return assessments.find((item) => item.chokepointId === id) || { status: "unknown", confidence: 0, activeEventCount: 0, updatedAt: null, explanation: "No assessment available.", operationalDimensions: [], topEvents: [], caveats: [] };

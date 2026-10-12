@@ -25,5 +25,8 @@ jobs:
       - name: Run syntax and route export checks
         run: npm run check
 
+      - name: Run platform and source-boundary regressions
+        run: npm run test:platform && npm run test:audit-repair
+
       - name: Run Live Map validator
         run: npm run validate

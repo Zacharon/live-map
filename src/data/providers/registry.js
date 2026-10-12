@@ -10,7 +10,7 @@ export const EVENT_PROVIDERS = [
     id: "usgs",
     name: "USGS Earthquake Hazards Program",
     description: "Official earthquake GeoJSON feed from the United States Geological Survey.",
-    homepageUrl: "https://earthquake.usgs.gov/earthquakes/feed/",
+    homepageUrl: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php",
     attribution: "USGS Earthquake Hazards Program",
     enabled: true,
     categories: ["earthquake"],

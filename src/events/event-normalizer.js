@@ -1,6 +1,8 @@
 import { CATEGORIES, SEVERITIES } from "../config.js";
 import { computeQualityDimensions } from "./event-quality.js";
 import { classifyEvent } from "./taxonomy.js";
+import { safeSourceUrl } from "../sources/source-url.js";
+import { timestampMs, confidenceValue } from "./event-values.js";
 
 export function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
@@ -14,22 +16,11 @@ export function safeSeverity(severity) {
   return SEVERITIES[severity] ? severity : "low";
 }
 
-function timestampMs(...values) {
-  for (const value of values) {
-    if (value === null || value === undefined || value === "") continue;
-    const numeric = Number(value);
-    if (Number.isFinite(numeric)) return numeric;
-    const parsed = new Date(value).getTime();
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return Date.now();
-}
-
 export function normalizeEvent(event) {
   const sourceName = event.sourceName || event.source || event.providerName || "Unknown source";
   const severityKey = event.uiSeverity || event.severityLabel || event.severity;
   const occurredAt = timestampMs(event.occurredAt, event.startedAt, event.sourcePublishedAt);
-  const updatedAt = timestampMs(event.updatedAt, event.updatedAtIso, event.startedAt, occurredAt);
+  const updatedAt = timestampMs(event.updatedAt, event.updatedAtIso);
   const taxonomy = classifyEvent(event);
   const normalized = {
     ...event,
@@ -52,7 +43,9 @@ export function normalizeEvent(event) {
     geographic: event.geographic === false ? false : Number.isFinite(Number(event.lat ?? event.latitude)) && Number.isFinite(Number(event.lon ?? event.longitude)),
     mapDisplayStatus: event.mapDisplayStatus || (event.geographic === false ? "not-mapped" : "mapped"),
     nonGeographicReason: event.nonGeographicReason || null,
-    confidence: Number(event.confidence || 80),
+    confidence: confidenceValue(event.confidence),
+    sourceUrl: safeSourceUrl(event.sourceUrl),
+    providerUrl: safeSourceUrl(event.providerUrl),
     source: sourceName,
     sourceName,
     sourceType: event.sourceType || "Unknown",
@@ -74,7 +67,9 @@ export function normalizeEvent(event) {
 }
 
 export function relativeTime(timestamp, now = Date.now()) {
-  const delta = Math.max(0, now - Number(timestamp));
+  const value = timestampMs(timestamp);
+  if (value === null) return "Unknown time";
+  const delta = Math.max(0, now - value);
   const minutes = Math.floor(delta / 60000);
   const hours = Math.floor(minutes / 60);
   if (minutes < 1) return "just now";
@@ -84,5 +79,6 @@ export function relativeTime(timestamp, now = Date.now()) {
 }
 
 export function exactTime(timestamp) {
-  return new Date(timestamp).toLocaleString([], { dateStyle: "medium", timeStyle: "long" });
+  const value = timestampMs(timestamp);
+  return value === null ? "Unknown time" : new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "long" });
 }
