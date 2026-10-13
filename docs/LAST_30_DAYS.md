@@ -1,6 +1,6 @@
 # Last 30 Days
 
-Last updated: 2026-07-15.
+Last updated: 2026-10-12.
 
 ## Merged Recently
 
@@ -37,3 +37,7 @@ PR #36 passed GitHub checks: `cloudflare-validation`, `validate`, browser secret
 # 2026-07-15 - Open News and Social Signal Fusion v1
 
 Added metadata-only source observations, source-organization-aware storylines, and configuration-gated open news/social provider boundaries. Latest Intelligence separates trend velocity from verification and displays coverage gaps.
+
+# 2026-10-12 — bounded repository audit repair candidate
+
+Separate branch `fix/audit-20261012-live-map` repairs source URL safety, nullable zero/unknown confidence and source clocks with ingestion kept separate, obsolete USGS documentation references, and enforceable local/CI regressions. CodeQL's unchanged supported job now fails on analysis errors. Existing main/canonical installations and release/hosted/provider gates remain separate. See [candidate editing guide](AUDIT_REPAIR_2026-10-12.md). Independent review and hosted CI are tracked in the external repair receipt, not assumed from local tests.

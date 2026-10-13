@@ -1,3 +1,4 @@
+import { timestampMs, confidenceValue } from "./event-values.js";
 import { SEVERITIES } from "../config.js";
 import { relativeTime } from "./event-normalizer.js";
 
@@ -35,7 +36,7 @@ function stableTie(a, b) {
 }
 
 function timestamp(event, key) {
-  return Number(event[key] || 0);
+  return timestampMs(event[key]) ?? -Infinity;
 }
 
 export function sortEvents(events, sortBy = "highest-severity") {
@@ -45,13 +46,15 @@ export function sortEvents(events, sortBy = "highest-severity") {
     else if (sortBy === "newest-occurred") result = timestamp(b, "occurredAt") - timestamp(a, "occurredAt");
     else if (sortBy === "recently-updated") result = timestamp(b, "updatedAt") - timestamp(a, "updatedAt");
     else if (sortBy === "highest-severity") result = Number(b.severityScore || SEVERITIES[b.severity]?.score || 0) - Number(a.severityScore || SEVERITIES[a.severity]?.score || 0);
-    else if (sortBy === "highest-confidence") result = Number(b.confidence || 0) - Number(a.confidence || 0);
+    else if (sortBy === "highest-confidence") result = (confidenceValue(b.confidence) ?? -1) - (confidenceValue(a.confidence) ?? -1);
     else if (sortBy === "most-corroborated") result = Number(b.corroborationScore || 0) - Number(a.corroborationScore || 0);
     else if (sortBy === "highest-impact") result = Number(b.impactScore || 0) - Number(a.impactScore || 0);
-    else if (sortBy === "source-freshness") result = Number(b.freshnessScore || 0) - Number(a.freshnessScore || 0);
+    else if (sortBy === "source-freshness") result = (b.freshnessScore ?? -1) - (a.freshnessScore ?? -1);
     else if (sortBy === "country") result = String(a.country || "").localeCompare(String(b.country || ""));
     else if (sortBy === "distance") result = Number(a.distanceKm || 999999) - Number(b.distanceKm || 999999);
-    if (result === 0) result = timestamp(b, "occurredAt") - timestamp(a, "occurredAt");
+    if (!Number.isFinite(result) && !Number.isNaN(result)) return result;
+    if (Number.isNaN(result)) result = 0;
+    if (result === 0) result = (timestamp(b, "occurredAt") === timestamp(a, "occurredAt")) ? 0 : timestamp(b, "occurredAt") - timestamp(a, "occurredAt");
     if (result === 0) result = stableTie(a, b);
     return result;
   });
@@ -68,6 +71,7 @@ function keyFor(event, groupBy) {
   if (groupBy === "provider") return [event.provider || event.sourceName || "unknown", event.sourceName || event.provider || "Unknown provider"];
   if (groupBy === "record-kind") return [event.recordKind || "event", (event.recordKind || "event").replace(/-/g, " ")];
   if (groupBy === "incident") return [event.incidentId || "unclustered", event.incidentTitle || "Unclustered events"];
+  if ((groupBy === "hour" || groupBy === "day") && timestampMs(event.occurredAt) === null) return ["unknown-time", "Unknown time"];
   if (groupBy === "hour") {
     const date = new Date(event.occurredAt);
     date.setMinutes(0, 0, 0);
@@ -93,13 +97,14 @@ export function groupEvents(events, groupBy = "none", providerWarnings = {}) {
 }
 
 export function groupStats(events, providerWarnings = {}) {
-  const newest = Math.max(...events.map((event) => Number(event.updatedAt || event.occurredAt || 0)), 0);
+  const updates = events.map((event) => timestampMs(event.updatedAt)).filter((value) => value !== null);
+  const newest = updates.length ? Math.max(...updates) : null;
   const providerWarning = events.some((event) => providerWarnings[event.provider]?.ok === false || providerWarnings[event.provider]?.stale);
   return {
     total: events.length,
     highCount: events.filter((event) => ["critical", "high"].includes(event.severity)).length,
     newCount: events.filter((event) => Date.now() - Number(event.firstReportedAt || event.occurredAt) < 3600000).length,
-    newestUpdate: newest ? relativeTime(newest) : "unknown",
+    newestUpdate: newest === null ? "unknown" : relativeTime(newest),
     providerWarning,
   };
 }

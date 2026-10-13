@@ -18,7 +18,7 @@ export function normalizeStatuspageIncident(incident = {}, page = {}, now = new 
   const status = String(incident.status || "investigating").toLowerCase();
   const impact = String(incident.impact || "none").toLowerCase();
   if (!incident.id || status === "resolved" || impact === "none" || status === "scheduled") return { event: null, errors: [] };
-  const updatedAt = incident.updated_at || incident.created_at || now;
+  const updatedAt = incident.updated_at ?? null;
   const result = createNormalizedEvent({
     id: `statuspage:${page.id}:${incident.id}`,
     provider: "statuspage",
@@ -32,7 +32,7 @@ export function normalizeStatuspageIncident(incident = {}, page = {}, now = new 
     geographic: false,
     mapDisplayStatus: "not-mapped",
     nonGeographicReason: "Statuspage incidents describe service availability, not verified physical locations.",
-    startedAt: incident.created_at || now,
+    startedAt: incident.created_at ?? null,
     updatedAt,
     ingestedAt: now,
     severity: impactSeverity(impact),
@@ -43,7 +43,7 @@ export function normalizeStatuspageIncident(incident = {}, page = {}, now = new 
     sourceType: "Official status page",
     sourceTier: "tier-1-primary-official",
     publisher: page.name,
-    sourcePublishedAt: incident.created_at || updatedAt,
+    sourcePublishedAt: incident.created_at ?? null,
     verification: {
       state: "primary-confirmed",
       evidenceLevel: "official-statuspage-incident",
@@ -75,7 +75,7 @@ function normalizeSlackCurrent(payload = {}, page = {}, now = new Date()) {
       status: incident.status || "investigating",
       impact: incident.type || "minor",
       created_at: incident.date_created,
-      updated_at: incident.date_updated || incident.date_created,
+      updated_at: incident.date_updated ?? null,
       shortlink: page.homepageUrl,
       incident_updates: [{ body: incident.notes || incident.title || "" }],
     }, page, now)

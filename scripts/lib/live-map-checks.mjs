@@ -1,3 +1,4 @@
+import { safeSourceUrl } from "../../src/sources/source-url.js";
 import { execFile } from "node:child_process";
 import { promises as fs } from "node:fs";
 import path from "node:path";
@@ -116,13 +117,7 @@ export async function scanBrowserSecrets(root, reporter) {
 }
 
 export function assertValidUrl(value) {
-  if (!value || typeof value !== "string") return false;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:";
-  } catch {
-    return false;
-  }
+  return safeSourceUrl(value) !== null;
 }
 
 export function validateEventPayload(payload, reporter, options = {}) {

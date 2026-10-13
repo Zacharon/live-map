@@ -30,7 +30,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
     licensingStatus: "open-public-data",
     refreshInterval: "120 seconds",
     geographicCoverage: "Global earthquake feed.",
-    sourceUrl: "https://earthquake.usgs.gov/earthquakes/feed/",
+    sourceUrl: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php",
     documentationUrl: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php",
     attribution: "USGS Earthquake Hazards Program",
     limitations: "Provider timing and magnitudes may be revised.",

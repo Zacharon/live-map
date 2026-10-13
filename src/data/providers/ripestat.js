@@ -30,7 +30,7 @@ export function normalizeRipestatObservation(resource, payload = {}, now = new D
     resource,
     visibility,
     rpkiStatus,
-    observedAt: payload.time || now.toISOString(),
+    observedAt: payload.time || null,
     sourceUrl: `https://stat.ripe.net/${resource}`,
   };
   const classification = classifyRipestatObservation(observation);

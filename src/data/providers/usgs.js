@@ -42,7 +42,7 @@ export function normalizeUsgsFeature(feature, now = new Date()) {
     confidence: reviewed ? 96 : 88,
     status: "active",
     sourceName: "USGS Earthquake Hazards Program",
-    sourceUrl: properties.url || "https://earthquake.usgs.gov/earthquakes/feed/",
+    sourceUrl: properties.url || "https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php",
     sourceType: "Official",
     sourcePublishedAt: properties.time,
     geometry: feature.geometry || null,

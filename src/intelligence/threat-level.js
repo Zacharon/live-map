@@ -1,3 +1,4 @@
+import { confidenceValue } from "../events/event-values.js";
 /**
  * OSINT Forge Threat Level v0 — explainable local heuristic.
  * Uses only existing normalized event fields. No network. No AI.
@@ -171,8 +172,8 @@ export function computeThreatLevel(event, opts = {}) {
     reasons.push(`Part of a ${clusterSize}-event cluster`);
   }
 
-  const confidence = Number(event.confidence);
-  if (Number.isFinite(confidence)) {
+  const confidence = confidenceValue(event.confidence);
+  if (confidence !== null) {
     if (confidence >= 80) {
       score += 3;
       reasons.push(`Higher record confidence (${Math.round(confidence)}%)`);

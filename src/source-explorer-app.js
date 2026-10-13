@@ -1,3 +1,4 @@
+import { sourceLink } from "./sources/source-url.js";
 import { DOMAIN_LABELS, IMPLEMENTATION_STATUSES, MASTER_SOURCE_REGISTRY, SOURCE_ACCESS_CLASSIFICATIONS, SOURCE_DOMAINS, SOURCE_QUALITY_TIERS, filterSources, sourceById, sourceRegistryStats } from "./sources/master-source-registry.js";
 import { escapeHtml, relativeTime } from "./events/event-normalizer.js";
 import { allowedParam, safeSearchParams, textParam, tokenParam } from "./url-params.js";
@@ -163,9 +164,9 @@ function renderDetail(sourceRecord) {
       ${row("Notes", sourceRecord.notes)}
     </dl>
     <div class="source-actions">
-      <a href="${escapeHtml(sourceRecord.sourceUrl)}" target="_blank" rel="noopener noreferrer">Source</a>
-      <a href="${escapeHtml(sourceRecord.docsUrl || sourceRecord.sourceUrl)}" target="_blank" rel="noopener noreferrer">Docs</a>
-      <a href="${escapeHtml(sourceRecord.termsUrl || sourceRecord.sourceUrl)}" target="_blank" rel="noopener noreferrer">Terms</a>
+      ${sourceLink(sourceRecord.sourceUrl, "Source")}
+      ${sourceLink(sourceRecord.docsUrl ?? sourceRecord.sourceUrl, "Docs")}
+      ${sourceLink(sourceRecord.termsUrl ?? sourceRecord.sourceUrl, "Terms")}
     </div>
   `;
 }

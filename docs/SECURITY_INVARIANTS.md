@@ -29,7 +29,7 @@ These rules capture the current security baseline, including PR #36.
 ## Frontend Exposure
 
 - Browser JS/HTML must not include provider credentials or private auth emails.
-- Links from provider data must be escaped. Backlog item: enforce `http:`/`https:` scheme allowlisting before rendering provider-controlled source links.
+- Provider-controlled external links must pass the shared absolute HTTP(S), no-credentials boundary at ingestion and rendering; rejected or missing destinations render unavailable text. Escape HTML and attributes after validation. See `src/sources/source-url.js` and `tests/audit-repair-tests.mjs`.
 - Netlify assets have CSP/security headers in `netlify.toml`. Backlog item: add equivalent headers around Cloudflare `env.ASSETS.fetch()` responses.
 
 ## Provider Fetch Safety

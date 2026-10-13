@@ -1,3 +1,5 @@
+import { sourceLink } from "../../sources/source-url.js";
+import { confidenceText, timestampMs } from "../../events/event-values.js";
 import { CATEGORIES, SEVERITIES } from "../../config.js";
 import { escapeHtml, exactTime, relativeTime } from "../../events/event-normalizer.js";
 import { renderEventArtifactSection, renderClusterArtifactSection } from "./event-artifact-card.js";
@@ -19,7 +21,9 @@ function whyShownCopy(event, changeStatus, connections) {
   } else if (connections?.relatedEvents?.length) {
     bits.push(`${connections.relatedEvents.length} related event(s) share place, time, provider, or category.`);
   } else {
-    bits.push("Included because it matches active filters and time window.");
+    bits.push(timestampMs(event.occurredAt) === null
+      ? "Source occurrence time is unknown; this record does not establish recency."
+      : "Included because it matches active filters and time window.");
   }
   if (event?.geographic === false) bits.push("Non-geographic record — listed without a map pin.");
   else if (!(Number.isFinite(event?.lat) && Number.isFinite(event?.lon))) bits.push("Coordinates missing or incomplete.");
@@ -104,14 +108,10 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
   const severityColor = SEVERITIES[event.severity]?.color || SEVERITIES.low.color;
   const categoryColor = event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color;
   const location = event.geographic === false ? "No map location" : event.place || event.country || "Location pending";
-  const confidence = Number.isFinite(event.confidence) ? `${Math.round(event.confidence)}%` : "Not scored";
+  const confidence = confidenceText(event.confidence);
   const sourceBadge = event.sourceName || event.provider || "Unknown source";
-  const sourceLink = event.sourceUrl
-    ? `<a class="v2-detail-link" href="${escapeHtml(event.sourceUrl)}" target="_blank" rel="noopener noreferrer">Open source</a>`
-    : `<span class="v2-detail-link secondary v2-detail-link-disabled" title="No source URL on this record">No source URL</span>`;
-  const providerLink = event.providerUrl
-    ? `<a class="v2-detail-link secondary" href="${escapeHtml(event.providerUrl)}" target="_blank" rel="noopener noreferrer">Provider info</a>`
-    : "";
+  const sourceAction = sourceLink(event.sourceUrl, "Open source", "v2-detail-link");
+  const providerLink = sourceLink(event.providerUrl, "Provider info", "v2-detail-link secondary");
   const mapLink = Number.isFinite(event.lat) && Number.isFinite(event.lon)
     ? `<a class="v2-detail-link secondary" href="https://www.openstreetmap.org/?mlat=${event.lat}&mlon=${event.lon}#map=7/${event.lat}/${event.lon}" target="_blank" rel="noopener noreferrer">Coordinates</a>`
     : `<span class="v2-detail-link secondary v2-detail-link-disabled" title="Coordinates unavailable">No coordinates</span>`;
@@ -139,14 +139,14 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
     <dl class="v2-detail-facts">
       <div><dt>Location</dt><dd>${escapeHtml(location)}</dd></div>
       <div><dt>Occurred</dt><dd>${escapeHtml(exactTime(event.occurredAt))}</dd></div>
-      <div><dt>Updated</dt><dd>${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</dd></div>
+      <div><dt>Updated</dt><dd>${escapeHtml(relativeTime(event.updatedAt))}</dd></div>
       <div><dt>Source</dt><dd>${escapeHtml(event.sourceName || "Unknown")}</dd></div>
       <div><dt>Verification</dt><dd>${escapeHtml(event.verificationStatus || "Reported")}</dd></div>
       <div><dt>Type</dt><dd>${escapeHtml(event.typeLabel || event.category || "—")}</dd></div>
       <div><dt>Domain</dt><dd>${escapeHtml(event.domainLabel || event.domain || "—")}</dd></div>
       <div><dt>Provider</dt><dd>${escapeHtml(event.provider || event.providerName || "—")}</dd></div>
     </dl>
-    <div class="v2-detail-actions">${sourceLink}${providerLink}${mapLink}<button type="button" class="v2-detail-link secondary" data-v2-clear-selection>Clear selection</button></div>
+    <div class="v2-detail-actions">${sourceAction}${providerLink}${mapLink}<button type="button" class="v2-detail-link secondary" data-v2-clear-selection>Clear selection</button></div>
     ${renderConnectionsPanel(connections)}
     ${renderEventArtifactSection(event, { allEvents, clusters, changeStatus })}
   </aside>`;
