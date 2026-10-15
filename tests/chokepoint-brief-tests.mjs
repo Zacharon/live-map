@@ -1,0 +1,20 @@
+import assert from "node:assert/strict";
+import { STRATEGIC_CHOKEPOINTS } from "../src/data/strategic-chokepoints.js";
+import { indexItemsByChokepoint, renderChokepointBriefList } from "../src/ui/chokepoint-brief.js";
+import { createGenuineHormuzCase } from "../src/intelligence/portwatch-frozen-sample.js";
+import { loadFrozenExtract } from "../scripts/load-frozen-extract.mjs";
+
+const loaded = loadFrozenExtract();
+const genuine = createGenuineHormuzCase({ json: loaded.json, sha256: loaded.sha256 });
+const index = indexItemsByChokepoint(STRATEGIC_CHOKEPOINTS, [], [], genuine.evidence, { start: Date.parse("2025-01-01"), end: Date.parse("2025-01-08") });
+const hormuz = index.get("strait-of-hormuz");
+assert.ok(hormuz.observations.length >= 7);
+const html = renderChokepointBriefList(STRATEGIC_CHOKEPOINTS.filter((item) => item.id === "strait-of-hormuz" || item.id === "suez-canal"), [], index, "strait-of-hormuz", { expandedId: "strait-of-hormuz" });
+assert.match(html, /Historical observations available/);
+assert.match(html, /2025-01-07/);
+assert.match(html, />63</);
+assert.match(html, /not 7 incidents|One historical series/);
+assert.match(html, /Suez Canal/);
+assert.match(html, /No matching records in loaded sources/);
+assert.doesNotMatch(html, /\bSafe\b|\bNormal operations\b/);
+console.log("chokepoint-brief-tests: ok");

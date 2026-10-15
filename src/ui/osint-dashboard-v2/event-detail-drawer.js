@@ -66,7 +66,7 @@ export function renderClusterDetailDrawer(cluster, { allEvents = [] } = {}) {
       <h2 class="v2-detail-title">Related cluster</h2>
     </div>
     <p class="v2-detail-summary">${escapeHtml(cluster.attentionLabel)} — ${escapeHtml(cluster.locationLabel)} across ${cluster.sourceCount} source${cluster.sourceCount === 1 ? "" : "s"}.</p>
-    ${renderThreatExplain(threat)}
+    <details class="detail-extra"><summary>Heuristic context</summary>${renderThreatExplain(threat)}</details>
     ${mapNote}
     <div class="v2-detail-actions"><button type="button" class="v2-detail-link secondary" data-v2-clear-selection>Clear selection</button></div>
     <dl class="v2-detail-facts">
@@ -118,6 +118,7 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
   const why = whyShownCopy(event, changeStatus, connections);
 
   return `<aside class="v2-event-detail" aria-label="Event details">
+    <button class="inspector-back" type="button" data-v2-close-detail>← Back to developments</button>
     <div class="v2-detail-head">
       <button type="button" class="v2-detail-close" data-v2-close-detail aria-label="Close details">×</button>
       <div class="v2-detail-badges">
@@ -131,15 +132,21 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
       <h2 class="v2-detail-title">${escapeHtml(event.title)}</h2>
     </div>
     <p class="v2-detail-summary">${escapeHtml(event.summary || "No summary available.")}</p>
-    ${renderThreatExplain(threat)}
+    <details class="detail-extra"><summary>Heuristic context</summary>${renderThreatExplain(threat)}</details>
     <div class="v2-why-shown">
       <div class="v2-section-title"><span>Why am I seeing this?</span></div>
       <p class="v2-empty">${escapeHtml(why)}</p>
     </div>
     <dl class="v2-detail-facts">
       <div><dt>Location</dt><dd>${escapeHtml(location)}</dd></div>
+      <div><dt>Geographic precision</dt><dd>${escapeHtml(event.coordinateMethod || event.locationPrecision || 'Not supplied — do not infer street-level accuracy')}</dd></div>
+      <div><dt>Reported</dt><dd>${event.firstReportedAt || event.sourcePublishedAt ? escapeHtml(exactTime(event.firstReportedAt || event.sourcePublishedAt)) : 'Not supplied'}</dd></div>
+      <div><dt>Retrieved</dt><dd>${event.fetchedAt || event.retrievedAt ? escapeHtml(exactTime(event.fetchedAt || event.retrievedAt)) : 'Not supplied'}</dd></div>
       <div><dt>Occurred</dt><dd>${escapeHtml(exactTime(event.occurredAt))}</dd></div>
-      <div><dt>Updated</dt><dd>${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</dd></div>
+      <div><dt>Updated</dt><dd>${escapeHtml(relativeTime(event.updatedAt))}</dd></div>
+      <div><dt>Verified at</dt><dd>${escapeHtml(exactTime(event.lastVerifiedAt))}</dd></div>
+      <div><dt>Independent sources</dt><dd>${escapeHtml(event.independentSourceCount ?? 'Not established')}</dd></div>
+      <div><dt>Impact</dt><dd>${Number.isFinite(event.impactScore) ? `${event.impactScore}/100 · supplied assessment` : 'Not assessed'}</dd></div>
       <div><dt>Source</dt><dd>${escapeHtml(event.sourceName || "Unknown")}</dd></div>
       <div><dt>Verification</dt><dd>${escapeHtml(event.verificationStatus || "Reported")}</dd></div>
       <div><dt>Type</dt><dd>${escapeHtml(event.typeLabel || event.category || "—")}</dd></div>
@@ -147,7 +154,7 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
       <div><dt>Provider</dt><dd>${escapeHtml(event.provider || event.providerName || "—")}</dd></div>
     </dl>
     <div class="v2-detail-actions">${sourceLink}${providerLink}${mapLink}<button type="button" class="v2-detail-link secondary" data-v2-clear-selection>Clear selection</button></div>
-    ${renderConnectionsPanel(connections)}
-    ${renderEventArtifactSection(event, { allEvents, clusters, changeStatus })}
+    <details class="detail-extra"><summary>Related reports · heuristic links</summary>${renderConnectionsPanel(connections)}</details>
+    <details class="detail-extra"><summary>Export source snapshot</summary>${renderEventArtifactSection(event, { allEvents, clusters, changeStatus })}</details>
   </aside>`;
 }

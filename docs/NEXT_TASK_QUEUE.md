@@ -2,13 +2,66 @@
 
 Small, agent-ready tasks only. Do not turn these into broad refactors.
 
+## Audit repairs completed locally (2026-09-30)
+
+- The authorized selective refactor is documented in [AUDIT_REFACTOR_2026-09-30.md](AUDIT_REFACTOR_2026-09-30.md). Existing queues and release gates continue to apply.
+- Remaining bounded engineering candidates: explicit unknown severity across taxonomy/filter/risk consumers; Cesium screen-space decluttering; finer controller ownership and retirement of legacy CSS/compatibility routes after measured acceptance. No framework migration is required by these repairs.
+- Review the Watch workspace visually against #61 human acceptance. Production Cesium CSP and native PostgreSQL/restore evidence remain open; local audit repair evidence does not close those gates.
+
+## Durable ingestion candidate — local only
+
+- Review [the USGS local slice](DURABLE_INGESTION_LOCAL.md). Next bounded validation is running the prepared native PostgreSQL/PostGIS concurrency and restore harness against two empty, disposable loopback `live_map_test_*` databases. The server and CLI tools are absent on this host, so this is NOT RUN. Then verify connection/role limits and exact Worker/Netlify route behavior. The migration and flags remain off; no collection or hosted switch is authorized by this queue entry.
+- Before enabling a recurring USGS job, settle source policy and legal retention review, configure Cron/Queue/Hyperdrive with retry and dead-letter behavior, and complete H3 after native concurrency/restore evidence. Current independent H3 is PARTIAL for that missing native proof. Identity, R2, other providers, and notification delivery remain separate follow-ons.
+
+## Current local Watch Desk follow-on (2026-09-29)
+
+- Screen-space decluttering and bounded aircraft/vessel inspection on the existing 3D globe. Start from [the Watch Desk run](WATCH_DESK_2026-09-29.md), preserving the current feed-to-globe selection, camera, URL, and evidence state. Use only already fetched or approved observations; verify world/regional/local density, mobile layout, source/time labels, and repeated mode switches. #61 owner acceptance and production globe productization remain separate.
+- #59 is a recorded product decision, not completed code. After the visual follow-on, implement versioned meaningful-change snapshots and source-organization-aware suppression in the operator UI. No browser push or public-map promotion.
+
 ## Context Updates
+
+- Completed locally (2026-09-13): progressive event severity thresholds on the shared attention selector; see `PROGRESSIVE_ZOOM_DETAIL.md`. Next bounded density candidate: screen-space decluttering for overlapping high-severity markers while retaining inspectability and the current provider contracts. Not implemented in this slice.
 
 - In review: Strategic chokepoints v1 on `feature/strategic-chokepoints-event-intelligence-v1`. Keep follow-on provider work separate from the local registry and do not label a source live without the source-registry contract.
 - Completed: PR #37 created the ICM memory pack and made `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/LAST_30_DAYS.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY_INVARIANTS.md`, and this queue the first-read context for future agents.
 - In progress: Future feature structure and feature-flag documentation on branch `feature/future-feature-structure`. Keep it docs/structure-only: no runtime imports, no fake UI, no unfinished feature activation.
 
+## Upstream feature transfer
+
+- Contact interactions and heading helper integrated from/inspired by God's Eye View; see `GODS_EYE_VIEW_REUSE.md`. Next bounded candidates are dated satellite orbital elements and launch timelines, each with source review and an explicit separate implementation task. Keep current Leaflet and provider-access boundaries.
+
 ## P0
+
+### Human review of the genuine Hormuz draft (unchanged)
+
+- Goal: owner reviews `artifacts/hormuz-portwatch-2025-01/drafts/genuine-assessment.md` (regenerate with `node scripts/replay-hormuz-frozen-sample.mjs`). Do not treat test-only approvals as human review. Provider stays off.
+- Touch first: `docs/EVIDENCE_TO_ASSESSMENT_WORKBENCH.md`, frozen extract provenance.
+- Test: none until the owner records an explicit review.
+
+### Re-run isolated browser acceptance of 2D/3D inspector + Investigate
+
+- 2026-09-25: local Cesium 1.145 renders on the preview (`artifacts/watchdesk-3d-2026-09-25/result.json`). Production `netlify.toml` still omits `'unsafe-eval'`, so deployed 3D is not claimed. The 2026-09-15 full-globe rows for density, wind, and recovery steps were not re-closed.
+- Next: approved feed activation and one energy-context series. Do not enable providers from this note. Do not overwrite `artifacts/evidence-globe-runtime/2026-09-15T-runtime`.
+
+
+### Vendor Cesium 1.145 locally and capture globe screenshots
+
+- Goal: copy Apache-2.0 Cesium Build (workers, widgets, Natural Earth II) into `vendor/cesium/` without an ion token, then verify imagery in the local preview.
+- Touch first: `src/map/cesium-adapter.js`, `scripts/preview-foundation.mjs`, `docs/EVIDENCE_SEMANTIC_GLOBE.md`.
+- Test: `node tests/semantic-globe-weather-tests.mjs`; browser 2D/3D/Auto + WebGL-loss fallback.
+
+### Bounded GFS subset once wgrib2 or a Windows-safe decoder exists
+
+- Goal: replace the compact-field decoder fixture with a real recorded 10 m U/V subset.
+- Touch first: `scripts/prepare-gfs-wind-sample.mjs`.
+- Test: recorded field separate from synthetic; no full-archive download.
+
+### Complete hosting parity for the redesigned map
+
+- Local foundation implemented on `codex/zoom-aware-map-foundation`; see `docs/ZOOM_AWARE_MAP_FOUNDATION.md`.
+- Next: fixture-test Cloudflare country, risk and bounded moving-object routes plus `/countries` and `/diagnostics` aliases; preserve structured unknown-API 404 and Netlify direct routes. Add equivalent asset security headers and public asset allowlisting.
+- Measure Worker CPU/subrequests and durable provider quota strategy before a migration. Do not deploy or activate sources without an explicit next instruction.
+- Finish browser stress/frame/heap and keyboard focus testing before claiming the entire attached milestone complete.
 
 ### Add governed official chokepoint notice adapters
 

@@ -49,13 +49,15 @@ export async function openskyAccessToken(fetchImpl = fetch, now = Date.now()) {
 
 export function normalizeOpenSkyState(row = [], now = Date.now()) {
   const [icao24, callsign, originCountry, timePosition, lastContact, longitude, latitude, baroAltitude, onGround, velocity, trueTrack, verticalRate, sensors, geoAltitude, squawk, spi, positionSource, aircraftCategory] = row;
-  const observedSeconds = Number(timePosition || lastContact || 0);
+  if(timePosition==null || !Number.isFinite(Number(timePosition)) || Number(timePosition)<=0) return {object:null,errors:['missing position timestamp']};
+  const observedSeconds = Number(timePosition);
   const observedAt = observedSeconds ? observedSeconds * 1000 : now;
   return normalizeMovingObject({
     id: `aircraft:${icao24}`,
     objectType: "aircraft",
     providerId: "opensky",
     observedAt,
+    lastContactAt: lastContact ? Number(lastContact)*1000 : null,
     receivedAt: now,
     latitude,
     longitude,
