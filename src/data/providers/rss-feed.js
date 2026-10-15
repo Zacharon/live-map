@@ -144,7 +144,7 @@ export function normalizeFeedItem(item, feed, now = new Date()) {
 
 export async function fetchOfficialFeedEvents(context = {}) {
   const flag = PROVIDER_ENABLE_FLAGS[context.provider?.id];
-  if (flag && String(globalThis?.process?.env?.[flag] || "").toLowerCase() !== "true") {
+  if (flag && String((context.env ?? globalThis?.process?.env ?? {})[flag] || "").toLowerCase() !== "true") {
     return {
       events: [],
       rejected: [],

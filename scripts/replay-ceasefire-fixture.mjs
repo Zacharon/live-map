@@ -1,0 +1,17 @@
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {createCeasefireCase} from '../src/data/fixtures/synthetic-ceasefire-scenario.js';
+import {parseCaseFile,serializeCase} from '../src/intelligence/case-io.js';
+import {draftOperationalAssessment} from '../src/intelligence/investigation-cycle.js';
+import {ceasefireMarkdown} from '../src/ui/ceasefire-assessment.js';
+const input=process.argv[2];
+const parsed=parseCaseFile(input?await readFile(input,'utf8'):serializeCase(createCeasefireCase()));
+if(!parsed.ok) throw new Error(parsed.errors.join('; '));
+if(parsed.caseObject.caseType!=='ceasefire-v1') throw new Error('Expected synthetic ceasefire case');
+const {assessment,operational}=draftOperationalAssessment(parsed.caseObject);
+const c={...parsed.caseObject,assessments:[assessment],lastOperational:operational};
+const out='artifacts/ceasefire-20261012';
+await mkdir(out,{recursive:true});
+await writeFile(`${out}/case.json`,serializeCase(c));
+await writeFile(`${out}/assessment.json`,JSON.stringify(operational.ceasefire,null,2));
+await writeFile(`${out}/assessment.md`,ceasefireMarkdown(operational.ceasefire));
+console.log(JSON.stringify({caseId:c.id,mode:'SYNTHETIC',announcement:operational.ceasefire.announcement,parties:operational.ceasefire.parties,output:out},null,2));

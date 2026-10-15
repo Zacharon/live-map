@@ -1,7 +1,7 @@
 const REVIEWED_AT = "2026-07-15";
 
 export const CHOKEPOINT_TYPES = ["strait", "canal", "sea-lane", "maritime-region", "port-approach", "arctic-route", "strategic-region"];
-export const CHOKEPOINT_STATUSES = ["normal", "watch", "disrupted", "severely-disrupted", "closed", "unknown"];
+export const CHOKEPOINT_STATUSES = ["normal", "watch", "restricted", "disrupted", "severely-disrupted", "closed", "recovering", "unknown"];
 
 const SOURCE_LINKS = [
   { label: "International Hydrographic Organization", url: "https://iho.int/" },
