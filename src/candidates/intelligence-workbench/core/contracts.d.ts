@@ -1,0 +1,9 @@
+/** Proposed contract boundary. External input still requires runtime validation. */
+export type DomainReference = { source: string; kind: 'event' | 'contact' | 'institution' | 'document'; id: string };
+export type Height = { value: number | null; unit: 'm' | 'km' | 'ft' | 'unknown'; quantity: 'geometric' | 'barometric' | 'above-ground' | 'calculated' | 'unknown'; reference: string; uncertaintyMeters: number | null };
+export type Position = { valid: boolean; latitude: number | null; longitude: number | null; horizontalReference: 'WGS84' | 'unknown'; uncertaintyMeters: number | null; height: Height; renderHeightMeters: number | null; heightReason: string };
+export type EvidenceTime = { observedAt: number | null; publishedAt: number | null; receivedAt: number | null; validFrom: number | null; validTo: number | null; calculatedFor: number | null; calculatedAt: number | null };
+export type SourceReference = { name: string; url: string | null; locator: string; version: string; origin: 'synthetic' | 'reported' | 'observed' | 'calculated'; acquisition: string };
+export type EvidenceRecord = { ref: DomainReference; revision: number; layer: string; title: string; position: Position; time: EvidenceTime; source: SourceReference; maxAgeMs: number | null; valueOrigin: string; withdrawn: boolean };
+export type CameraIntent = { lat: number; lon: number; zoom: number; heading: number; pitch: number; pose: null | { position: [number, number, number]; direction: [number, number, number]; up: [number, number, number] } };
+export type Workspace = { version: 1; selected: DomainReference | null; asOf: number; knownAt: number; timeMode: 'known' | 'situation'; layers: Record<string, boolean>; camera: CameraIntent; globeCamera: CameraIntent | null; layout: 'atlas' | 'ledger' | 'systems'; view: 'globe' | 'leaflet'; panel: 'records' | 'evidence' };

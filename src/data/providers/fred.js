@@ -1,13 +1,13 @@
 import { createNormalizedEvent } from "../../events/normalized-event.js";
 import { FRED_SERIES_ALLOWLIST } from "./finance-commodity-config.js";
 import { createSeriesObservation, numericChange } from "./finance-records.js";
+import { finiteNumber } from '../../events/value-semantics.js';
+import { energyTimestamp } from '../../intelligence/energy-state.js';
 
 export const FRED_BASE_URL = "https://api.stlouisfed.org/fred";
 
 function parseFredNumber(value) {
-  if (value === "." || value === null || value === undefined) return null;
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
+  return finiteNumber(value);
 }
 
 export function classifyFredObservation(seriesConfig, observation, previousObservation = null, metadata = {}) {
@@ -41,19 +41,26 @@ export function classifyFredObservation(seriesConfig, observation, previousObser
 
 export function normalizeFredObservation(seriesConfig, observation, previousObservation = null, metadata = {}, now = new Date()) {
   const classification = classifyFredObservation(seriesConfig, observation, previousObservation, metadata);
+  const priceBases={DCOILWTICO:'BENCHMARK',DCOILBRENTEU:'BENCHMARK',GASREGW:'RETAIL'};
+  const energy=priceBases[seriesConfig.id]?{dimension:'RETAIL_WHOLESALE_PRICE',stage:'PRICE',priceBasis:priceBases[seriesConfig.id],
+    commodity:seriesConfig.id==='GASREGW'?'gasoline':'crude-oil',scope:classification.seriesTitle,
+    value:classification.value,units:classification.units,period:classification.observationDate,method:'FRED published series observation'}:null;
   const observationRecord = createSeriesObservation({
+    provider: 'fred',
     domain: "finance-markets",
     category: "macro-economic-indicator",
     type: classification.eventType,
     seriesId: seriesConfig.id,
-    occurredAt: classification.observationDate,
-    publishedAt: classification.publishedAt,
+    occurredAt: energyTimestamp(classification.observationDate)===null?null:classification.observationDate,
+    publishedAt: energyTimestamp(classification.publishedAt)===null?null:classification.publishedAt,
     updatedAt: classification.revisedAt || classification.publishedAt,
     value: classification.value,
     previousValue: classification.previousValue,
     change: classification.absoluteChange,
     changePercent: classification.percentChange,
     units: classification.units,
+    energy,
+    ingestedAt: now.toISOString(),
     sourceName: "Federal Reserve Economic Data (FRED)",
     sourceUrl: classification.sourceUrl,
     geographic: false,
@@ -68,12 +75,13 @@ export function normalizeFredObservation(seriesConfig, observation, previousObse
     category: "finance",
     type: classification.eventType === "macro-revision" ? "economic-revision" : "economic-release",
     subtype: classification.seriesId,
+    energy,
     title: `${classification.seriesTitle}: ${classification.eventType === "macro-revision" ? "revision reported" : "material observation reported"}`,
     description: `FRED published ${classification.seriesId} at ${classification.value ?? "missing"}${classification.units ? ` ${classification.units}` : ""}. Automated threshold interpretation requires analyst review.`,
     geographic: false,
     mapDisplayStatus: "not-mapped",
     nonGeographicReason: "FRED macroeconomic observations are time-series records, not event coordinates.",
-    startedAt: classification.observationDate || now,
+    startedAt: energyTimestamp(classification.observationDate),
     updatedAt: classification.revisedAt || classification.publishedAt || classification.observationDate || now,
     ingestedAt: now,
     severity: classification.eventType === "macro-revision" ? 45 : 55,
@@ -82,7 +90,7 @@ export function normalizeFredObservation(seriesConfig, observation, previousObse
     sourceName: "Federal Reserve Economic Data (FRED)",
     sourceUrl: classification.sourceUrl,
     sourceType: "Official",
-    sourcePublishedAt: classification.publishedAt || null,
+    sourcePublishedAt: energyTimestamp(classification.publishedAt),
     tags: ["FRED", classification.seriesId, classification.releaseName],
     metadata: {
       ...classification,
@@ -105,7 +113,7 @@ export function normalizeFredObservation(seriesConfig, observation, previousObse
 }
 
 export async function fetchFredEvents(context = {}) {
-  const apiKey = globalThis?.process?.env?.FRED_API_KEY;
+  const apiKey = (context.env ?? globalThis?.process?.env ?? {}).FRED_API_KEY;
   if (!apiKey) {
     return {
       events: [],

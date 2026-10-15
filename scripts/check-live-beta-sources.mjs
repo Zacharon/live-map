@@ -1,0 +1,10 @@
+import { collectSources, readSnapshots } from '../src/beta/snapshot-service.js';
+import { fileStorage } from '../src/beta/file-storage.mjs';
+import { writeFile, mkdir } from 'node:fs/promises';
+const directory='artifacts/live-beta-2026-10-01';await mkdir(directory,{recursive:true});
+const result=await collectSources(fileStorage(`${directory}/local-cache`),{trigger:'manual-local-verification'});
+const envelope=await readSnapshots(fileStorage(`${directory}/local-cache`));
+await writeFile(`${directory}/real-api.json`,JSON.stringify(envelope,null,2));
+await writeFile(`${directory}/source-check.json`,JSON.stringify({at:new Date().toISOString(),runtime:'local Node; not deployed',result,counts:envelope.canonicalEvents.reduce((n,e)=>{n[e.provider]=(n[e.provider]||0)+1;return n;},{}),trace:envelope.canonicalEvents.find(e=>e.provider==='usgs')},null,2));
+console.log(JSON.stringify({status:envelope.systemStatus,sources:result,records:envelope.canonicalEvents.length}));
+if(envelope.sourceStatus.usgs.lastSuccessAt==null)process.exitCode=1;
