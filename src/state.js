@@ -1,4 +1,6 @@
+import { workspaceStorage } from './ui/workspace-storage.js';
 import { CONFIG, CATEGORIES, SEVERITIES } from "./config.js";
+import { readMapView, writeMapView } from './map/view-state.js';
 import { getDashboard } from "./data/dashboards.js";
 import { countryByCode } from "./data/countries.js";
 import { GROUP_OPTIONS, SORT_OPTIONS } from "./events/feed-organization.js";
@@ -28,21 +30,29 @@ function urlList(key) {
   return listParam(params, key, DOMAIN_IDS);
 }
 
-const storedInterfaceMode = localStorage.getItem("live-map-interface-mode-v1");
-const storedPreset = localStorage.getItem("live-map-preset-v1");
+const storedInterfaceMode = workspaceStorage.getItem("live-map-interface-mode-v1");
+const storedPreset = workspaceStorage.getItem("live-map-preset-v1");
 
 export const state = {
+  mapView: readMapView(params),
+  demo: params.get('demo') === 'foundation',
+  dataMode: params.get('demo') === 'foundation' ? 'mixed' : allowedParam(params, 'data', ['public', 'demo', 'mixed'], 'public'),
+  stressDemo: params.get('demo')==='foundation' && params.get('stress')==='1',
+  listPage: 0,
+  localPreview: null,
+  watchSource: tokenParam(params,'source','',{maxLength:80}) || '',
+  watchChangeFilter: allowedParam(params,'changes',['all','new','updated'],'all'),
   activeArea: allowedParam(params, "view", ACTIVE_AREAS, "explore"),
   interfaceMode: INTERFACE_MODES.includes(storedInterfaceMode) ? storedInterfaceMode : "standard",
-  leftDrawerOpen: localStorage.getItem("live-map-left-drawer-v1") === "open",
-  rightDrawerOpen: allowedParam(params, "view", ACTIVE_AREAS, "explore") === "latest-intelligence" || localStorage.getItem("live-map-right-drawer-v1") !== "closed",
+  leftDrawerOpen: workspaceStorage.getItem("live-map-left-drawer-v1") === "open",
+  rightDrawerOpen: allowedParam(params, "view", ACTIVE_AREAS, "explore") === "latest-intelligence" || workspaceStorage.getItem("live-map-right-drawer-v1") !== "closed",
   selectedPreset: storedPreset && /^[a-z0-9][a-z0-9_-]{0,79}$/i.test(storedPreset) ? storedPreset : "explore",
-  onboardingComplete: localStorage.getItem("live-map-onboarding-v1") === "done",
+  onboardingComplete: workspaceStorage.getItem("live-map-onboarding-v1") === "done",
   tracking: {
-    aircraft: allowedParam(params, "tracking", TRACKING_MODES, "") === "aircraft",
-    vessels: allowedParam(params, "tracking", TRACKING_MODES, "") === "vessels",
-    airports: false,
-    ports: false,
+    aircraft: readMapView(params).aircraft,
+    vessels: readMapView(params).vessels,
+    airports: readMapView(params).airports,
+    ports: readMapView(params).ports,
   },
   movingObjects: [],
   movingObjectStatus: {},
@@ -52,7 +62,7 @@ export const state = {
   categoriesByDashboard: new Map(),
   severitiesByDashboard: new Map(),
   queryByDashboard: new Map(),
-  hours: 168,
+  hours: [24,72,168,720].includes(Number(params.get('hours'))) ? Number(params.get('hours')) : 168,
   sort: allowedParam(params, "sort", SORT_IDS, "highest-severity"),
   groupBy: allowedParam(params, "group", GROUP_IDS, "domain"),
   cardMode: allowedParam(params, "cards", CARD_MODES, "compact"),
@@ -70,9 +80,10 @@ export const state = {
   countDebug: {},
   visibleMapEvents: 0,
   mapHealth: null,
-  mapMode: "2d",
+  mapMode: readMapView(params).mapMode,
   ciiVisible: false,
-  selectedEventId: null,
+  selectedEvidenceId: tokenParam(params, "evidence", "", {maxLength:180, pattern:/^[a-z0-9][a-z0-9_.:-]*$/i}) || null,
+  selectedEventId: tokenParam(params, "event", "") || null,
   selectedClusterId: null,
   selectedChokepointId: tokenParam(params, "chokepoint", "", { maxLength: 80 }) && chokepointById(params.get("chokepoint")) ? params.get("chokepoint") : null,
   chokepointFilters: {
@@ -87,7 +98,7 @@ export const state = {
   intelligenceEvents: [],
   selectedCountryIso3: countryParam(params, "country", countryByCode) || null,
   sessionAlertHistory: [],
-  collapsedGroups: new Set(safeJsonArray(localStorage.getItem("live-map-collapsed-groups-v1"))),
+  collapsedGroups: new Set(safeJsonArray(workspaceStorage.getItem("live-map-collapsed-groups-v1"))),
   incidents: [],
   observations: [],
   storylines: [],
@@ -96,10 +107,10 @@ export const state = {
 
 export function dashboardFilters(dashboardId = state.dashboard) {
   if (!state.categoriesByDashboard.has(dashboardId)) {
-    state.categoriesByDashboard.set(dashboardId, new Set(Object.keys(CATEGORIES)));
+    state.categoriesByDashboard.set(dashboardId, dashboardId === state.dashboard && params.has('categories') ? listParam(params,'categories',Object.keys(CATEGORIES)) : new Set(Object.keys(CATEGORIES)));
   }
   if (!state.severitiesByDashboard.has(dashboardId)) {
-    state.severitiesByDashboard.set(dashboardId, new Set(Object.keys(SEVERITIES)));
+    state.severitiesByDashboard.set(dashboardId, dashboardId === state.dashboard && params.has('severities') ? listParam(params,'severities',Object.keys(SEVERITIES)) : new Set(Object.keys(SEVERITIES)));
   }
   if (!state.queryByDashboard.has(dashboardId)) {
     state.queryByDashboard.set(dashboardId, dashboardId === state.dashboard ? urlValue("q", "") : "");
@@ -110,7 +121,7 @@ export function dashboardFilters(dashboardId = state.dashboard) {
   }
   if (!state.recordKindsByDashboard) state.recordKindsByDashboard = new Map();
   if (!state.recordKindsByDashboard.has(dashboardId)) {
-    state.recordKindsByDashboard.set(dashboardId, new Set());
+    state.recordKindsByDashboard.set(dashboardId, dashboardId===state.dashboard ? listParam(params,'records',['event','observation','discovery-lead','moving-object']) : new Set());
   }
   return {
     categories: state.categoriesByDashboard.get(dashboardId),
@@ -137,6 +148,8 @@ export function syncUrlState() {
   else url.searchParams.delete("country");
   if (state.selectedChokepointId) url.searchParams.set("chokepoint", state.selectedChokepointId);
   else url.searchParams.delete("chokepoint");
+  if (state.selectedEventId) url.searchParams.set("event", state.selectedEventId);
+  else url.searchParams.delete("event");
   const chokepointFilters = state.chokepointFilters || {};
   [["chokepointQuery", chokepointFilters.query], ["chokepointRegion", chokepointFilters.region], ["chokepointType", chokepointFilters.type], ["chokepointStatus", chokepointFilters.status], ["chokepointDomain", chokepointFilters.domain], ["chokepointSort", chokepointFilters.sort === "priority" ? "" : chokepointFilters.sort]].forEach(([key, value]) => {
     if (value) url.searchParams.set(key, value);
@@ -152,6 +165,17 @@ export function syncUrlState() {
     url.searchParams.delete("aircraft");
     url.searchParams.delete("vessel");
   }
+  writeMapView(url.searchParams, { ...state.mapView, ...state.tracking });
+  if (state.demo) url.searchParams.set('demo', 'foundation');
+  if (state.dataMode === 'public' && !state.demo) url.searchParams.set('data', 'public');
+  else if (state.dataMode === 'mixed' || state.demo) url.searchParams.set('data', 'mixed');
+  else url.searchParams.delete('data');
+  if(state.watchSource)url.searchParams.set('source',state.watchSource);else url.searchParams.delete('source');
+  if(state.watchChangeFilter!=='all')url.searchParams.set('changes',state.watchChangeFilter);else url.searchParams.delete('changes');
+  url.searchParams.set('hours',String(state.hours));
+  url.searchParams.set('categories',[...filters.categories].join(','));
+  url.searchParams.set('severities',[...filters.severities].join(','));
+  url.searchParams.set('records',[...filters.recordKinds].join(','));
   window.history.replaceState({}, "", url);
 }
 

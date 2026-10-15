@@ -1,5 +1,7 @@
 Live Map — Intelligence Platform Foundation
 
+Local redesign (2026-09-09): zoom-aware map workspace with source details, composable controls and explicitly synthetic transport/wind demos. 2026-09-15 adds the operational evidence model, chokepoint inspector (L01–L11), 2D/3D/Auto globe boundary, and overlay pins. Run `node scripts/preview-foundation.mjs` and open `http://127.0.0.1:8766/?demo=foundation`. Chokepoint scenario: `http://127.0.0.1:8766/?demo=foundation&view=chokepoints&chokepoint=strait-of-hormuz`. This is local-only and does not run provider APIs. Read `docs/ZOOM_AWARE_MAP_FOUNDATION.md` and `docs/EVIDENCE_SEMANTIC_GLOBE.md`. Deployed behavior has not changed.
+
 Live Map is a map-first global event dashboard deployed at:
 
 https://liveworldmap.netlify.app/

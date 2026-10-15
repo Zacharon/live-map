@@ -1,6 +1,109 @@
+## 2026-10-12 - Aviation incident reporting case; isolated candidate
+
+The existing inspector and case controls now support the dated Riyadh October 10–11 public-report case through shared `aviation-incident.inspect/v1`. Source clocks, separate event casualty revisions, airport operations, named flight cancellations, airspace advice and carrier suspension remain independent. Missing flight telemetry, economic measurement and official reopening remain unknown. No combined casualty total or operational approval is generated. See [candidate report and seven gates](../outputs/aviation-incident-20261012/REPORT.md) for actual checks, browser export, parity, preservation and independent H3 disposition.
+
+This entry exists only in the isolated aviation candidate. The installed 53-path October 5 state and October 2 replay remain preserved in canonical source. Provider activation, owner acceptance, production Cesium, native/hosted recovery and publication remain separate gates.
+
+## 2026-10-05 - Approved local integration installed
+
+The owner-approved 53-path maritime, selection/source and Working Watch candidate is now installed in this canonical repository on branch `feature/evidence-semantic-globe` at unchanged HEAD `1640bed51a76fb916f570d755bf5e576ccc36646`. Exact preconditions, task-local backups and installed hashes were checked. This supersedes the older candidate-only/pending-installation notes below; the frozen candidate, review and Library archive remain historical artifacts. See [installed state and proof](LOCAL_INTEGRATION_2026-10-05.md).
+
+Ten scoped suites, repository syntax/Cloudflare export checks, changed-module syntax and 23 native installed-browser checks passed. The browser proof uses explicitly dated October 2 saved public observations, not current data. New providers remain off and the paid API budget remains zero. No commit, push, merge, deployment, account, credential or security changes. Owner visual acceptance (#61), production Cesium policy, current-feed activation, and native/hosted durable-ingestion recovery remain separate decisions/gates.
+
+## 2026-10-02 · Direct selection and public-source isolated candidate
+
+Reproduced canonical Watch cards selecting directly; added omitted Evidence ledger entry and selectable schema-bound records, reload/case identity, mobile access and keyboard Back/focus. New candidate imports the prior maritime delta while preserving its historical 16-path freeze. Three public connectors (NHC, Digitraffic regional AIS, ADSB.lol aircraft) are locally implemented/tested but OFF; bounded public development reads are not activation. Free-default optional fork gate blocks paid/unknown-price adapters without explicit billing and genuine hard budget enforcement. Owned API plan reuses existing USGS durable ingestion and API envelopes. See DIRECT_SELECTION_AND_SOURCES_LOCAL.md and OWNED_API_INGESTION_PLAN.md. No canonical installation, credentials, source contact, paid activity or publication.
+
 # Last 30 Days
 
-Last updated: 2026-07-15.
+Last updated: 2026-10-02 (isolated candidate only).
+
+## Independent maritime signals — isolated local candidate
+
+- Extended the existing operational evaluator and Assessment inspector with independent AIS visibility, dark-traffic inference, cargo-confirmation/published-estimate evidence, and security reports. Each retains provenance, clocks, coverage, confidence and unknowns; no AIS absence-to-zero-flow inference, averaging or safety/recovery score.
+- Focused regression and independent semantic checks cover future/conditional/stale evidence, numeric/proxy guards, contradictions, case export and historical PortWatch labels. See [local candidate record](MARITIME_SIGNALS_LOCAL.md) and its linked evidence for actual browser/review status.
+- Canonical repo remains untouched. No sources, routes, hosting, credentials or paid services changed. Installation and owner acceptance are pending; release gates remain open.
+
+## Watch design/build candidate — local only
+
+- Implemented the reference-informed map-first Watch interface, native editable Figma screens and prototype flows, source-first inspector, occurrence-based historical browser, mobile Map/Reports panes and on-demand Weather/Sea/Air/Space guides. Current wind reference links are included; wind visualization remains a synthetic 2D proof.
+- Browser/independent review repaired stale selection/reset state, saved-view renderer restoration, hidden-pane keyboard access and temporary WebGL capability-context leaks. Cesium survives mobile selection and 40 rerenders with the same viewer. Native 200% zoom and export download bytes are evidenced.
+- See [design/build record](DESIGN_BUILD_2026-09-30.md) for exact checks, screenshots, Figma and provider-state fixture limitations. Required syntax/platform and focused checks pass; full offline validator reports known public Cesium tokens in unrelated backup copies. Independent H3 verifies the scoped local candidate. Owner visual acceptance, production CSP, native database recovery and source activation gates remain separate. No push/deployment.
+
+## Current-local audit repairs — local only
+
+- Refactored the primary screen into Watch, Passages, and Open reports, with a separate feed/inspector, explicit scope/time/coverage, and a larger global globe frame. Kept the existing Cesium engine, evidence workbench, provider envelope, and durable ingestion.
+- Repaired missing-coordinate/coercion, confidence, source-type, occurrence/publication/revision/verification clocks, exact verification mapping, independent-source counts, and heuristic-impact conflation. Undated records now survive the API and remain inspectable. Export preserves unknown revision times and legitimate zero timestamps. Provider environments are request-scoped; blocked storage fails softly.
+- Stable event IDs retain Leaflet markers and Cesium event entities; unchanged inspector/feed markup retains keyboard focus and disclosures. Actual browser checks found and repaired 2D hidden-layout recovery and an opaque offline ocean layer.
+- Evidence and bounded limitations: [audit repair report](AUDIT_REFACTOR_2026-09-30.md). Local syntax, platform, truth, renderer/API, SQL ingestion/recovery, offline validator, static handler/source smoke, and secret scan checks are recorded there. Browser evidence is synthetic; hosted/runtime/native PostgreSQL and owner acceptance are separate. No deployment or source activation.
+
+## Durable USGS ingestion — local candidate
+
+- Added a repeatable-read snapshot cursor, serialized change-log dispatch, explicit `409` resync after cursor expiry/restore, policy-based bounded retention with pending-work expiration, a native PostgreSQL concurrency/restore harness, and stored-data browser polling. `npm.cmd run test:recovery` passes against PGlite/PostGIS. The synthetic stored-data Edge journey passed all seven checks with zero exceptions; see [browser result](../artifacts/usgs-stored-browser-local/1790691186183/result.json). Native PostgreSQL and restore are NOT RUN because the server and CLI tools are absent. The source is still disabled and no hosted behavior is claimed.
+- Added PostGIS evidence tables, policy-disabled USGS collector, idempotent transactional commit/outbox, material-change log, stored-USGS read mode for the existing event envelope, and bounded `/api/changes`. Removed browser direct-USGS outage fallback. No database, queue, Cron, Hyperdrive, or live source was provisioned or enabled.
+- In-process PGlite/PostGIS integration is the current SQL proof. Independent H3 is PARTIAL: the reviewer matched 25 source hashes and reran both focused suites twice, but native concurrency and restore remain NOT RUN. Hosted read/write roles and runtime parity remain open. See [durable ingestion](DURABLE_INGESTION_LOCAL.md).
+- Local syntax, platform, ingestion, repository-secret, security, and full validator checks pass. Replaced a stale USGS feed-directory link with the working GeoJSON documentation page. The browser-secret scanner has an exact-digest exception for Cesium's bundled public default ion token; any other JWT match is still reported. No hosted or independent verification is implied.
+
+## 3D Watch Desk event journey — local only
+
+- Reconciled stale #59 vault frontier: #59/#60 decisions closed, #61 human grammar acceptance open, PR #69 merged; #59 semantic implementation still deferred. See [run record](WATCH_DESK_2026-09-29.md).
+- Existing Cesium globe now displays attention-budgeted geographic events, opens the source inspector from feed or globe picks, retains event/time/camera context across 2D/3D and reload, and keeps the selected marker visible above the mobile inspector. No provider, asset, or dataset was activated.
+- Syntax and platform suite pass. Validator still fails vendored Cesium JWT-pattern scanning and an external USGS feed directory 404. Older Edge acceptance runner has stale scenario selectors; its 3D initialization, state, ten-switch, WebGL-fallback, and no-exception rows pass. No deploy or independent H3 claim.
+
+## Hormuz historical sample journey — local only
+
+- Reused the 2026-09-16 IMF PortWatch extract (`portid` chokepoint6, 2025-01-01 through 2025-01-07, sha256 `f5e8367a93451cb2a69dfda436c72a31e5769e5f6373e32a577d7e993ecfe69b`). Not re-fetched. Acquisition `historical_public`. Row publication date remains unknown. `n_total` stays an AIS transit-call estimate, not measured throughput. Evidence rank for that extract is `reported`. Operating status stays `unknown`.
+- Scenario replay now evaluates restrictions at the scenario as-of, so the synthetic diplomacy step keeps physical access restricted. Diplomacy can read improving while throughput is disrupted (synthetic fixture) or unknown (historical extract). Invalidating or aging out `imf-portwatch` drops the throughput conclusion and supersedes a test-only approval.
+- Browser journey on `127.0.0.1:8768` passed Question, Evidence, Assessment, Changes, and Export, including provenance. No deploy.
+
+## Watch Desk globe — local only
+
+- Cesium 1.145 `Build/Cesium` is vendored. `index.js` is the ESM bundle (`import { Viewer }`). `Cesium.js` is the IIFE (`var Cesium=`). Knockout 3.5.1 inside that bundle calls `eval("this")` while the module evaluates. The strict preview CSP blocked it, so `Viewer` never finished initializing. WebGL itself was available.
+- Local preview now allows `'unsafe-eval'` for that bundle. `netlify.toml` is unchanged and still has no `'unsafe-eval'`, so a deployed page would still stop the globe. Passing `skyAtmosphere: true` was also wrong: Cesium treats that option as an instance, and the boolean caused `setDynamicLighting is not a function`.
+- Edge on `127.0.0.1:8768` rendered the Natural Earth globe, moved the camera, kept the Hormuz selection through Investigation and back to 2D, resized, drew at longitude 179, and kept a usable 2D map when WebGL was forced off. Evidence: `artifacts/watchdesk-3d-2026-09-25/`. The measurement dock shows the existing PortWatch `n_total` series as `historical_public` with throughput unknown. No provider was enabled. Not independent H3.
+
+## Investigation desk expansion — local only
+
+## Investigation desk expansion — local only
+
+- 2D Hormuz Investigate path repaired (`Map has no maxZoom specified` on local-earth). Genuine PortWatch series (75/65/67/77/56/54/63) renders in table+chart. Human review still pending.
+- CISA KEV and NHC TWO snapshots frozen and shown as non-geographic feed records. Preview denies `/artifacts` and `/.env`. Website vibe audit is a **local adaptation** 12/12 on :8767, not original 20/20.
+- Preview: `http://127.0.0.1:8767/?demo=foundation&view=chokepoints&chokepoint=strait-of-hormuz`
+
+## Frozen PortWatch Hormuz sample — local only
+
+- Bounded public query of IMF PortWatch `Daily_Chokepoints_Data` for `portid=chokepoint6` / Strait of Hormuz, calendar dates 2025-01-01 through 2025-01-07. `date` is `esriFieldTypeDateOnly` (not Unix ms). Field `n_total` mapped as AIS-derived estimated transit calls.
+- Genuine case stays `review_required`. Operational status **unknown** (no baseline). Isolated `automated-test-only:hormuz-frozen-sample` approval is invalidated when one day is withdrawn. Provider not enabled. No deploy.
+- Replay: `node scripts/replay-hormuz-frozen-sample.mjs` (no network). Tests: `node tests/portwatch-hormuz-frozen-sample-tests.mjs`.
+
+## Evidence-to-assessment workbench v1 — local only
+
+- On `feature/evidence-semantic-globe` (HEAD still `1640bed` plus inherited dirty foundation). Standing chokepoint watch, origin-vs-acquisition grouping, L01–L11 draft assessment, review binding, stale-approval invalidation, Source Explorer catalog overlay (`upstreamStatus` ≠ provider live), Investigate panel on the existing inspector.
+- Synthetic Hormuz scenario remains labeled synthetic. PortWatch sample file is still a schema fixture, not a genuine dated measurement. No deploy, no new live provider, no FAIR/TAXII.
+- See `docs/EVIDENCE_TO_ASSESSMENT_WORKBENCH.md`.
+
+## Evidence model + semantic-zoom globe — local only
+
+- On `feature/evidence-semantic-globe` from the zoom-aware foundation (HEAD `1640bed` plus inherited uncommitted foundation). L01–L11 operational evaluator, integrated chokepoint inspector, 2D/3D/Auto renderer boundary, compact wind-field decoder, maritime overlay distinction, and a satellite proof module.
+- No-evidence assessments are `unknown`, not `normal`. Thresholds are `engineering-default-unvalidated`. Synthetic Hormuz scenario is labeled synthetic.
+- Cesium ion is not used. NOAA GRIB decode is blocked on this Windows host (no wgrib2). PortWatch/World Bank/CelesTrak are not live-activated.
+- See `docs/EVIDENCE_SEMANTIC_GLOBE.md`. Nothing pushed or deployed.
+
+
+## Progressive event density — local only
+
+- Shared event selection now requires high/critical severity at world zoom, adds medium at regional zoom, and allows all severities locally, within existing 18/80/240 budgets. Quiet views no longer fill with minor events.
+- Filters and viewport checks precede selection; an inspected eligible record is retained within the cap. UI distinguishes scale-hidden records from budget-hidden records. Existing provenance/freshness and providers are unchanged.
+- Focused tests are wired into the platform suite. See `PROGRESSIVE_ZOOM_DETAIL.md` for policy, local browser observations and verification. No deployment.
+
+## Local zoom-aware foundation — not published
+
+- User-requested God's Eye View reuse: contact roster, source/track inspector, return-to-view and MIT heading stabilization from pinned upstream revision. See `GODS_EYE_VIEW_REUSE.md`. No datasets or new live providers imported.
+
+- On `codex/zoom-aware-map-foundation` from Phase 9 HEAD `1640bed`, rebuilt the map workspace, added filter-first world/regional/local attention budgets, list pagination, source precision facts, URL/saved map views, bounded transport scheduling/coalescing, and demo-only vector wind.
+- OpenStreetMap street default; old CARTO dark endpoint visibly returned access-required tiles during QA and is disabled.
+- No provider activation or hosting change. Existing Cloudflare Worker has only events/sources/provider-health API parity. Sites connector read access is available; migration remains gated on parity and local validation.
+- See `docs/ZOOM_AWARE_MAP_FOUNDATION.md` for authority evidence, source matrix, benchmark, tests, screenshots and explicit remaining limits. July entries below are historical.
 
 ## Merged Recently
 
@@ -37,3 +140,6 @@ PR #36 passed GitHub checks: `cloudflare-validation`, `validate`, browser secret
 # 2026-07-15 - Open News and Social Signal Fusion v1
 
 Added metadata-only source observations, source-organization-aware storylines, and configuration-gated open news/social provider boundaries. Latest Intelligence separates trend velocity from verification and displays coverage gaps.
+## 2026-10-02 — Useful Watch workflow with actual public reads (isolated candidate)
+
+Extended the reviewed maritime/selection candidate into a running local Reports workflow using bounded genuine USGS and NHC/CPHC reads. Source/place search, direct inspector selection, source measurements/UTC clocks/coverage, full loaded read baseline, material revisions, mobile Reports/search and response-generation guards use existing UI/schema/Cesium/workbench. Excluded records and source-clock uncertainty remain visible. See WORKING_WATCH_LOCAL.md and WORKING_WATCH_HOSTED_PLAN.md. Canonical, previous candidate/Library freezes, production routing/flags and zero paid budget are preserved; owner integration and hosted gates remain pending.

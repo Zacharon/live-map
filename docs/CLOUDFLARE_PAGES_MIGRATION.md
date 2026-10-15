@@ -1,5 +1,27 @@
 # Cloudflare Pages Migration Notes
 
+## 2026-09-09 hosting recommendation (no cutover performed)
+
+Prefer **Cloudflare Workers + Static Assets** for the public application after compatibility work. Despite this document's historical Pages title, the checked-in `wrangler.toml` already uses a Worker with an ASSETS binding. Retain Netlify as the current compatibility target until a tested cutover is explicitly authorized.
+
+| Option | Fit and connector status | Decision |
+|---|---|---|
+| Cloudflare Workers + Static Assets | Existing Worker source and config. Direct Cloudflare plugin is not installed in this task. [Static asset requests are free/unlimited](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/); dynamic Worker requests retain quotas. [Workers Free limits](https://developers.cloudflare.com/workers/platform/limits/) include 100,000 requests/day; CPU/subrequest limits must be measured for this aggregator. | Preferred public-hosting target, conditional on measured fit. No claim that the API is free at arbitrary traffic. |
+| Sites | Native connector is callable; read-only `list_sites` succeeded. Hosting skill supports Workers-compatible bundles. Existing app would need deliberate Worker packaging and complete API compatibility; static-only publication would lose server routes. No site created. | Connector-managed alternative, especially for controlled review access. Account entitlement, packaging, custom domain and runtime limits still need confirmation before choosing it. |
+| Netlify | Existing full function route support and available connector. Repository records a historical usage_exceeded outage; current account plan/usage was not inspected. [Credit plans](https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/credit-based-pricing-plans/) pool usage costs. | Preserve current service during local work; don't assume a visual redesign fixes quota exhaustion. |
+
+The recommendation is an architectural inference from the current repository and official platform documentation, not a completed load test or a deployment. No paid tier is selected or authorized.
+
+Concrete migration sequence:
+
+1. Complete and locally test `/api/countries`, `/api/country-risk`, `/api/moving-objects`, `/countries`, `/diagnostics`, and required remaining Netlify API contracts. Keep `/api/events`, `/api/sources`, `/api/provider-health`, and structured JSON 404 behavior. Preserve the Netlify direct events endpoint in the supported Netlify deployment.
+2. Add asset security-header parity and publish only public assets. The current root asset directory needs a deliberate exclude/allowlist review, especially before packaging local outputs or development scripts.
+3. Measure dynamic Worker CPU and upstream subrequest use under partial provider failure. Implement durable account-wide quota enforcement before enabling licensed tracking. A per-instance cache/budget alone does not constrain all server instances.
+4. Package an isolated preview artifact and verify all routes with fixtures. Choose direct Cloudflare tooling or the accessible Sites connector without migrating frameworks or creating a replacement repository.
+5. Present the tested artifact, costs/limits, deployment destination, DNS plan and rollback to the owner. Publish/change DNS only on explicit deployment authorization. Keep the previous deployment available for rollback.
+
+AIS ingestion remains a separate decision: neither static hosting nor a short-lived request function should silently become a persistent upstream stream consumer. No new infrastructure, subscriptions or credentials were created.
+
 Live Map remains a Netlify-hosted static site during this migration. These notes define the smallest safe Cloudflare Pages compatibility foundation without changing production hosting, API calls, or provider behavior.
 
 ## Current Hosting Baseline

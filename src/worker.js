@@ -52,6 +52,14 @@ function assetAliasRequest(request, pathname) {
 }
 
 export default {
+  async scheduled(controller, env) {
+    const { enqueueDueUsgs } = await import("./ingestion/worker-handlers.js");
+    return enqueueDueUsgs(controller, env);
+  },
+  async queue(batch, env) {
+    const { consumeUsgsJobs } = await import("./ingestion/worker-handlers.js");
+    return consumeUsgsJobs(batch, env);
+  },
   async fetch(request, env) {
     const url = new URL(request.url);
 
@@ -67,6 +75,11 @@ export default {
 
     if (url.pathname === "/api/events") {
       return eventsResponse(request, env);
+    }
+
+    if (url.pathname === "/api/changes") {
+      const { createChangesResponse } = await import("./api/changes-response.js");
+      return createChangesResponse(request, { env });
     }
 
     if (url.pathname === "/api/sources") {

@@ -3,35 +3,43 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Live Map - a source-transparent public event map." />
-  <title>Live Map - Public Event Map</title>
+  <meta name="description" content="Live Map is a source-transparent public-information map. It is not emergency dispatch or operational guidance." />
+  <title>Live Map — Watch workspace</title>
+  <link rel="canonical" href="/" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <meta property="og:title" content="Live Map — public event map" />
+  <meta property="og:description" content="Source-transparent public-information map. Not emergency dispatch." />
+  <meta property="og:image" content="/favicon.svg" />
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
   <link rel="stylesheet" href="vendor/leaflet-markercluster/MarkerCluster.css" />
   <link rel="stylesheet" href="vendor/leaflet-markercluster/MarkerCluster.Default.css" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="source-explorer.css" />
   <link rel="stylesheet" href="dashboard-v2.css" />
-  <link rel="stylesheet" href="operator-polish.css" />
+  <link rel="stylesheet" href="map-workspace.css" />
 </head>
-<body>
+<body class="map-workspace">
   <div class="app-shell">
     <header class="topbar" role="banner">
-      <div class="brand"><span class="brand-mark" aria-hidden="true">LM</span><div><strong>LIVE MAP</strong><span>Operator console</span></div></div>
-      <nav id="dashboardNav" class="dashboard-nav consumer-nav" aria-label="Main navigation"><button class="dashboard-tab active" type="button">Overview</button><button class="dashboard-tab" type="button">Events</button><button class="dashboard-tab" type="button">Latest Intelligence</button><button class="dashboard-tab" type="button">Chokepoints</button><a class="dashboard-tab" href="/countries">Countries</a><a class="dashboard-tab" href="/sources" data-sources-link>Sources</a><a class="dashboard-tab" href="/diagnostics">Diagnostics</a></nav>
+      <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13"/><ellipse cx="16" cy="16" rx="6" ry="13"/><path d="M3 16h26M6 8h20M6 24h20"/></svg></span><div><strong>Live Map</strong><span>Explore. Trace. Understand.</span></div></div>
+      <nav id="dashboardNav" class="dashboard-nav consumer-nav" aria-label="Main navigation"><button class="dashboard-tab active" type="button">Watch</button><button class="dashboard-tab" type="button">Passages</button><button class="dashboard-tab" type="button">Open reports</button></nav>
       <section class="global-search search-wrap" aria-label="Global search">
         <label for="globalSearch">Search</label>
         <input id="globalSearch" type="search" autocomplete="off" placeholder="Country, city, airport, event..." />
         <div id="globalSearchResults" class="global-search-results" hidden></div>
       </section>
       <div class="topbar-actions">
-        <label class="mode-toggle"><span>Advanced</span><input id="advancedMode" type="checkbox" /></label>
         <details id="toolsMenu" class="tools-menu">
           <summary>Tools</summary>
           <div>
+            <label class="mode-toggle"><span>Advanced tools</span><input id="advancedMode" type="checkbox" /></label>
             <a id="sourcesLink" href="/sources" data-sources-link>Source Explorer</a>
             <a href="/diagnostics">Diagnostics</a>
+            <a href="/countries">Country context</a>
             <button type="button" data-open-drawer="left">Advanced filters</button>
             <button type="button" data-open-drawer="right">Saved views</button>
+            <label for="baseMap">2D basemap</label><select id="baseMap"><option value="satellite">Satellite</option><option value="dark">Dark map</option><option value="street" selected>Street map</option><option value="local-earth">Offline dark geography</option></select>
+            <label for="dataMode">Data mode</label><select id="dataMode"><option value="public">Public reports</option><option value="mixed">Demo / mixed</option></select>
           </div>
         </details>
         <span id="systemStatus" class="status" aria-live="polite"><i></i> Connecting</span>
@@ -40,6 +48,12 @@
       </div>
     </header>
 
+    <nav class="workspace-presets" aria-label="Map presets"><span class="preset-label">Explore</span><button data-preset="explore">Overview</button><button data-preset="conflicts">Conflict</button><button data-preset="disasters">Hazards</button><button data-preset="weather">Weather</button><button data-preset="ships">Sea</button><button data-preset="flights">Air</button><button type="button" data-space-lens>Space</button><span class="preset-spacer"></span><button type="button" data-open-drawer="left">Filters & layers</button></nav>
+    <section class="workspace-scope" aria-label="Workspace scope and source coverage">
+      <div id="workspaceSummary" class="workspace-summary" aria-live="polite"></div>
+      <div class="scope-controls"><details id="timeBrowser" class="time-browser"><summary><span class="wide-label">Browse time</span><span class="narrow-label">Time</span></summary><div><label for="asOfInput">Window ends at (UTC)</label><input id="asOfInput" type="datetime-local"/><p>Filters the loaded reports by occurrence. Undated reports stay available. No historical source is fetched.</p><button type="button" id="applyTime">Apply window</button><button type="button" id="availableTime">Latest available</button></div></details><select id="timeWindow" aria-label="Time window"><option value="24">24-hour window</option><option value="72">3-day window</option><option value="168" selected>7-day window</option><option value="720">30-day window</option></select><select id="mapMode" aria-label="Map mode"><option value="2d">2D map</option><option value="3d" selected>3D globe</option><option value="auto">Auto</option></select></div>
+    </section>
+    <nav class="mobile-views" aria-label="Workspace view"><button type="button" data-mobile-pane="map" aria-pressed="true">Map</button><button type="button" data-mobile-pane="feed" aria-pressed="false">Reports</button></nav>
     <aside id="filterDrawer" class="sidebar left-panel drawer drawer-left" aria-label="Filters">
       <section id="osintDashboardV2" class="osint-dashboard-v2 panel-sticky" data-view-section="summary" aria-label="OSINT dashboard"></section>
       <section class="panel-sticky view-chrome" data-view-section="chrome">
@@ -52,10 +66,22 @@
         <div class="section-title"><span>Chokepoint filters</span><button id="resetChokepointFilters" type="button">Reset</button></div>
         <label for="chokepointSearch">Search</label><input id="chokepointSearch" type="search" placeholder="Strait, canal, region..." />
         <div class="chokepoint-filter-grid"><select id="chokepointRegion" aria-label="Chokepoint region"></select><select id="chokepointType" aria-label="Chokepoint type"></select><select id="chokepointStatus" aria-label="Chokepoint status"></select><select id="chokepointDomain" aria-label="Chokepoint event domain"></select><select id="chokepointSort" aria-label="Chokepoint sorting"></select></div>
+        <label id="scenarioStageLabel" for="scenarioStage" hidden>Synthetic scenario step (fixture only)</label>
+        <select id="scenarioStage" hidden aria-label="Synthetic scenario step"></select>
+        <p id="scenarioStageHelp" class="panel-help" hidden>Software fixture. Not a claim about current events at this passage.</p>
       </section>
-      <section class="tracking-panel" data-view-section="tracking"><div class="section-title"><span>Live Tracking</span></div><label><input id="aircraftToggle" type="checkbox" /> Aircraft</label><label><input id="vesselToggle" type="checkbox" /> Vessels</label><label><input id="airportsToggle" type="checkbox" /> Airports</label><label><input id="portsToggle" type="checkbox" /> Ports</label><p id="trackingStatus" class="panel-help">Zoom in to view aircraft or vessel activity.</p></section>
+      <section class="tracking-panel" data-view-section="tracking"><div class="section-title"><span>Transport & context</span></div><label><input id="aircraftToggle" type="checkbox" /> Aircraft observations</label><label><input id="vesselToggle" type="checkbox" /> Vessel observations</label><label><input id="airportsToggle" type="checkbox" /> Airports · reference</label><label><input id="portsToggle" type="checkbox" /> Ports · reference</label><label><input id="chokepointsToggle" type="checkbox" /> Strategic chokepoints</label><p id="trackingStatus" class="panel-help">Zoom in to view aircraft or vessel activity.</p><p class="panel-help">Positions require configured, authorized sources. Coverage is incomplete.</p></section>
+      <section class="workspace-filter-options"><label><input id="viewportOnly" type="checkbox" /> Limit list to map area</label><label for="verificationFilter">Verification</label><select id="verificationFilter"><option value="all">All eligible reports</option><option value="supported">Corroborated / confirmed / reviewed</option></select></section>
+      <section id="windControls" hidden><div class="section-title">Wind renderer proof</div><label><input id="windToggle" type="checkbox" /> SYNTHETIC wind field — not live wind</label><label><input id="recordedWindToggle" type="checkbox" /> SYNTHETIC DECODER FIXTURE — NOT A FETCHED NOAA/GFS FIELD</label><label for="windOpacity">Opacity</label><input id="windOpacity" type="range" min="0.1" max="1" step="0.1" value="0.7" /><p class="panel-help">Synthetic and decoder-fixture caches are separate. Arrows point toward flow. A 10 m field stays a 10 m field at any camera height.</p></section>
+      <section id="overlayControls"><div class="section-title">Semantic overlays</div>
+        <label><input id="graphToggle" type="checkbox" /> Relationship graph (bounded, selected neighborhood)</label>
+        <label><input id="densityToggle" type="checkbox" /> SYNTHETIC FORMAT FIXTURE — NOT SOURCE MEASUREMENTS (density overlay)</label>
+        <label><input id="activityToggle" type="checkbox" /> SYNTHETIC FORMAT FIXTURE — NOT SOURCE MEASUREMENTS (dated activity overlay)</label>
+        <label><input id="orbitalToggle" type="checkbox" /> Orbital module proof — not on-globe satellites</label>
+        <p id="overlayStatus" class="panel-help" role="status">Pins stay independent of Auto. Spatial clusters are not corroborated incidents. Missing coordinates are not zero.</p>
+      </section>
       <section data-view-section="domains"><div class="section-title"><span>Domains</span><button id="clearDomains">All</button></div><div id="domainFilters" class="filter-list"></div></section>
-      <section data-view-section="layers"><div class="section-title"><span>Event layers</span><button id="clearFilters">Reset</button></div><div id="layerFilters" class="filter-list"></div></section>
+      <section data-view-section="layers"><div class="section-title"><span>Event layers</span><button id="clearFilters">Reset</button></div><label class="search-wrap" for="layerSearch">Find a layer</label><input id="layerSearch" type="search" placeholder="Earthquake, storm…" /><div id="layerFilters" class="filter-list"></div><p class="panel-help">Filters apply to available reports. <a href="/sources">Check source access & coverage ↗</a></p></section>
       <section data-view-section="severity"><div class="section-title"><span>Severity</span></div><div id="severityFilters" class="severity-row"></div></section>
       <section class="stats-grid" data-view-section="stats"><article><span>Visible</span><strong id="visibleCount">0</strong></article><article><span>High / critical</span><strong id="highCount">0</strong></article><article><span>Countries</span><strong id="countryCount">0</strong></article><article><span>Last refresh</span><strong id="updatedAt">-</strong></article></section>
       <section id="sourcesStatusPanel" class="sources-status-panel" data-view-section="sources"></section>
@@ -67,23 +93,26 @@
     </aside>
 
     <main class="map-stage">
+      <div id="demoBanner" class="demo-banner" hidden>SYNTHETIC DEMO — invented test scenarios, not live intelligence</div>
+      <output id="demoPerf" class="demo-perf" hidden aria-live="polite"></output>
       <div id="map"></div>
       <div id="globeStage" class="globe-stage" hidden></div>
       <div class="map-toolbar">
         <button id="fitWorld">World</button><button id="fitEvents">Fit events</button>
-        <select id="mapMode" aria-label="Map mode"><option value="2d" selected>2D map</option><option value="3d">3D beta</option></select>
-        <select id="baseMap" aria-label="Basemap"><option value="satellite" selected>Satellite</option><option value="dark">Dark map</option><option value="street">Street map</option></select>
-        <select id="timeWindow" aria-label="Time window"><option value="24">Last 24 hours</option><option value="72">Last 3 days</option><option value="168" selected>Last 7 days</option><option value="720">Last 30 days</option></select>
-        <button id="refreshNow">Refresh</button>
+        <button id="refreshNow">Reload saved data</button>
       </div>
-      <div id="mapLegend" class="legend"></div>
+      <div class="map-context"><span class="context-kicker">SPATIAL VIEW</span><strong id="mapScale">World</strong><span id="mapCount">Loading observations</span><span id="watchModeChip" class="watch-mode-chip" data-watch-mode="historical">Historical public extract</span><details><summary>Coverage & map selection</summary><p id="attentionNote"></p><p>Unreported areas are coverage gaps, not an indication of safety.</p></details></div>
+      <details class="map-legend-disclosure"><summary>Map key</summary><div id="mapLegend" class="legend"></div><p>Dots show report locations. Zoom reveals more eligible reports. Selection has a ring and an inspector.</p></details>
+      <details id="lensGuide" class="lens-guide" hidden><summary id="lensGuideTitle">Layer guide</summary><div id="lensGuideContent"></div></details>
       <div id="mapHealth" class="map-health" hidden></div>
+      <div id="watchDockHost"></div>
       <div id="feedError" class="feed-error" hidden></div>
+      <output id="workspaceMessage" class="workspace-message" aria-live="polite"></output>
       <button id="ciiToggle" class="map-toggle" type="button">CII countries</button>
       <div class="floating-controls" aria-label="Map controls">
         <button id="filterDrawerToggle" type="button" data-open-drawer="left">Filters</button>
         <button id="layersDrawerToggle" type="button" data-open-drawer="left">Layers</button>
-        <button id="mapListToggle" type="button">Map/List</button>
+        <button id="mapListToggle" type="button" aria-controls="eventDrawer">Reports</button>
         <button id="locateMap" type="button">Locate</button>
         <button id="resetWorkspace" type="button">Reset</button>
       </div>
@@ -92,24 +121,26 @@
     <aside id="eventDrawer" class="event-panel right-panel drawer drawer-right open" aria-label="Event feed">
       <div class="panel-head">
         <div class="panel-head-main">
-          <div><span id="dashboardEyebrow" class="eyebrow">EXPLORE</span><h1 id="dashboardTitle">World events</h1></div>
-          <button class="drawer-close feed-hide-btn" type="button" data-close-drawer="right">Hide</button>
+          <div><span id="dashboardEyebrow" class="eyebrow">IN FOCUS</span><h1 id="dashboardTitle">Developments</h1></div>
+          <button class="drawer-close feed-hide-btn" type="button" data-close-drawer="right" aria-label="Close report panel">Close</button>
         </div>
         <div class="feed-controls" role="group" aria-label="Feed controls">
           <div class="feed-controls-primary">
             <select id="sortOrder" aria-label="Sort events"></select>
             <select id="cardMode" aria-label="Card density"><option value="compact">Compact</option><option value="expanded">Expanded</option></select>
           </div>
-          <div class="feed-controls-secondary advanced-only">
+          <details class="feed-options"><summary>Organize & save view</summary><div class="feed-controls-secondary">
             <select id="groupBy" aria-label="Group events"></select>
             <select id="savedViews" aria-label="Saved views"></select>
             <button id="saveView" type="button">Save view</button>
-          </div>
+          </div></details>
         </div>
       </div>
+      <section class="search-wrap event-search"><label for="search">Search events, countries, or sources</label><input id="search" type="search" placeholder="Japan, M6.2, wildfire..." /></section>
+      <section id="watchOperator" class="watch-operator" aria-label="Find reports and track source revisions"></section>
+      <details id="contactsPanel" class="contacts-panel"><summary>Aircraft & vessel contacts</summary><section id="contactDetail" aria-label="Selected contact" hidden></section><div id="contactRoster"></div></details>
       <div id="eventDetailDrawer" class="event-detail-drawer-host" hidden></div>
       <div id="chokepointDetailDrawer" class="event-detail-drawer-host" hidden></div>
-      <section class="search-wrap event-search"><label for="search">Search events, countries, or sources</label><input id="search" type="search" placeholder="Japan, M6.2, wildfire..." /></section>
       <div id="eventList" class="event-list"></div>
     </aside>
   </div>

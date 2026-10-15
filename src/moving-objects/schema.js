@@ -5,6 +5,7 @@ const MAX_AGE_SECONDS = 10 * 60;
 export function normalizeMovingObject(input = {}) {
   const objectType = input.objectType;
   if (!["aircraft", "vessel"].includes(objectType)) return { object: null, errors: ["unsupported object type"] };
+  if ([input.latitude,input.longitude].some(value=>value==null || value==='')) return {object:null,errors:['missing coordinates']};
   const latitude = Number(input.latitude);
   const longitude = Number(input.longitude);
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
@@ -19,6 +20,7 @@ export function normalizeMovingObject(input = {}) {
       objectType,
       providerId: input.providerId,
       observedAt,
+      lastContactAt: Number.isFinite(input.lastContactAt) ? input.lastContactAt : null,
       receivedAt,
       latitude,
       longitude,
