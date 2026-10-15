@@ -1,13 +1,17 @@
 import { SEVERITIES } from "../config.js";
 import { sortEvents } from "./feed-organization.js";
+import { timestampMs } from "./value-semantics.js";
 
-export function filteredEvents(events, filters, hours, sort) {
+export function filteredEvents(events, filters, hours, sort, time = {}) {
   const cutoff = Date.now() - hours * 3600000;
   const query = filters.query.trim().toLowerCase();
   let output = events.filter((event) => {
     const domainMatch = !filters.domains || filters.domains.size === 0 || filters.domains.has(event.domain);
     const recordKindMatch = !filters.recordKinds || filters.recordKinds.size === 0 || filters.recordKinds.has(event.recordKind || "event");
-    return domainMatch && recordKindMatch && filters.categories.has(event.category) && filters.severities.has(event.severity) && event.occurredAt >= cutoff;
+    const occurredAt = timestampMs(event.occurredAt);
+    // Undated reports remain inspectable, explicitly labeled unknown; they are
+    // never upgraded into a recent event by substituting ingestion time.
+    return domainMatch && recordKindMatch && filters.categories.has(event.category) && filters.severities.has(event.severity) && (time.period === "history" || occurredAt === null || occurredAt >= cutoff);
   });
   if (query) {
     output = output.filter((event) => `${event.title} ${event.summary} ${event.country} ${event.place} ${event.sourceName} ${event.sourceType} ${event.verificationStatus} ${event.domainLabel} ${event.typeLabel} ${JSON.stringify(event.details)}`.toLowerCase().includes(query));

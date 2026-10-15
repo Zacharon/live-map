@@ -27,3 +27,13 @@ Live Map core mode uses only free, public, default-safe sources. A source can be
 - `/api/sources` and `/api/provider-health` are the public trust layer for source registry status and sanitized provider health.
 - Public does not mean unrestricted. Review terms before enabling a new source.
 - Do not claim complete global coverage from partial public feeds.
+
+## Saved history and reference imagery (2026-09-30)
+
+The bounded historical import uses the official [USGS FDSN API](https://earthquake.usgs.gov/fdsnws/event/1/) and [NASA EONET v3](https://eonet.gsfc.nasa.gov/docs/v3), not news scraping. The saved September 2024 extract contains 481 magnitude >=4.5 earthquake records and 721 curated EONET records. The [manifest](../data/history/september-2024/manifest.json) records queries, original response hashes, counts, rejects, duplicates, caps and retrieval timestamp. Each record retains provider ID, source links and supplied geometry/clock values. [EONET's extent disclaimer](https://eonet.gsfc.nasa.gov/what-is-eonet) applies: positions and dates can be approximate, and this is not an official warning service.
+
+Original JSON is retained as factual catalog metadata/geometry in a versioned local archive, with no mirrored source articles, images or PDFs. The importer refuses to overwrite the existing version before making a network request. No browser calls to earthquake/EONET APIs or recurring collection job are introduced. Future archive versions require bounded queries and review; the current importer is intentionally fixed to this authorized month.
+
+Both engines share the [USGS National Map basemap configuration](../src/map/basemaps.js). [National Map terms](https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map) and the actual service metadata govern viewing: Alaska SPOT imagery is viewing-only, not covered by a blanket public-domain/download claim. Only normal viewport tile requests are made; no tile archive, prefetch or bulk scraping is implemented. USGS/NGP attribution is displayed. Fine imagery is US-focused; global imagery is coarse. CONUS NAIP imagery spans 2017–2021 in this service, with differing regional vintages, and does not show September 2024 event conditions. Ellipsoid terrain has no elevation relief. See the [detail and failure evidence](REAL_HISTORY_2026-09-30.md).
+
+Esri account/software eligibility was not established, so the new satellite/topographic configuration uses the public USGS service. Existing offline dark/light geography remains available. The legacy online-dark style retains its previous provider and attribution; this work does not authorize bulk use or claim new eligibility for that style.

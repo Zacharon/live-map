@@ -13,10 +13,24 @@
     "security:scan": "node scripts/live-map-validator.mjs --security-only",
     "security:repo-scan": "node scripts/repo-secret-scan.mjs",
     "smoke:production": "node scripts/production-smoke-test.mjs",
-    "test:platform": "node tests/run-tests.mjs",
+    "test:platform": "node tests/run-tests.mjs && node tests/history-tests.mjs",
+    "test:ingestion": "node tests/usgs-ingestion-tests.mjs",
+    "test:recovery": "node tests/usgs-recovery-tests.mjs",
+    "test:ingestion:native": "node scripts/test-usgs-native.mjs",
+    "preview:usgs:stored": "node scripts/preview-usgs-stored-fixture.mjs",
+    "test:browser:usgs:stored": "node scripts/runtime-usgs-stored-browser.mjs",
     "test:e2e": "node scripts/e2e-smoke.mjs",
     "test:sources": "node scripts/source-explorer-smoke-test.mjs",
     "test": "npm run test:platform && npm run validate && npm run test:e2e && npm run test:sources",
-    "check:chokepoints": "node --check src/data/strategic-chokepoints.js && node --check src/intelligence/chokepoint-correlation.js && node --check src/intelligence/chokepoint-condition.js && node --check src/ui/chokepoints.js"
+    "check:chokepoints": "node --check src/data/strategic-chokepoints.js && node --check src/intelligence/chokepoint-correlation.js && node --check src/intelligence/chokepoint-condition.js && node --check src/intelligence/evidence-records.js && node --check src/intelligence/operational-evaluator.js && node --check src/intelligence/investigation-cycle.js && node --check src/intelligence/resource-catalog.js && node --check src/intelligence/case-io.js && node --check src/intelligence/public-projection.js && node --check src/intelligence/portwatch-frozen-sample.js && node --check src/ui/chokepoints.js && node --check src/ui/investigation-workbench.js",
+    "test:history": "node tests/history-tests.mjs",
+    "patch:cesium-csp": "node scripts/patch-cesium-csp.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@electric-sql/pglite-postgis": "^0.2.8"
   }
 }

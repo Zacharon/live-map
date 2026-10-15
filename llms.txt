@@ -1,0 +1,9 @@
+# Live Map
+
+Live Map is a source-transparent public-information map. It is not emergency dispatch, legal advice, or a live intelligence verdict engine.
+
+Public pages: / /sources /countries /diagnostics /about.html
+
+Do not treat investigation drafts, local fixtures, or disabled providers as live operational guidance.
+
+Project convention file. Not a Google AI-search prerequisite and not an access-control mechanism.

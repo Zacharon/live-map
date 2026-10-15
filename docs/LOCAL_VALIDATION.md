@@ -1,5 +1,19 @@
 # Local Validation
 
+For deterministic local validation without outbound provider requests:
+
+```powershell
+node tests/foundation-tests.mjs
+node tests/operational-evidence-tests.mjs
+node tests/semantic-globe-weather-tests.mjs
+node --import ./tests/offline-network.mjs tests/run-tests.mjs
+node scripts/live-map-validator.mjs --offline
+node --import ./tests/offline-network.mjs scripts/e2e-smoke.mjs
+node --import ./tests/offline-network.mjs scripts/source-explorer-smoke-test.mjs
+```
+
+The explicit test preload stubs USGS/EONET/NWS and returns unavailable for other upstreams. Offline validation skips source-URL reachability and reports that omission. It is not production smoke evidence.
+
 Live Map expects Node.js 20 or newer and npm. The repository has no required package lockfile or install step for the built-in validation commands; the checks run with standard Node/npm commands from `package.json`.
 
 ## Standard Commands
@@ -68,3 +82,11 @@ GitHub Actions uses `actions/setup-node` with Node 20 and remains the authoritat
 # Open News and Social Validation
 
 Run `npm run test:platform` to exercise observation URL normalization, source independence, deterministic storyline grouping, and metadata-only social normalizers. Keep provider feature flags unset during ordinary validation so no external social/video polling occurs.
+
+## Real history preview
+
+`npm.cmd run test:history` validates actual archive hashes, strict UTC boundaries, cursor clipping, unknown EONET onset, response compatibility, viewport-before-budget and renderer regression cases. `node scripts/preview-foundation.mjs 8894` serves ordinary Watch with the actual saved history. The preview reads the exact CSP from `netlify.toml` and refuses `unsafe-eval`. It deliberately returns JSON 503 for current provider APIs.
+
+Cesium 1.145's two vendored bundles replace precisely the Knockout global-object lookup `(0,eval)("this")` with `globalThis`. `npm.cmd run patch:cesium-csp` is the guarded, atomic maintenance command; review any different vendor version/lookup count. Optional expression-compiling widgets remain disabled. No CSP eval allowance is added. Local browser success is not hosted acceptance.
+
+Failure-only QA: `?failTiles=1` requests nonexistent local tiles, `?failWebgl=1` uses the existing 2D fallback, and `LIVE_MAP_PREVIEW_FAIL_HISTORY=true` starts a separate preview returning History 503. These tests must be labeled; the normal preview uses none of those flags. Native PostgreSQL/restore, live providers, production headers and owner acceptance remain separate evidence.

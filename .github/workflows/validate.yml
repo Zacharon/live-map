@@ -25,5 +25,8 @@ jobs:
       - name: Run syntax and route export checks
         run: npm run check
 
+      - name: Validate saved history and date semantics
+        run: npm run test:history
+
       - name: Run Live Map validator
         run: npm run validate

@@ -31,7 +31,8 @@ export function buildActiveFilterChips(filters = {}, hours = 168) {
   return chips;
 }
 
-export function renderEventFilterSummary(filters = {}, hours = 168) {
+export function renderEventFilterSummary(filters = {}, hours = 168, history = null) {
+  if(history) return `<section class="v2-filter-summary" aria-label="Active filters"><p>History · ${escapeHtml(history.start)} – ${escapeHtml(history.end)} UTC · through ${escapeHtml(history.cursor)}</p></section>`;
   const chips = buildActiveFilterChips(filters, hours);
   if (!chips.length) {
     return `<section class="v2-filter-summary" aria-label="Active filters"><div class="v2-section-title"><span>Filters</span></div><p class="v2-empty">All categories, severities, and domains — last 7 days.</p></section>`;

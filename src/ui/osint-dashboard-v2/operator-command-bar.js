@@ -49,7 +49,7 @@ function filterSummaryLine(filters = {}, hours = 168) {
   if (filters.countries?.size) parts.push(`${filters.countries.size} country filter(s)`);
   if (filters.query) parts.push(`search “${String(filters.query).slice(0, 24)}”`);
   const hourLabel = hours <= 1 ? "1h" : hours <= 6 ? "6h" : hours <= 24 ? "24h" : hours <= 168 ? "7d" : `${hours}h`;
-  parts.push(`window ${hourLabel}`);
+  parts.push(hours === null ? "Historical absolute date range" : `window ${hourLabel}`);
   return parts.join(" · ") || `All categories · last ${hourLabel}`;
 }
 
@@ -127,3 +127,4 @@ export function renderOperatorCommandBar({
     <p class="v2-empty v2-command-hint">Triage → inspect drawer → check connections → export artifact → mark seen.</p>
   </section>`;
 }
+

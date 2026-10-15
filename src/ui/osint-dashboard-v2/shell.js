@@ -29,7 +29,7 @@ export function renderOsintDashboardShell(container, context = {}) {
 
   if (loading) {
     container.innerHTML = `<div class="v2-shell v2-shell-loading" role="status">
-      ${renderOperatorCommandBar({ events: [], filters, hours, lastLoaded, systemStatus, sourceStatus, providerResults, changeSummary, loading: true })}
+      ${renderOperatorCommandBar({ events: [], filters, hours:context.history?null:hours, lastLoaded, systemStatus, sourceStatus, providerResults, changeSummary, loading: true })}
       <p class="v2-empty">Loading dashboard… provider responses still arriving.</p>
     </div>`;
     return;
@@ -37,7 +37,7 @@ export function renderOsintDashboardShell(container, context = {}) {
 
   if (error && !events.length) {
     container.innerHTML = `<div class="v2-shell v2-shell-error" role="alert">
-      ${renderOperatorCommandBar({ events: [], filters, hours, lastLoaded, systemStatus, sourceStatus, providerResults, changeSummary, error })}
+      ${renderOperatorCommandBar({ events: [], filters, hours:context.history?null:hours, lastLoaded, systemStatus, sourceStatus, providerResults, changeSummary, error })}
       <p>${error}</p>
       <p class="v2-empty">Clear filters if applied, then refresh. Cached events may still appear in the feed when available.</p>
     </div>`;
@@ -56,14 +56,14 @@ export function renderOsintDashboardShell(container, context = {}) {
 
   container.innerHTML = `<div class="v2-shell">
     ${selectionBanner}
-    ${renderOperatorCommandBar({ events, filters, hours, lastLoaded, systemStatus, sourceStatus, providerResults, changeSummary, loading, error })}
+    ${renderOperatorCommandBar({ events, filters, hours:context.history?null:hours, lastLoaded, systemStatus, sourceStatus, providerResults, changeSummary, loading, error })}
     ${renderEventSummaryCards({ events, sourceStatus, lastLoaded, systemStatus })}
     ${renderLegendPanel()}
     ${emptyFocus}
     ${renderChangeAwarenessPanel(changeSummary)}
     ${renderTimelinePanel(events, lastLoaded || Date.now(), changeStatusById)}
     ${renderClusterSummary(events, selectedClusterId)}
-    ${renderEventFilterSummary(filters, hours)}
+    ${renderEventFilterSummary(filters, hours, context.history)}
     ${renderProviderHealthSummary(sourceStatus, providerResults)}
   </div>`;
 }
@@ -77,9 +77,21 @@ export function renderOsintEventDetailDrawer(container, {
 } = {}) {
   if (!container) return;
   const active = Boolean(event || cluster);
-  container.innerHTML = cluster
+  const markup = cluster
     ? renderClusterDetailDrawer(cluster, { allEvents })
     : renderEventDetailDrawer(event, { changeStatus, allEvents, clusters });
+  // Camera changes must not replace a focused inspector or collapse its disclosures.
+  if (container.dataset.renderedMarkup !== markup) {
+    const focused = container.contains(document.activeElement) ? document.activeElement : null;
+    const focusAttribute = focused?.hasAttribute('data-v2-close-detail') ? 'data-v2-close-detail' : null;
+    const openSummaries = [...container.querySelectorAll('details[open] > summary')].map((item) => item.textContent);
+    container.innerHTML = markup;
+    container.dataset.renderedMarkup = markup;
+    for (const details of container.querySelectorAll('details')) {
+      if (openSummaries.includes(details.querySelector('summary')?.textContent)) details.open = true;
+    }
+    if (focusAttribute) container.querySelector(`[${focusAttribute}]`)?.focus({ preventScroll: true });
+  }
   container.hidden = !active;
   container.classList.toggle("open", active);
 }
@@ -90,3 +102,4 @@ export { renderEventFilterSummary, buildActiveFilterChips } from "./event-filter
 export { renderEventDetailDrawer, renderClusterDetailDrawer } from "./event-detail-drawer.js";
 export { renderTimelinePanel } from "./timeline-panel.js";
 export { renderClusterSummary } from "./cluster-summary.js";
+

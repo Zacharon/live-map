@@ -1,3 +1,4 @@
+import { readHistory } from "../data/history-repository.js";
 import { EVENT_PROVIDERS } from "../data/providers/registry.js";
 import { orchestrateProviders } from "../data/providers/orchestrator.js";
 import { DOMAIN_SOURCE_STATUS, PROVIDER_SOURCE_REGISTRY } from "../data/providers/source-registry.js";
@@ -5,6 +6,7 @@ import { countryByCode, countryForEvent } from "../data/countries.js";
 import { RECORD_KINDS } from "../events/normalized-event.js";
 import { SOURCE_DOMAINS, VERIFICATION_STATES } from "../sources/master-source-registry.js";
 import { allowedValue, parseHoursParam, sanitizeCountryCode } from "./request-validation.js";
+import { readStoredUsgs, unavailableStoredUsgs } from "../ingestion/usgs-read-model.js";
 
 const headers = {
   "content-type": "application/json; charset=utf-8",
@@ -107,23 +109,31 @@ function responseMode(result, runtimeMode) {
   return result.systemStatus === "operational" ? runtimeMode : `partial-${runtimeMode}`;
 }
 
-async function withRuntimeEnv(env, callback) {
-  if (!env || typeof env !== "object") return callback();
-  const previousProcess = globalThis.process;
-  const previousEnv = previousProcess?.env;
-  const nextEnv = { ...(previousEnv || {}), ...env };
-  if (previousProcess) previousProcess.env = nextEnv;
-  else globalThis.process = { env: nextEnv };
-  try {
-    return await callback();
-  } finally {
-    if (previousProcess) previousProcess.env = previousEnv;
-    else delete globalThis.process;
-  }
-}
-
 export function createEventsOptionsResponse() {
   return new Response("", { status: 204, headers });
+}
+
+async function storedUsgsResult(options, hours, now) {
+  const enabled = Boolean(options.usgsDb) || options.env?.LIVE_MAP_STORED_USGS === "true";
+  if (!enabled) return null;
+  if (options.usgsDb) {
+    try { return await readStoredUsgs(options.usgsDb, { hours, now }); }
+    catch { return unavailableStoredUsgs(now); }
+  }
+  const connectionString = options.env?.HYPERDRIVE?.connectionString || options.env?.DATABASE_URL;
+  if (!connectionString) return unavailableStoredUsgs(now);
+  let client;
+  try {
+    const pg = await import("pg");
+    const Client = pg.Client || pg.default.Client;
+    client = new Client({ connectionString });
+    await client.connect();
+    return await readStoredUsgs(client, { hours, now });
+  } catch {
+    return unavailableStoredUsgs(now);
+  } finally {
+    await client?.end().catch(() => {});
+  }
 }
 
 export async function createEventsResponse(request, options = {}) {
@@ -135,11 +145,30 @@ export async function createEventsResponse(request, options = {}) {
     );
   }
 
+  if (new URL(request.url).searchParams.get("period") === "history") {
+    try { const result = readHistory(new URL(request.url).searchParams);
+      const { filters } = parseApiParams(request);
+      result.events = applyApiFilters(result.events, filters); result.canonicalEvents = applyApiFilters(result.canonicalEvents, filters); result.filters = filters;
+      Object.assign(result, {sourceRegistry, providerSourceRegistry,
+        domainSourceStatus: Object.fromEntries(DOMAIN_SOURCE_STATUS.map(([id,status,message])=>[id,{status,message}])),
+        observationSummary:{total:0,retained:'metadata-only',coverageGaps:['Historical natural hazards only; no current global-news coverage.']},
+        hours:null,warnings:result.errors});
+      return new Response(JSON.stringify(result), { headers: {...headers, "cache-control":"public, max-age=3600"} });
+    } catch { return new Response(JSON.stringify({error:"invalid-history-window"}), {status:400, headers}); }
+  }
   try {
-    const result = await withRuntimeEnv(options.env, async () => {
+    // Request configuration stays in the provider context. Mutating process.env
+    // around awaited work leaks flags/credentials between concurrent requests.
+    const result = await (async () => {
       const { hours, filters, warnings } = parseApiParams(request);
-      const generatedAt = Date.now();
-      const providerResult = await orchestrateProviders({ hours, now: generatedAt, env: options.env });
+      const generatedAt = options.now ?? Date.now();
+      const storedUsgs = await storedUsgsResult(options, hours, generatedAt);
+      const providerResultsOverride = [
+        ...(storedUsgs ? [storedUsgs] : []),
+        ...(options.providerResultsOverride || []),
+      ];
+      const providerResult = await orchestrateProviders({ hours, now: generatedAt, env: options.env,
+        providerResultsOverride });
       const canonicalEvents = applyApiFilters(providerResult.canonicalEvents, filters);
       const legacyEvents = applyApiFilters(providerResult.events, filters);
 
@@ -163,13 +192,17 @@ export async function createEventsResponse(request, options = {}) {
         storylines: providerResult.storylines,
         observations: providerResult.observations,
         systemStatus: providerResult.systemStatus,
+        changeCursor: storedUsgs?.changeCursor || null,
         mode: responseMode(providerResult, options.runtimeMode),
         errors: providerResult.errors,
         warnings: [...warnings, ...(providerResult.errors || [])],
       };
-    });
+    })();
 
-    return new Response(JSON.stringify(result), { status: 200, headers });
+    const responseHeaders = options.usgsDb || options.env?.LIVE_MAP_STORED_USGS === "true"
+      ? { ...headers, "cache-control": "public, max-age=15, s-maxage=30" }
+      : headers;
+    return new Response(JSON.stringify(result), { status: 200, headers: responseHeaders });
   } catch (error) {
     return new Response(
       JSON.stringify({

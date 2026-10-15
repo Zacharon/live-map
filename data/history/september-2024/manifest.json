@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "importer": "live-map-history-v1",
+  "start": "2024-09-01",
+  "end": "2024-09-30",
+  "retrievedAt": "2026-09-30T20:58:27.146Z",
+  "providers": {
+    "usgs": {
+      "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2024-09-01T00%3A00%3A00Z&endtime=2024-09-30T23%3A59%3A59.999Z&minmagnitude=4.5&eventtype=earthquake&orderby=time-asc&limit=20000",
+      "requestedAt": "2026-09-30T20:58:27.156Z",
+      "accepted": 481,
+      "rejected": [],
+      "duplicates": 0,
+      "sha256": "37fcbafd658cb48379888e86b8a706efedb094b33229d60979168568168314f6",
+      "bytes": 345123,
+      "returned": 481,
+      "cap": 20000,
+      "capReached": false,
+      "status": "available"
+    },
+    "eonet": {
+      "url": "https://eonet.gsfc.nasa.gov/api/v3/events?start=2024-09-01&end=2024-09-30&status=all&limit=5000",
+      "requestedAt": "2026-09-30T20:58:28.242Z",
+      "accepted": 721,
+      "rejected": [],
+      "duplicates": 0,
+      "sha256": "fb0cb224acfd2e2ac65932a2b1e45c8450a3653304baa22befaffd3c2cbdcd79",
+      "bytes": 548171,
+      "returned": 721,
+      "cap": 5000,
+      "capReached": false,
+      "status": "available"
+    }
+  },
+  "limitations": [
+    "Current catalog extract of historical occurrences/observations, not point-in-time knowledge.",
+    "USGS magnitude >= 4.5; EONET coverage is curated natural hazards, not all hazards or global news.",
+    "Basemap imagery is reference imagery, not dated to these events."
+  ],
+  "accepted": 1202,
+  "recordSha256": "864637057455e5410e76cfa2e159583d675dbb9a0f9082469ae989bacd7d62b5"
+}
