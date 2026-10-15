@@ -1,0 +1,113 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { parseCaseFile, serializeCase, validateCasePayload, CASE_IO_LIMITS } from '../src/intelligence/case-io.js';
+import { inspectGrayZoneMaritime } from '../src/intelligence/gray-zone-maritime.js';
+import { validateEvidenceRecord } from '../src/intelligence/evidence-records.js';
+import { renderEvidenceDetail } from '../src/ui/evidence-detail.js';
+import { renderInvestigationWorkbench, workbenchFilename } from '../src/ui/investigation-workbench.js';
+import { evaluateChokepointOperations } from '../src/intelligence/operational-evaluator.js';
+import { chokepointById } from '../src/data/strategic-chokepoints.js';
+import { independenceSummary } from '../src/intelligence/investigation-cycle.js';
+
+const bytes = readFileSync(new URL('../data/development-fixtures/gray-zone-maritime-taiwan-2026-08.json', import.meta.url), 'utf8');
+const parsed = parseCaseFile(bytes);
+assert.equal(parsed.ok, true, JSON.stringify(parsed.errors));
+const original = parsed.caseObject;
+const vesselRecords = original.evidence.filter(record => record.extra.vessel);
+assert.equal(vesselRecords.length, 3);
+assert.deepEqual(vesselRecords.map(record => record.extra.vessel.reportedIdentity), ['Minfudingyu 07902','2502','Xiang Yang Hong 03']);
+const cgaResponse=original.evidence.find(record=>record.id==='cga-restricted-waters-response');
+assert.ok(cgaResponse.rightsAttribution.includes('CNA / Focus Taiwan'));
+assert.ok(!cgaResponse.extra.occurrencePeriod.includes('mid-August'),'official response period differs from the vessel encounter');
+for (const record of [...original.evidence, ...original.claims, ...original.relationships]) {
+  assert.equal(validateEvidenceRecord(record).valid, true, record.id);
+  assert.equal(record.observedAt, null); assert.equal(record.lat, null); assert.equal(record.lon, null);
+  assert.equal(record.geometry, null); assert.equal(record.synthetic, false);
+}
+const result = inspectGrayZoneMaritime(original);
+assert.deepEqual(result.conclusions.map(item => item.state), ['reported-sighting','attributed-inference','attributed-claim']);
+assert.equal(result.mission, 'unknown'); assert.equal(result.hostileIntent, 'unknown'); assert.equal(result.legalBoundary, 'unknown');
+assert.equal(result.receipt.effect,'none'); assert.equal(result.receipt.actor,'unauthenticated-local-reader');
+assert.equal(result.receipt.beforeRevision,null); assert.equal(result.receipt.afterRevision,null);
+assert.deepEqual(inspectGrayZoneMaritime(original), result, 'repeated immutable reads have no new effect');
+assert.equal(independenceSummary(vesselRecords).independentOriginCount, 1, 'three vessels are one reporting origin');
+assert.deepEqual(inspectGrayZoneMaritime(parseCaseFile(serializeCase(original)).caseObject), result, 'shared portable state survives export/reimport');
+
+function rejected(name, mutate) {
+  const changed = structuredClone(original); mutate(changed);
+  assert.equal(parseCaseFile(serializeCase(changed)).ok, false, name);
+}
+rejected('reported sightings cannot become app observations', value => value.evidence[0].valueOrigin = 'observed');
+rejected('no synthetic substitution', value => value.evidence[0].synthetic = true);
+rejected('no precise day invented', value => value.evidence[0].observedAt = '2026-08-15T00:00:00Z');
+rejected('no fabricated coordinates', value => value.evidence[0].lat = 24.5);
+rejected('no nested fabricated coordinates', value => value.evidence[0].extra.reportedLocation.coordinates = [121,24]);
+rejected('no fabricated track', value => value.evidence[0].extra.track = [[121,24],[122,24]]);
+rejected('no fabricated legal polygon', value => value.evidence[3].geometry = { type:'Polygon',coordinates:[] });
+rejected('no registry identity invention', value => value.evidence[0].extra.vessel.mmsi = '123456789');
+rejected('no corroboration promotion', value => value.independentCorroboration = 'confirmed');
+rejected('mirrors cannot create corroboration', value => value.claims[0].extra.independence = { independentOriginCount:3 });
+rejected('claim cannot become observed coordination', value => value.claims[1].valueOrigin = 'observed');
+rejected('no established blockade', value => value.claims[2].extra.established = true);
+rejected('no credibility promotion', value => value.claims[2].extra.credibility.code = '1');
+rejected('inference requires who said it', value => delete value.claims[1].extra.attributedTo);
+rejected('proximity cannot become causal edge', value => value.relationships[0].extra.edgeType = 'affects');
+rejected('no imported operational measurement', value => { value.evidence[0].value=3; value.evidence[0].evidenceKind='throughput-measurement'; });
+rejected('no imported operating assessment', value => value.assessments = [{extra:{approved:true}}]);
+rejected('malformed typed array fails clearly', value => value.claims = {});
+rejected('null record fails clearly', value => value.sources = [null]);
+rejected('no invented exact occurrence interval', value => value.evidence[0].effectiveStart = '2026-08-15T00:00:00Z');
+rejected('publication day cannot become exact publication time', value => value.evidence[0].reportedAt = '2026-10-08T00:00:00Z');
+rejected('claim cannot substitute synthetic evidence', value => value.claims[0].synthetic = true);
+rejected('no analytical confidence promotion', value => value.evidence[0].extra.analyticalConfidence.level = 'high');
+rejected('malformed parent evidence IDs cannot crash inspection', value => value.claims[0].parentEvidenceIds = {});
+rejected('malformed limitations cannot crash rendering', value => value.claims[0].qualityLimitations = {});
+rejected('malformed vessel associations cannot crash selected inspector', value => value.evidence[0].extra.associatedVessels = 'wrong type');
+rejected('co-occurrence relationship cannot become observed provenance', value => value.relationships[0].valueOrigin = 'observed');
+rejected('origin count must be numeric metadata', value => value.claims[0].extra.independence = { independentOriginCount:'confirmed' });
+rejected('malformed history cannot crash Changes', value => value.history = {});
+rejected('malformed parked list cannot crash Evidence', value => value.parked = {});
+rejected('null parked item cannot crash Evidence', value => value.parked = [null]);
+rejected('parked item needs a typed record', value => value.parked = [{record:null,reason:'out of scope'}]);
+rejected('source reliability cannot be promoted by import', value => value.sourceEvaluations[0].code = 'A');
+
+const tooMany={evidence:Array.from({length:CASE_IO_LIMITS.MAX_RECORDS+1},(_,index)=>({id:`extra-${index}`}))};
+assert.ok(validateCasePayload(serializeCase(tooMany)).errors.includes(`record count exceeds ${CASE_IO_LIMITS.MAX_RECORDS}`),'wrapped cases enforce record limit');
+assert.ok(validateCasePayload(JSON.stringify(tooMany)).errors.includes(`record count exceeds ${CASE_IO_LIMITS.MAX_RECORDS}`),'raw cases retain record limit');
+assert.ok(validateCasePayload(serializeCase({relationships:tooMany.evidence})).errors.includes(`record count exceeds ${CASE_IO_LIMITS.MAX_RECORDS}`),'relationship records count toward same limit');
+const unicodeCase=structuredClone(original);
+unicodeCase.evidence[0].qualityLimitations=Array.from({length:140},()=> '漢'.repeat(1500));
+const unicodeBytes=serializeCase(unicodeCase);
+assert.ok(unicodeBytes.length<CASE_IO_LIMITS.MAX_BYTES);
+assert.ok(new TextEncoder().encode(unicodeBytes).byteLength>CASE_IO_LIMITS.MAX_BYTES);
+assert.ok(validateCasePayload(unicodeBytes).errors.includes(`payload exceeds ${CASE_IO_LIMITS.MAX_BYTES} bytes`),'UTF8 bytes enforce real payload limit');
+
+const lost = structuredClone(original); lost.sources[0].availability = 'unavailable';
+assert.equal(parseCaseFile(serializeCase(lost)).ok, true);
+assert.ok(inspectGrayZoneMaritime(lost).conclusions.every(item => item.state === 'unknown'));
+assert.notEqual(inspectGrayZoneMaritime(lost).receipt.inputFingerprint,result.receipt.inputFingerprint,'source loss changes receipt input fingerprint');
+const missing = structuredClone(original); missing.evidence = missing.evidence.slice(1);
+assert.ok(inspectGrayZoneMaritime(missing).conclusions.every(item => item.state === 'unknown'));
+const noUrl = structuredClone(original); noUrl.claims[1].sourceUrl = null;
+assert.equal(inspectGrayZoneMaritime(noUrl).conclusions[1].state, 'unknown');
+const operational = evaluateChokepointOperations({chokepoint:chokepointById('taiwan-strait'), records:original.evidence, now:Date.parse('2026-10-11T20:22:41Z')});
+assert.equal(operational.operationalStatus,'unknown','a textual east-coast report cannot close Taiwan Strait');
+assert.equal(operational.dimensions.throughput.state,'unknown');
+const detail = renderEvidenceDetail(vesselRecords[0]);
+for(const term of ['Minfudingyu','Reported location / precision','Attribution','Source access','Independent corroboration','mid-August','2026-10-08','not inspected']) assert.ok(detail.includes(term),term);
+for(const tab of ['evidence','assessment']) {
+  const html = renderInvestigationWorkbench({chokepoint:{id:'taiwan-strait',name:'Taiwan Strait'},caseObject:original,open:true,tab});
+  for(const term of ['GRAY-ZONE MARITIME ACTIVITY','VESSEL OBSERVED','COORDINATION INFERRED','BLOCKADE PREPARATION CLAIMED','Honor Hung','no precise map location']) assert.ok(html.includes(term),term);
+  assert.ok(!html.includes('SYNTHETIC SCENARIO')); assert.ok(!html.includes('data-investigate-review'));
+  assert.ok(html.includes('data-gray-zone-receipt'));
+}
+const lostHtml=renderInvestigationWorkbench({chokepoint:{id:'taiwan-strait'},caseObject:lost,open:true,tab:'evidence'});
+assert.ok(lostHtml.includes('data-state="unknown"'));
+const assessmentHtml=renderInvestigationWorkbench({chokepoint:{id:'taiwan-strait'},caseObject:original,open:true,tab:'assessment'});
+assert.ok(assessmentHtml.includes('historical reporting only'));
+assert.ok(!assessmentHtml.includes('Human review pending'));
+const changesHtml=renderInvestigationWorkbench({chokepoint:{id:'taiwan-strait'},caseObject:original,open:true,tab:'changes'});
+assert.ok(changesHtml.includes('Dependent conclusions then become unknown'));
+assert.ok(!changesHtml.includes('Mutate evidence'));
+assert.ok(workbenchFilename('json',original.fixtureId).startsWith('gray-zone-maritime-taiwan-case-'));
+console.log('gray-zone-maritime-tests: 3 vessels, clocks/unknowns, 33 adversarial imports, UTF8/wrapped-record limits, source loss, portable state, inspector and operating non-promotion passed');

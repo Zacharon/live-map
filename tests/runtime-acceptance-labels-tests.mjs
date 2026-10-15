@@ -1,0 +1,25 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { densityUiLabel, activityUiLabel, recordedWindUiLabel, SYNTHETIC_FORMAT_FIXTURE, WIND_DECODER_FIXTURE, SYNTHETIC_WIND } from "../src/map/overlay-labels.js";
+import { densityLabel, activityLabel } from "../src/data/maritime-overlays.js";
+import { SCENARIO_STAGES } from "../src/data/fixtures/synthetic-chokepoint-scenario.js";
+import { readMapView, writeMapView, validateMapView } from "../src/map/view-state.js";
+
+const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+assert.match(html, /SYNTHETIC FORMAT FIXTURE — NOT SOURCE MEASUREMENTS \(density overlay\)/);
+assert.match(html, /SYNTHETIC FORMAT FIXTURE — NOT SOURCE MEASUREMENTS \(dated activity overlay\)/);
+assert.match(html, /SYNTHETIC DECODER FIXTURE — NOT A FETCHED NOAA\/GFS FIELD/);
+assert.match(html, /SYNTHETIC wind field — not live wind/);
+assert.match(html, /id="scenarioStage"/);
+assert.doesNotMatch(html, /Historical shipping density \(2015–2021, not live\)/);
+assert.match(densityUiLabel(), new RegExp(SYNTHETIC_FORMAT_FIXTURE));
+assert.match(activityUiLabel(), new RegExp(SYNTHETIC_FORMAT_FIXTURE));
+assert.equal(recordedWindUiLabel(), WIND_DECODER_FIXTURE);
+assert.equal(SYNTHETIC_WIND.includes("not live wind"), true);
+assert.match(densityLabel(), /SYNTHETIC FORMAT FIXTURE/);
+assert.match(activityLabel({ locationName: "x", vintage: "fixture" }), /SYNTHETIC FORMAT FIXTURE/);
+assert.ok(SCENARIO_STAGES.some((stage) => stage.id === "diplomacy-with-low-throughput"));
+const params = new URLSearchParams();
+writeMapView(params, validateMapView({ scenarioStage: "diplomacy-with-low-throughput", zoom: 5, lat: 26, lon: 56 }));
+assert.equal(readMapView(params).scenarioStage, "diplomacy-with-low-throughput");
+console.log("Runtime acceptance label tests passed.");

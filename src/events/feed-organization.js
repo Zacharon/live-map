@@ -1,5 +1,6 @@
 import { SEVERITIES } from "../config.js";
 import { relativeTime } from "./event-normalizer.js";
+import { finiteNumber, timestampMs } from "./value-semantics.js";
 
 export const SORT_OPTIONS = [
   ["newest-reported", "Newest reported"],
@@ -9,6 +10,7 @@ export const SORT_OPTIONS = [
   ["highest-confidence", "Highest confidence"],
   ["most-corroborated", "Most corroborated"],
   ["highest-impact", "Highest potential impact"],
+  ["attention-priority", "Inspection priority · heuristic"],
   ["source-freshness", "Source freshness"],
   ["country", "Country name"],
   ["distance", "Closest to selected location"],
@@ -45,10 +47,11 @@ export function sortEvents(events, sortBy = "highest-severity") {
     else if (sortBy === "newest-occurred") result = timestamp(b, "occurredAt") - timestamp(a, "occurredAt");
     else if (sortBy === "recently-updated") result = timestamp(b, "updatedAt") - timestamp(a, "updatedAt");
     else if (sortBy === "highest-severity") result = Number(b.severityScore || SEVERITIES[b.severity]?.score || 0) - Number(a.severityScore || SEVERITIES[a.severity]?.score || 0);
-    else if (sortBy === "highest-confidence") result = Number(b.confidence || 0) - Number(a.confidence || 0);
-    else if (sortBy === "most-corroborated") result = Number(b.corroborationScore || 0) - Number(a.corroborationScore || 0);
-    else if (sortBy === "highest-impact") result = Number(b.impactScore || 0) - Number(a.impactScore || 0);
-    else if (sortBy === "source-freshness") result = Number(b.freshnessScore || 0) - Number(a.freshnessScore || 0);
+    else if (sortBy === "highest-confidence") result = (finiteNumber(b.confidence) ?? -1) - (finiteNumber(a.confidence) ?? -1);
+    else if (sortBy === "most-corroborated") result = (finiteNumber(b.corroborationScore) ?? -1) - (finiteNumber(a.corroborationScore) ?? -1);
+    else if (sortBy === "highest-impact") result = (finiteNumber(b.impactScore) ?? -1) - (finiteNumber(a.impactScore) ?? -1);
+    else if (sortBy === "attention-priority") result = (finiteNumber(b.attentionScore) ?? -1) - (finiteNumber(a.attentionScore) ?? -1);
+    else if (sortBy === "source-freshness") result = (finiteNumber(b.freshnessScore) ?? -1) - (finiteNumber(a.freshnessScore) ?? -1);
     else if (sortBy === "country") result = String(a.country || "").localeCompare(String(b.country || ""));
     else if (sortBy === "distance") result = Number(a.distanceKm || 999999) - Number(b.distanceKm || 999999);
     if (result === 0) result = timestamp(b, "occurredAt") - timestamp(a, "occurredAt");
@@ -58,6 +61,7 @@ export function sortEvents(events, sortBy = "highest-severity") {
 }
 
 function keyFor(event, groupBy) {
+  if (["hour", "day"].includes(groupBy) && timestampMs(event.occurredAt) === null) return ["unknown-time", "Time unknown"];
   if (groupBy === "domain") return [event.domain || "other", event.domainLabel || "Other"];
   if (groupBy === "category") return [event.taxonomyCategory || event.domain || event.category || "other", event.categoryLabel || event.domainLabel || event.category || "Other"];
   if (groupBy === "type") return [event.type || event.category || "other", event.typeLabel || event.category || "Other"];

@@ -105,7 +105,7 @@ export function normalizeFredObservation(seriesConfig, observation, previousObse
 }
 
 export async function fetchFredEvents(context = {}) {
-  const apiKey = globalThis?.process?.env?.FRED_API_KEY;
+  const apiKey = (context.env ?? globalThis?.process?.env ?? {}).FRED_API_KEY;
   if (!apiKey) {
     return {
       events: [],
