@@ -1,7 +1,7 @@
 ## 2026-10-17 - Globe visual pass awaiting owner review
 
 - Owner visual acceptance of the globe pass (`docs/GLOBE_VISUAL_2026-10-17.md`, screenshots in `artifacts/globe-visual-2026-10-17/`).
-- Owner decision on the production CSP for Cesium (`'unsafe-eval'`, a separate globe route, or a build without Knockout). Until that is decided, the deployed site shows the 2D fallback.
+- Production Cesium CSP: owner chose a separate globe page (`/globe.html` adds `'unsafe-eval'`; other pages stay strict). Confirm the per-path headers on a deploy preview before merge.
 - Vendor the Natural Earth 1:110m boundary lines (public domain) if borders are approved; the loader is already in place.
 - Merge order: draft PR #75 first, then the stacked follow-up PR.
 
