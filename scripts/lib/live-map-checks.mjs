@@ -1,3 +1,4 @@
+import { safeSourceUrl } from "../../src/sources/source-url.js";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
@@ -15,6 +16,8 @@ export const DEFAULT_PRODUCTION_URLS = [
 const JAVASCRIPT_EXTENSIONS = new Set([".js", ".mjs", ".cjs"]);
 const BROWSER_FILE_EXTENSIONS = new Set([".html", ".js", ".mjs"]);
 const IGNORED_DIRS = new Set([".git", "node_modules", ".netlify"]);
+// Gitignored local evidence folders hold backup copies (including vendored Cesium); they never ship.
+const ROOT_IGNORED_DIRS = new Set(["artifacts", "qa-artifacts", ".wrangler", ".gstack"]);
 const CESIUM_PUBLIC_DEFAULT_TOKEN_SHA256 = "cd471a429327b7c79a70b0c7da0af876c4790908a3c3d58fa3c925c501a5c356";
 const SECRET_PATTERNS = [
   { name: "AWS access key", pattern: /AKIA[0-9A-Z]{16}/g },
@@ -62,6 +65,7 @@ export async function findFiles(root, predicate) {
     const entries = await fs.readdir(directory, { withFileTypes: true });
     for (const entry of entries) {
       if (IGNORED_DIRS.has(entry.name)) continue;
+      if (directory === root && ROOT_IGNORED_DIRS.has(entry.name)) continue;
       const fullPath = path.join(directory, entry.name);
       if (entry.isDirectory()) {
         await walk(fullPath);
@@ -123,13 +127,7 @@ export async function scanBrowserSecrets(root, reporter) {
 }
 
 export function assertValidUrl(value) {
-  if (!value || typeof value !== "string") return false;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:";
-  } catch {
-    return false;
-  }
+  return safeSourceUrl(value) !== null;
 }
 
 export function validateEventPayload(payload, reporter, options = {}) {

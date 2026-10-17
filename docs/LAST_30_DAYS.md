@@ -1,3 +1,7 @@
+## 2026-10-17 - Candidate committed, main merged, globe visual pass
+
+The 53-path candidate and inherited foundation are committed on `feature/evidence-semantic-globe` (draft PR #75 to `main`). Current `main` (33d426f) is merged in. Main's audit-repair suite is reconciled with candidate semantics: undated records stay visible as "Time unknown", unknown exact clocks read "Not supplied", the browser direct-USGS fallback stays removed, and source URLs use the shared `safeSourceUrl` helper. The inherited registry cache-policy assertion is fixed. The validator now skips gitignored root evidence folders. The 3D globe gained a night-atlas restyle, atmosphere/terminator, stars, graticule, optional local borders, severity-styled clustered markers and smooth fly-to ([record and CSP implications](GLOBE_VISUAL_2026-10-17.md)). The repository ruleset requires PRs for updates to every branch, so follow-ups go out as a new stacked branch and PR. No deployment.
+
 ## 2026-10-12 - Aviation local installation proposal prepared
 
 The dated aviation candidate has a separate exact-file installation proposal; canonical installation and owner acceptance remain NOT RUN until a verified application receipt exists. The proposed bytes add shared read-only Case/Evidence/Assessment/Changes inspection and a matching agent command. See [scope and ordinary/agent use](AVIATION_LOCAL_INTEGRATION_2026-10-12.md). Candidate H3 verification does not establish installation, incident authenticity or current operations.
@@ -20,7 +24,7 @@ Reproduced canonical Watch cards selecting directly; added omitted Evidence ledg
 
 # Last 30 Days
 
-Last updated: 2026-10-02 (isolated candidate only).
+Last updated: 2026-10-17 (branch merged with main; draft PR #75).
 
 ## Independent maritime signals — isolated local candidate
 
@@ -147,3 +151,7 @@ Added metadata-only source observations, source-organization-aware storylines, a
 ## 2026-10-02 — Useful Watch workflow with actual public reads (isolated candidate)
 
 Extended the reviewed maritime/selection candidate into a running local Reports workflow using bounded genuine USGS and NHC/CPHC reads. Source/place search, direct inspector selection, source measurements/UTC clocks/coverage, full loaded read baseline, material revisions, mobile Reports/search and response-generation guards use existing UI/schema/Cesium/workbench. Excluded records and source-clock uncertainty remain visible. See WORKING_WATCH_LOCAL.md and WORKING_WATCH_HOSTED_PLAN.md. Canonical, previous candidate/Library freezes, production routing/flags and zero paid budget are preserved; owner integration and hosted gates remain pending.
+
+# 2026-10-12 — bounded repository audit repair candidate
+
+Separate branch `fix/audit-20261012-live-map` repairs source URL safety, nullable zero/unknown confidence and source clocks with ingestion kept separate, obsolete USGS documentation references, and enforceable local/CI regressions. CodeQL's unchanged supported job now fails on analysis errors. Existing main/canonical installations and release/hosted/provider gates remain separate. See [candidate editing guide](AUDIT_REPAIR_2026-10-12.md). Independent review and hosted CI are tracked in the external repair receipt, not assumed from local tests.

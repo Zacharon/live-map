@@ -146,7 +146,7 @@ export function normalizeGdacsFeature(feature, now = new Date()) {
   const point = representativeGdacsPoint(feature?.geometry, feature?.bbox);
   if (!point) return { event: null, errors: ["missing usable geometry"] };
   const providerEventId = [properties.eventtype, properties.eventid, properties.episodeid].filter(Boolean).join(":");
-  const startedAt = parseDate(properties.fromdate, now.toISOString());
+  const startedAt = parseDate(properties.fromdate);
   const updatedAt = parseDate(properties.datemodified, parseDate(properties.todate, startedAt));
   const sourceName = properties.source ? `GDACS / ${properties.source}` : "Global Disaster Alert and Coordination System, GDACS";
   const severityText = properties.severitydata?.severitytext || null;

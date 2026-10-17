@@ -105,7 +105,7 @@ export function normalizeFirmsRow(row, now = new Date()) {
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return { event: null, errors: ["missing coordinates"] };
   }
-  const acq = parseAcqTime(row.acq_date, row.acq_time) || now;
+  const acq = parseAcqTime(row.acq_date, row.acq_time);
   const frp = Number(row.frp);
   const sat = row.satellite || row.instrument || "VIIRS";
   const conf = row.confidence || "unknown";
@@ -159,7 +159,7 @@ export function normalizeFirmsRow(row, now = new Date()) {
         FRP: Number.isFinite(frp) ? `${frp.toFixed(1)} MW` : "Not reported",
         Confidence: conf,
         Satellite: sat,
-        Acquired: acq.toISOString?.() || String(acq),
+        Acquired: acq ? acq.toISOString() : "Unknown time",
         Clustered: String(cellCount),
       },
     },

@@ -1,3 +1,4 @@
+import { safeSourceUrl } from "../../sources/source-url.js";
 import { createNormalizedEvent, stableStringHash } from "../../events/normalized-event.js";
 import { OFFICIAL_FEED_REGISTRY } from "./feed-registry.js";
 import { applyPublicationPolicy } from "./publication-policy.js";
@@ -95,7 +96,8 @@ async function fetchTextWithSafety(url, options = {}) {
 
 export function normalizeFeedItem(item, feed, now = new Date()) {
   if (!item?.title || !item?.link) return { event: null, errors: ["missing title or link"] };
-  const startedAt = item.publishedAt || item.updatedAt || now;
+  if (!safeSourceUrl(item.link)) return { event: null, errors: ["source URL rejected: absolute HTTP(S) URL without credentials required"] };
+  const startedAt = item.publishedAt || null;
   const result = createNormalizedEvent({
     id: `${feed.providerId}:${feed.id}:${stableStringHash(item.guid || item.link || item.title)}`,
     provider: feed.providerId,
@@ -110,7 +112,7 @@ export function normalizeFeedItem(item, feed, now = new Date()) {
     mapDisplayStatus: "not-mapped",
     nonGeographicReason: "Official feed item has no verified event coordinates.",
     startedAt,
-    updatedAt: item.updatedAt || startedAt,
+    updatedAt: item.updatedAt || null,
     ingestedAt: now,
     severity: feed.domain === "technology-cyber" ? 42 : 35,
     confidence: feed.sourceTier === "tier-1-primary-official" ? 78 : 55,

@@ -34,7 +34,7 @@ export function normalizeGdeltArticle(article = {}, pack = {}, now = new Date())
   const url = article.url || null;
   if (!url || !article.title) return { event: null, errors: ["missing title or url"] };
   const publisher = article.domain || article.sourceCountry || publisherFromUrl(url);
-  const publishedAt = article.seendate || article.date || now;
+  const publishedAt = article.seendate || article.date || null;
   const description = applyPublicationPolicy(article.socialimage ? article.title : article.title, DISCOVERY_PUBLICATION_POLICY);
   const result = createNormalizedEvent({
     id: `gdelt:${stableStringHash(canonicalizeUrl(url))}`,

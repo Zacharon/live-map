@@ -1,3 +1,10 @@
+## 2026-10-17 - Globe visual pass awaiting owner review
+
+- Owner visual acceptance of the globe pass (`docs/GLOBE_VISUAL_2026-10-17.md`, screenshots in `artifacts/globe-visual-2026-10-17/`).
+- Owner decision on the production CSP for Cesium (`'unsafe-eval'`, a separate globe route, or a build without Knockout). Until that is decided, the deployed site shows the 2D fallback.
+- Vendor the Natural Earth 1:110m boundary lines (public domain) if borders are approved; the loader is already in place.
+- Merge order: draft PR #75 first, then the stacked follow-up PR.
+
 ## 2026-10-12 - Aviation installation decision pending
 
 - Review the exact-file installation map, full hashes, ownership, dependencies and rollback card before any canonical writes. [Aviation scope and use](AVIATION_LOCAL_INTEGRATION_2026-10-12.md) describes the proposed local capability; installation remains NOT RUN pending a separate authorization and verified receipt.
@@ -112,9 +119,9 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 - Touch first: GitHub PR #32, `src/api/events-response.js`, `src/api/sources-response.js`, `src/api/provider-health-response.js`, frontend query parsing files.
 - Test: `npm run check:syntax`, `npm run test:platform`.
 
-### Add source URL scheme allowlist
+### Review source URL boundary repair candidate
 
-- Goal: prevent provider-controlled event links from rendering non-web schemes.
+- Candidate: `fix/audit-20261012-live-map` enforces absolute HTTP(S) and no embedded credentials at ingestion and every external source-link renderer. Review [candidate guide](AUDIT_REPAIR_2026-10-12.md); independent review, hosted CI and release are separate gates.
 - Touch first: `src/events/normalized-event.js`, `src/app-controller.js`, `src/ui/dialogs.js`, provider normalizers that set `sourceUrl`.
 - Test: add cases for `javascript:`, `data:`, `mailto:`, relative URLs, `http:`, and `https:`.
 

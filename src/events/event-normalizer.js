@@ -1,15 +1,14 @@
 import { CATEGORIES, SEVERITIES } from "../config.js";
 import { computeQualityDimensions } from "./event-quality.js";
 import { classifyEvent } from "./taxonomy.js";
+import { safeSourceUrl } from "../sources/source-url.js";
 import { finiteNumber, nullableScore, timestampMs, validCoordinates } from "./value-semantics.js";
 
 export function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
 }
 
-export function safeSourceUrl(value) {
-  try {const url=new URL(value);return ['http:','https:'].includes(url.protocol) && !url.username && !url.password ? url.href : ''; }catch{return '';}
-}
+export { safeSourceUrl };
 
 export function safeCategory(category) {
   return CATEGORIES[category] ? category : "other";
