@@ -148,7 +148,8 @@ function recentFilingsFromSubmissions(data = {}) {
 }
 
 export async function fetchSecEdgarEvents(context = {}) {
-  const contact = globalThis?.process?.env?.SEC_CONTACT_EMAIL;
+  const runtimeEnv = context.env ?? globalThis?.process?.env ?? {};
+  const contact = runtimeEnv.SEC_CONTACT_EMAIL;
   if (!compliantSecContact(contact)) {
     return {
       events: [],
@@ -159,7 +160,7 @@ export async function fetchSecEdgarEvents(context = {}) {
       requestAttempted: false,
     };
   }
-  const cikTargets = (context.secCiks || globalThis?.process?.env?.SEC_CIKS || "").split(",").map(cik10).filter((value) => /\d{10}/.test(value)).slice(0, 25);
+  const cikTargets = (context.secCiks || runtimeEnv.SEC_CIKS || "").split(",").map(cik10).filter((value) => /\d{10}/.test(value)).slice(0, 25);
   if (!cikTargets.length) {
     return { events: [], rejected: [], status: "healthy", warnings: ["SEC EDGAR is configured but no SEC_CIKS allowlist was supplied; broad filing ingestion is disabled."], requestAttempted: false };
   }

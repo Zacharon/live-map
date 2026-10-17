@@ -3,20 +3,20 @@ import { classifyRipestatObservation } from "./internet-anomaly-rules.js";
 
 export const RIPESTAT_BASE_URL = "https://stat.ripe.net/data";
 
-function sourceapp() {
-  return globalThis?.process?.env?.RIPESTAT_SOURCEAPP || "";
+function sourceapp(runtimeEnv = globalThis?.process?.env ?? {}) {
+  return runtimeEnv.RIPESTAT_SOURCEAPP || "";
 }
 
-function resources() {
-  return String(globalThis?.process?.env?.RIPESTAT_RESOURCES || "")
+function resources(runtimeEnv = globalThis?.process?.env ?? {}) {
+  return String(runtimeEnv.RIPESTAT_RESOURCES || "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean)
     .slice(0, 8);
 }
 
-export function ripestatUrl(endpoint, resource) {
-  const params = new URLSearchParams({ resource, sourceapp: sourceapp() || "liveworldmap-preview" });
+export function ripestatUrl(endpoint, resource, runtimeEnv = globalThis?.process?.env ?? {}) {
+  const params = new URLSearchParams({ resource, sourceapp: sourceapp(runtimeEnv) || "liveworldmap-preview" });
   return `${RIPESTAT_BASE_URL}/${endpoint}/data.json?${params}`;
 }
 
@@ -80,7 +80,8 @@ export function normalizeRipestatObservation(resource, payload = {}, now = new D
 }
 
 export async function fetchRipestatEvents(context = {}) {
-  if (!sourceapp() || resources().length === 0) {
+  const runtimeEnv = context.env ?? globalThis?.process?.env ?? {};
+  if (!sourceapp(runtimeEnv) || resources(runtimeEnv).length === 0) {
     return {
       events: [],
       rejected: [],
@@ -95,8 +96,8 @@ export async function fetchRipestatEvents(context = {}) {
   const events = [];
   const observations = [];
   const rejected = [];
-  for (const resource of resources()) {
-    const payload = await context.fetchJson(ripestatUrl("visibility", resource), "RIPEstat");
+  for (const resource of resources(runtimeEnv)) {
+    const payload = await context.fetchJson(ripestatUrl("visibility", resource, runtimeEnv), "RIPEstat");
     const result = normalizeRipestatObservation(resource, payload, now);
     observations.push(result.observation);
     if (result.event) events.push(result.event);

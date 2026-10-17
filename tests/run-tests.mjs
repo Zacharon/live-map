@@ -821,7 +821,8 @@ test("Quality dimensions remain separate", () => {
   const quality = computeQualityDimensions({ severityScore: 80, confidence: 66, updatedAt: Date.now(), independentSourceCount: 2, verificationStatus: "Provider reviewed" });
   assert.equal(quality.severity, 80);
   assert.equal(quality.confidence, 66);
-  assert.ok(quality.impactScore >= 0 && quality.impactScore <= 100);
+  assert.equal(quality.impactScore, null);
+  assert.ok(quality.attentionScore >= 0 && quality.attentionScore <= 100);
   assert.equal(normalizeVerificationStatus("Provider reviewed"), "primary-confirmed");
 });
 
@@ -856,8 +857,9 @@ test("CSP is explicit and production assets are same-origin", () => {
   const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8");
   const csp = netlifyConfig.match(/Content-Security-Policy = "([^"]+)"/)?.[1] || "";
   const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(csp, /script-src 'self'/);
-  assert.doesNotMatch(csp, /unsafe-eval|\*/);
+  assert.match(csp, /script-src 'self' 'wasm-unsafe-eval'/);
+  assert.doesNotMatch(csp, /(?<!wasm-)unsafe-eval/);
+  assert.doesNotMatch(csp, /\*/);
   assert.doesNotMatch(csp, /unpkg\.com/);
   assert.doesNotMatch(html, /unpkg\.com/);
   assert.match(html, /vendor\/leaflet\/leaflet\.js/);
@@ -892,9 +894,9 @@ test("Detailed diagnostics are separated from the public dashboard", () => {
 test("Consumer shell exposes simple navigation, tools, onboarding, and drawers", () => {
   const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
-  assert.match(index, /Overview/);
-  assert.match(index, /Events/);
-  assert.match(index, /Chokepoints/);
+  assert.match(index, />Watch</);
+  assert.match(index, />Passages</);
+  assert.match(index, />Open reports</);
   assert.match(index, /Countries/);
   assert.match(index, /Diagnostics/);
   assert.match(index, /id="toolsMenu"/);
@@ -902,7 +904,8 @@ test("Consumer shell exposes simple navigation, tools, onboarding, and drawers",
   assert.match(index, /id="onboardingDialog"/);
   assert.match(index, /id="filterDrawer"/);
   assert.match(index, /id="eventDrawer"/);
-  assert.match(index, /Live Tracking/);
+  assert.match(index, /Transport &amp; context|Transport & context/);
+  assert.match(index, /Positions require configured, authorized sources/);
   assert.match(css, /\.drawer-left/);
   assert.match(css, /\.drawer-right/);
   assert.match(css, /\.standard-mode \.advanced-only/);
@@ -2071,7 +2074,7 @@ test("Chokepoint condition scoring requires authoritative disruption evidence", 
   const correlations = [{ chokepointId: chokepoint.id, eventId: event.id, relationship: "directly-references", confidence: 90 }];
   assert.equal(assessChokepointCondition(chokepoint, [event], correlations, { now }).status, "closed");
   assert.equal(assessChokepointCondition(chokepoint, [], [], { now, sourceStatus: { provider: { ok: false, stale: true } } }).status, "unknown");
-  assert.equal(assessChokepoints([], [], { now }).find((item) => item.chokepointId === chokepoint.id).status, "normal");
+  assert.equal(assessChokepoints([], [], { now }).find((item) => item.chokepointId === chokepoint.id).status, "unknown");
 });
 
 test("Chokepoint UI filtering, rendering, and event enrichment remain safe", () => {
@@ -2089,3 +2092,13 @@ test("Chokepoint UI filtering, rendering, and event enrichment remain safe", () 
 
 await runPendingTests();
 console.log("All tests passed.");
+import './zoom-density-tests.mjs';
+import './operational-evidence-tests.mjs';
+import './investigation-workbench-tests.mjs';
+import './portwatch-hormuz-frozen-sample-tests.mjs';
+import './public-source-snapshot-tests.mjs';
+import './chokepoint-brief-tests.mjs';
+import './usability-dark-globe-tests.mjs';
+import './semantic-globe-weather-tests.mjs';
+import './runtime-acceptance-labels-tests.mjs';
+import './globe-style-tests.mjs';

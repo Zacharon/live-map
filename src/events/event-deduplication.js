@@ -1,4 +1,4 @@
-import { timestampMs, confidenceValue } from "./event-values.js";
+import { nullableScore, timestampMs, validCoordinates } from "./value-semantics.js";
 
 function normalizeTitle(title) {
   return String(title || "")
@@ -31,6 +31,8 @@ function titleSimilarity(a, b) {
 
 export function arePotentialDuplicates(a, b) {
   if (a.provider === b.provider && a.providerEventId && a.providerEventId === b.providerEventId) return true;
+  if (!validCoordinates(a.latitude ?? a.lat, a.longitude ?? a.lon) || !validCoordinates(b.latitude ?? b.lat, b.longitude ?? b.lon)) return false;
+  if (timestampMs(a.startedAt) === null || timestampMs(b.startedAt) === null) return false;
   if (a.category !== b.category) return false;
   const leftTime = timestampMs(a.startedAt);
   const rightTime = timestampMs(b.startedAt);
@@ -60,8 +62,8 @@ export function mergeDuplicateEvents(events) {
     existing.startedAt = earliest.length ? new Date(Math.min(...earliest)).toISOString() : null;
     existing.updatedAt = latest.length ? new Date(Math.max(...latest)).toISOString() : null;
     existing.severity = Math.max(existing.severity, event.severity);
-    const confidence = [confidenceValue(existing.confidence), confidenceValue(event.confidence)].filter((value) => value !== null);
-    existing.confidence = confidence.length ? Math.max(...confidence) : null;
+    const confidenceScores = [nullableScore(existing.confidence), nullableScore(event.confidence)].filter((value) => value !== null);
+    existing.confidence = confidenceScores.length ? Math.max(...confidenceScores) : null;
     existing.metadata.mergedSources = [
       ...(existing.metadata.mergedSources || []),
       { provider: event.provider, providerEventId: event.providerEventId, sourceUrl: event.sourceUrl },

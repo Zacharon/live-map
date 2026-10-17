@@ -39,8 +39,8 @@ export function createMemoryProviderCache() {
   };
 }
 
-export async function createProviderCache() {
-  if (globalThis?.process?.env?.NETLIFY_BLOBS_PROVIDER_CACHE !== "true") {
+export async function createProviderCache(runtimeEnv = globalThis?.process?.env ?? {}) {
+  if (runtimeEnv.NETLIFY_BLOBS_PROVIDER_CACHE !== "true") {
     return createMemoryProviderCache();
   }
   try {

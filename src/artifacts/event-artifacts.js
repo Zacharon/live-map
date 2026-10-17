@@ -1,10 +1,11 @@
-import { confidenceValue, timestampMs } from "../events/event-values.js";
+import { confidenceValue } from "../events/event-values.js";
 /**
  * Event Artifacts v1 — pure client-side OSINT artifact builders.
  * No DOM, fetch, localStorage, or mutation of input events/clusters.
  */
 
 import { clusterKeyForEvent, findClusterById } from "../events/clustering.js";
+import { finiteNumber, timestampMs } from "../events/value-semantics.js";
 
 export const ARTIFACT_SCHEMA_VERSION = "v1";
 export const RELATED_EVENTS_MAX = 8;
@@ -42,8 +43,7 @@ function asTimestamp(value) {
 }
 
 function asCoord(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
+  return finiteNumber(value);
 }
 
 function eventIdOf(event) {
@@ -115,7 +115,7 @@ export function resolveConfidence(entity) {
       note: "Confidence is a record-quality label, not a danger rating.",
     };
   }
-  const n = confidenceValue(entity.confidence);
+  const n = finiteNumber(entity.confidence);
   if (n !== null) {
     const score = Math.max(0, Math.min(100, n));
     return {

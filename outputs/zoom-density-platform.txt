@@ -1,0 +1,121 @@
+Zoom-density tests passed: thresholds, quiet world, progressive reveal, selection, filters, viewport, budgets and stable ordering.
+ok - CII score boundaries map to expected levels
+ok - CII handles missing data with reduced confidence
+ok - CII handles event data and keeps score in range
+ok - Country registry supports ISO lookups, bounds, and event matching
+ok - CII v2 avoids duplicate saturation and keeps evidence dimensions separate
+ok - CII v2 ignores retracted records and downweights discovery leads
+ok - Layer registry has at least 45 valid definitions
+ok - Five dashboard modes exist
+ok - Exchange registry has 92 entries
+ok - Alert validation rejects incomplete rules
+ok - HTML escaping protects unsafe text
+ok - Correlation distance and matching work
+ok - Normalized event model validates bounds and timestamps
+ok - Record kinds and publication policy preserve weak-source boundaries
+ok - USGS normalization rejects invalid coordinates and maps severity
+ok - NASA EONET normalization handles polygon-like geometry
+ok - Conservative deduplication merges exact provider duplicates only when defensible
+ok - Provider orchestration reports partial failure without dropping successful providers
+ok - Master source registry schema and enums stay valid
+ok - Master source registry protects licensing and implementation state
+ok - Master source registry has attribution, HTTPS URLs, tiers, and domain coverage
+ok - Source Explorer search and filters preserve useful source groups
+ok - Source adapter contract sanitizes errors and opens breakers safely
+ok - Runtime providers map to master source registry entries
+ok - Provider capability registry covers runtime providers and controlled RSS groups
+ok - Controlled RSS provider groups stay disabled until explicitly configured
+ok - Provider schedules and request budgets protect upstream services
+ok - Source API returns JSON envelope, filters, and invalid source warnings
+ok - Country APIs support lookup, filtering, and distribution metadata
+ok - Provider health API returns sanitized diagnostics outside public dashboard
+ok - Moving-object API rejects global requests and reports configuration-required providers
+ok - Cloudflare Worker rate limits public API routes with JSON 429
+ok - Cloudflare Worker rejects oversized API requests before route handling
+ok - Netlify compatibility API routes share JSON 429 rate limiting
+ok - Netlify compatibility POST routes reject malformed and oversized JSON
+ok - Events API preserves recordKind/domain filters
+ok - Events API preserves country filters
+ok - Events API output survives default Explore frontend filters
+ok - Source Explorer markup supports routing, fallback state, and escaping-safe controls
+ok - Taxonomy maps provider categories and preserves unknowns safely
+ok - Sort modes preserve time-field meaning and stable tie-breaking
+ok - Grouping builds collapsible feed groups with stats
+ok - Quality dimensions remain separate
+ok - Provider health state conversion is explicit
+ok - Incident clustering prefers strong matches
+ok - Saved view serialization captures shareable feed state
+ok - CSP is explicit and production assets are same-origin
+ok - Repository browser code does not use eval-like patterns
+ok - Layout CSS declares stable map and independently scrolling panels
+ok - Detailed diagnostics are separated from the public dashboard
+ok - Consumer shell exposes simple navigation, tools, onboarding, and drawers
+ok - Consumer presets define safe default and tracking views
+ok - Global search covers countries, airports, ports, events, objects, and sources locally
+ok - NWS severity and polygon normalization map to weather taxonomy
+ok - NWS alerts without geometry use labeled coverage fallback
+ok - CISA KEV normalization creates safe non-geographic cyber events
+ok - NVD normalization enriches CVEs without map coordinates
+ok - ReliefWeb stays configuration-required without appname and limits report bodies
+ok - SEC EDGAR classifies material filings without inventing geography
+ok - Company identity prefers CIK and does not merge on similar names alone
+ok - FRED observations distinguish unchanged, revised, and material records
+ok - EIA records create commodity signals only for configured thresholds
+ok - Provider state prevents duplicate finance records after restart-like reuse
+ok - GDELT discovery leads stay unverified and non-geographic
+ok - Source observations retain bounded metadata and canonicalize tracking URLs
+ok - Storylines keep source independence and trend separate from verification
+ok - Open signal normalizers preserve metadata-only social boundaries
+ok - Official feed parsing strips unsafe markup and rejects local feed URLs
+ok - Statuspage incidents normalize only active user-impacting events
+ok - RIPEstat observations become events only on conservative anomaly rules
+ok - Moving-object schema validates bounded viewport and public object shape
+ok - OpenSky normalization and configuration boundary are safe
+ok - Global Fishing Watch vessel boundary normalizes but stays configuration-required
+ok - Non-geographic normalized events remain valid
+ok - GDACS normalizes disaster alert taxonomy, severity, and source links
+ok - GDACS handles polygons, tropical cyclone weather mapping, and invalid geometry
+ok - GDACS cross-provider earthquake reports can cluster without deleting source records
+ok - Provider cache stores normalized payloads without raw secrets
+ok - Source registry covers every top-level domain with non-live planned states
+ok - Dashboard v2 summary cards handle empty events and missing provider health
+ok - Dashboard v2 provider health summary does not crash without data
+ok - Dashboard v2 filter chips summarize filters without mutating event data
+ok - Timeline buckets are stable and handle missing timestamps
+ok - Timeline and clustering handle empty arrays without mutation
+ok - Clustering groups nearby coordinates and separates categories
+ok - Clustering handles missing coordinates without crashing
+ok - Cluster helpers resolve members, bounds, and stale ids safely
+ok - Cluster summary marks selected cluster without mutating events
+ok - Change awareness handles empty and missing previous snapshot
+ok - Change awareness detects new, updated, unchanged, and removed events
+ok - Change awareness handles corrupt snapshot and unavailable storage safely
+ok - Change awareness snapshot save and reload is deterministic
+ok - Dashboard v2 event detail drawer handles null and populated events
+ok - Event artifact creation from a normalized event
+ok - Cluster artifact creation from cluster events
+ok - Artifact Markdown export contains required sections
+ok - Artifact JSON export is parseable and stable
+ok - Artifact generation handles missing fields without crashing
+ok - Artifact generation does not mutate raw events
+ok - Related events logic is deterministic
+ok - Confidence placeholder present when no confidence data
+ok - Event artifact card renders export controls
+ok - Request validation clamps hours and rejects non-numeric values
+ok - Events API clamps invalid hours and ignores invalid filters safely
+ok - Source API sanitizes malformed filter params without breaking read-only access
+ok - Frontend URL param helpers sanitize malformed bookmarked params
+ok - Artifact and change-awareness helpers still soft-fail on malformed inputs
+ok - Threat level v0 is deterministic
+ok - Threat level missing fields do not crash
+ok - Threat level ranks high/recent/clustered above low/old/single
+ok - Threat level caveats are always present
+ok - Event connections are deterministic and capped
+ok - Event connections do not mutate raw events
+ok - Threat and connections UI helpers render safely
+ok - Event drawer includes threat and connections sections
+ok - Strategic chokepoint registry has valid controlled values and geometry
+ok - Chokepoint correlation is deterministic, evidence-led, and bounded
+ok - Chokepoint condition scoring requires authoritative disruption evidence
+ok - Chokepoint UI filtering, rendering, and event enrichment remain safe
+All tests passed.

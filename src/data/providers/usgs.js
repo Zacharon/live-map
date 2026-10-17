@@ -1,6 +1,15 @@
 import { createNormalizedEvent } from "../../events/normalized-event.js";
+import { finiteNumber, validCoordinates } from "../../events/value-semantics.js";
 
 export const USGS_FEED_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson";
+
+function usgsSourceUrl(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol === "https:" && url.hostname === "earthquake.usgs.gov" && !url.username && !url.password) return url.href;
+  } catch { /* Use the fixed source landing page. */ }
+  return "https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php";
+}
 
 export function usgsSeverityScore(magnitude) {
   const value = Number(magnitude);
@@ -12,11 +21,12 @@ export function normalizeUsgsFeature(feature, now = new Date()) {
   const errors = [];
   const properties = feature?.properties || {};
   const coordinates = feature?.geometry?.coordinates;
-  if (!Array.isArray(coordinates) || coordinates.length < 2) {
+  if (!Array.isArray(coordinates) || coordinates.length < 2 || !validCoordinates(coordinates[1], coordinates[0])) {
     return { event: null, errors: ["missing coordinates"] };
   }
-  const [longitude, latitude, depthKm = null] = coordinates.map(Number);
-  const magnitude = Number(properties.mag);
+  const [longitude, latitude] = coordinates.map(finiteNumber);
+  const depthKm = finiteNumber(coordinates[2]);
+  const magnitude = finiteNumber(properties.mag);
   const reviewed = properties.status === "reviewed";
   const title = properties.title || `Magnitude ${Number.isFinite(magnitude) ? magnitude.toFixed(1) : "unknown"} earthquake`;
   const result = createNormalizedEvent({
@@ -36,15 +46,15 @@ export function normalizeUsgsFeature(feature, now = new Date()) {
     countryName: (properties.place || "Unknown").split(",").pop().trim(),
     locationName: properties.place || "Unknown location",
     startedAt: properties.time,
-    updatedAt: properties.updated || properties.time,
+    updatedAt: properties.updated,
     ingestedAt: now,
     severity: usgsSeverityScore(magnitude),
     confidence: reviewed ? 96 : 88,
     status: "active",
     sourceName: "USGS Earthquake Hazards Program",
-    sourceUrl: properties.url || "https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php",
+    sourceUrl: usgsSourceUrl(properties.url),
     sourceType: "Official",
-    sourcePublishedAt: properties.time,
+    sourcePublishedAt: null,
     geometry: feature.geometry || null,
     tags: ["USGS", "earthquake", properties.status || "unknown"],
     metadata: {

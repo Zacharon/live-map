@@ -121,21 +121,23 @@ for (const value of [undefined, null, "", "bad", NaN, Infinity, false, [], {}]) 
     assert.equal(event.freshnessScore, null);
     assert.match(renderEventDetailDrawer(event), /Source occurrence time is unknown/);
     assert.doesNotMatch(renderEventDetailDrawer(event), /matches active filters and time window/);
-    assert.equal(relativeTime(value), "Unknown time");
-    assert.equal(exactTime(value), "Unknown time");
+    // Candidate wording (audit-truth-tests): unknown relative/exact clocks stay explicit.
+    assert.equal(relativeTime(value), "Time unknown");
+    assert.equal(exactTime(value), "Not supplied");
     assert.equal(timelineBucketForEvent(event, now.getTime()), "older");
-    assert.equal(groupEvents([event], "day")[0].label, "Unknown time");
+    assert.equal(groupEvents([event], "day")[0].label, "Time unknown");
     assert.equal(buildIncidents([event])[0].startedAt, null);
     assert.equal(buildIncidents([event])[0].confidence, null);
     assert.equal(shouldCluster(event, { ...event, id: "other" }), false);
     const filters = { categories: new Set(["other"]), severities: new Set(["low"]), query: "" };
-    assert.equal(filteredEvents([event], filters, 168, "newest").length, 0);
+    // Undated records stay inspectable under an explicit "Time unknown" label; they are never given ingestion time.
+    assert.equal(filteredEvents([event], filters, 168, "newest").length, 1);
   });
 }
 
 test("Valid clocks and zero epoch remain valid; missing updates are never invented", () => {
   assert.equal(timestampMs(0), 0);
-  assert.equal(exactTime(0), new Date(0).toLocaleString([], { dateStyle: "medium", timeStyle: "long" }));
+  assert.equal(exactTime(0), new Date(0).toLocaleString([], { dateStyle: "medium", timeStyle: "long", timeZone: "UTC" }));
   const canonical = createNormalizedEvent({ ...input, startedAt: "2026-10-11T08:00:00Z", confidence: 48 }).event;
   assert.equal(canonical.startedAt, "2026-10-11T08:00:00.000Z");
   assert.equal(canonical.updatedAt, null);
@@ -217,7 +219,7 @@ test("Statuspage absence never becomes ingestion recency; valid source clocks ar
   assert.equal(missing.freshnessScore, null);
   const event = normalizeEvent(toLegacyEvent(missing));
   const filters = { categories: new Set([event.category]), severities: new Set([event.severity]), query: "" };
-  assert.equal(filteredEvents([event], filters, 168, "newest").length, 0);
+  assert.equal(filteredEvents([event], filters, 168, "newest").length, 1);
   const dated = normalizeStatuspageIncident({ ...incident, created_at: "2026-10-11T08:00:00Z", updated_at: "2026-10-11T09:00:00Z" }, page, now).event;
   assert.equal(dated.startedAt, "2026-10-11T08:00:00.000Z");
   assert.equal(dated.sourcePublishedAt, dated.startedAt);
@@ -236,7 +238,9 @@ test("Grouped update summaries only report actual updates, with unknown and epoc
 });
 
 test("Obsolete USGS docs references are removed while the functional feed is unchanged", () => {
-  for (const file of ["src/data/providers/registry.js", "src/data/providers/source-registry.js", "src/data/layers.js", "src/app-controller.js", "src/data/providers/usgs.js"]) {
+  // The browser direct-USGS fallback was removed, so app-controller no longer carries a USGS URL.
+  assert.doesNotMatch(fs.readFileSync("src/app-controller.js", "utf8"), /["']https:\/\/earthquake\.usgs\.gov\/earthquakes\/feed\/["']/);
+  for (const file of ["src/data/providers/registry.js", "src/data/providers/source-registry.js", "src/data/layers.js", "src/data/providers/usgs.js"]) {
     const source = fs.readFileSync(file, "utf8");
     assert.doesNotMatch(source, /["']https:\/\/earthquake\.usgs\.gov\/earthquakes\/feed\/["']/);
     assert.match(source, /https:\/\/earthquake\.usgs\.gov\/earthquakes\/feed\/v1\.0\/geojson\.php/);

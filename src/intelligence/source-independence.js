@@ -7,6 +7,7 @@ export function sourceIndependence(left = {}, right = {}) {
   const rightUrl = canonicalizeObservationUrl(right.canonicalUrl || right.url);
   if (leftUrl && leftUrl === rightUrl) return { independent: false, reason: "same-canonical-url" };
   if (left.syndication && right.syndication && left.syndication === right.syndication) return { independent: false, reason: "same-syndication-chain" };
+  if (!left.sourceOrganizationId || !right.sourceOrganizationId) return { independent: false, reason: "organization-unknown" };
   return { independent: true, reason: "distinct-source-organization" };
 }
 

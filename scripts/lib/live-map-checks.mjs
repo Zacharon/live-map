@@ -1,5 +1,6 @@
 import { safeSourceUrl } from "../../src/sources/source-url.js";
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -15,6 +16,9 @@ export const DEFAULT_PRODUCTION_URLS = [
 const JAVASCRIPT_EXTENSIONS = new Set([".js", ".mjs", ".cjs"]);
 const BROWSER_FILE_EXTENSIONS = new Set([".html", ".js", ".mjs"]);
 const IGNORED_DIRS = new Set([".git", "node_modules", ".netlify"]);
+// Gitignored local evidence folders hold backup copies (including vendored Cesium); they never ship.
+const ROOT_IGNORED_DIRS = new Set(["artifacts", "qa-artifacts", ".wrangler", ".gstack"]);
+const CESIUM_PUBLIC_DEFAULT_TOKEN_SHA256 = "cd471a429327b7c79a70b0c7da0af876c4790908a3c3d58fa3c925c501a5c356";
 const SECRET_PATTERNS = [
   { name: "AWS access key", pattern: /AKIA[0-9A-Z]{16}/g },
   { name: "GitHub token", pattern: /gh[pousr]_[A-Za-z0-9_]{30,}/g },
@@ -61,6 +65,7 @@ export async function findFiles(root, predicate) {
     const entries = await fs.readdir(directory, { withFileTypes: true });
     for (const entry of entries) {
       if (IGNORED_DIRS.has(entry.name)) continue;
+      if (directory === root && ROOT_IGNORED_DIRS.has(entry.name)) continue;
       const fullPath = path.join(directory, entry.name);
       if (entry.isDirectory()) {
         await walk(fullPath);
@@ -99,10 +104,15 @@ export async function scanBrowserSecrets(root, reporter) {
   const findings = [];
   for (const file of files) {
     const text = await fs.readFile(file, "utf8");
+    const relative = path.relative(root, file).replace(/\\/g, "/");
     for (const { name, pattern } of SECRET_PATTERNS) {
       pattern.lastIndex = 0;
       let match;
       while ((match = pattern.exec(text))) {
+        // Cesium 1.145 ships this public default ion token in both distribution bundles.
+        // Match its exact digest, so any added or replaced JWT is still reported.
+        if (name === "JWT" && (relative === "vendor/cesium/index.js" || relative === "vendor/cesium/Cesium.js") &&
+            createHash("sha256").update(match[0]).digest("hex") === CESIUM_PUBLIC_DEFAULT_TOKEN_SHA256) continue;
         const line = text.slice(0, match.index).split(/\r?\n/).length;
         findings.push(`${path.relative(root, file)}:${line} ${name}`);
       }

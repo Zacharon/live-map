@@ -1,15 +1,16 @@
+import { workspaceStorage } from '../ui/workspace-storage.js';
 const STORAGE_KEY = "liveMapAlertRules";
 
 export function loadAlertRules() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return JSON.parse(workspaceStorage.getItem(STORAGE_KEY) || "[]");
   } catch {
     return [];
   }
 }
 
 export function saveAlertRules(rules) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(rules));
+  workspaceStorage.setItem(STORAGE_KEY, JSON.stringify(rules));
 }
 
 export function validateAlertRule(rule) {

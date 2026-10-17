@@ -1,7 +1,7 @@
+import { safeSourceUrl } from "../sources/source-url.js";
 import { computeQualityDimensions } from "./event-quality.js";
 import { classifyEvent } from "./taxonomy.js";
-import { safeSourceUrl } from "../sources/source-url.js";
-import { timestampMs, confidenceValue } from "./event-values.js";
+import { finiteNumber, nullableScore, timestampMs, validCoordinates } from "./value-semantics.js";
 
 const SEVERITY_LABELS = ["low", "moderate", "high", "critical"];
 const VALID_STATUS = new Set(["active", "monitoring", "resolved", "unknown"]);
@@ -43,20 +43,12 @@ export function scoreFromLegacySeverity(severity) {
 }
 
 export function toIsoString(value, fallback = null) {
-  if (value === null || value === undefined || value === "") return fallback;
   const timestamp = timestampMs(value);
   return timestamp === null ? fallback : new Date(timestamp).toISOString();
 }
 
 export function isValidCoordinate(latitude, longitude) {
-  return (
-    Number.isFinite(Number(latitude)) &&
-    Number.isFinite(Number(longitude)) &&
-    Number(latitude) >= -90 &&
-    Number(latitude) <= 90 &&
-    Number(longitude) >= -180 &&
-    Number(longitude) <= 180
-  );
+  return validCoordinates(latitude, longitude);
 }
 
 export function stableStringHash(value) {
@@ -91,7 +83,7 @@ export function validateNormalizedEvent(event) {
 
 export function createNormalizedEvent(input) {
   const nowIso = toIsoString(input.ingestedAt, new Date().toISOString());
-  const startedAt = toIsoString(timestampMs(input.startedAt, input.occurredAt, input.sourcePublishedAt));
+  const startedAt = toIsoString(input.startedAt ?? input.occurredAt);
   const updatedAt = toIsoString(input.updatedAt);
   const sourcePublishedAt = toIsoString(input.sourcePublishedAt);
   const lastVerifiedAt = toIsoString(input.lastVerifiedAt);
@@ -105,7 +97,9 @@ export function createNormalizedEvent(input) {
   const providerEventId = input.providerEventId ?? input.providerId ?? null;
   const stableId = input.id || `${input.provider}:${providerEventId || stableStringHash(`${input.title}:${startedAt}:${input.latitude}:${input.longitude}`)}`;
   const taxonomy = classifyEvent(input);
-  const isExplicitlyNonGeographic = input.geographic === false;
+  const latitude = finiteNumber(input.latitude ?? input.lat);
+  const longitude = finiteNumber(input.longitude ?? input.lon);
+  const isExplicitlyNonGeographic = input.geographic === false || latitude === null || longitude === null;
   const event = {
     id: stableId,
     provider: input.provider,
@@ -123,11 +117,11 @@ export function createNormalizedEvent(input) {
     typeLabel: taxonomy.typeLabel,
     taxonomyColor: taxonomy.color,
     subcategory: input.subcategory ?? null,
-    latitude: Number(input.latitude ?? input.lat),
-    longitude: Number(input.longitude ?? input.lon),
+    latitude,
+    longitude,
     geographic: isExplicitlyNonGeographic ? false : true,
-    mapDisplayStatus: input.mapDisplayStatus || (isExplicitlyNonGeographic ? "not-mapped" : "mapped"),
-    nonGeographicReason: input.nonGeographicReason || null,
+    mapDisplayStatus: isExplicitlyNonGeographic ? "not-mapped" : input.mapDisplayStatus || "mapped",
+    nonGeographicReason: input.nonGeographicReason || (isExplicitlyNonGeographic ? "Geography not supplied" : null),
     countryCode: input.countryCode ?? null,
     countryName: input.countryName ?? input.country ?? null,
     region: input.region ?? null,
@@ -137,11 +131,14 @@ export function createNormalizedEvent(input) {
     ingestedAt: nowIso,
     severity,
     severityLabel,
-    confidence: confidenceValue(input.confidence),
+    confidence: nullableScore(input.confidence),
+    impactScore: nullableScore(input.impactScore),
+    independentSourceCount: input.independentSourceCount ?? null,
+    verificationStatus: input.verificationStatus ?? null,
     status: normalizeStatus(input.status),
     sourceName: input.sourceName || input.source || input.providerName || input.provider,
     sourceUrl: safeSourceUrl(input.sourceUrl ?? input.providerUrl),
-    sourceType: input.sourceType || "Official",
+    sourceType: input.sourceType || "Unknown",
     sourceTier: input.sourceTier || input.metadata?.sourceTier || null,
     publisher: input.publisher || input.sourceName || input.provider,
     language: input.language || null,
@@ -193,7 +190,7 @@ export function toLegacyEvent(event) {
     summary: event.description || "",
     source: event.sourceName,
     providerName: event.sourceName,
-    verificationStatus: event.metadata?.verificationStatus || "single-source",
+    verificationStatus: event.verificationStatus,
     recordKind: event.recordKind,
     sourceTier: event.sourceTier,
     publisher: event.publisher,
@@ -201,7 +198,7 @@ export function toLegacyEvent(event) {
     publicationPolicy: event.publicationPolicy,
     clusterId: event.clusterId,
     severityReason: event.metadata?.severityReason || "Severity is platform-derived from provider data.",
-    coordinateMethod: event.metadata?.coordinateMethod || "provider coordinates",
+    coordinateMethod: event.metadata?.coordinateMethod || "Precision not supplied",
     details: event.metadata?.details || {},
     impactScore: event.impactScore,
     freshnessScore: event.freshnessScore,

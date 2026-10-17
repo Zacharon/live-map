@@ -1,6 +1,12 @@
-import { confidenceText } from "./events/event-values.js";
-import { sourceLink } from "./sources/source-url.js";
+import {renderWatchOperator,filterWatchEvents} from './ui/watch-operator.js';
+import { renderWatchEventCard, renderWorkspaceSummary, workspaceWindowEnd, renderLensGuide } from './ui/watch-workspace.js';
+import { normalizeVerificationStatus } from './events/event-quality.js';
+import { workspaceStorage } from './ui/workspace-storage.js';
+import { nearbyContacts, renderContactRoster, renderContactDetail } from './map/contact-roster.js';
 import { CONFIG, CATEGORIES, SEVERITIES } from "./config.js";
+import { selectMapEvents, selectMovingObjects, inViewport, wrapLongitude } from './map/attention-policy.js';
+import { validateMapView } from './map/view-state.js';
+import { validateBbox } from './moving-objects/schema.js';
 import { DASHBOARDS, getDashboard } from "./data/dashboards.js";
 import { LAYER_CATALOG, layersForDashboard } from "./data/layers.js";
 import { EXCHANGES } from "./data/exchanges.js";
@@ -23,7 +29,13 @@ import { loadAlertRules, saveAlertRules, createLocalRule, validateAlertRule, pre
 import { createMapController } from "./map/map-controller.js";
 import { renderMarkers } from "./map/marker-renderer.js";
 import { renderClusterHighlight, fitClusterOnMap } from "./map/cluster-highlight.js";
-import { setGlobeMode } from "./map/globe-controller.js";
+import { setGlobeMode, getGlobeHandle } from "./map/globe-controller.js";
+import { bandFromZoom } from "./map/semantic-bands.js";
+import { graphNodeFromRecord, graphEdgeFromRelationship, neighborhood } from "./intelligence/knowledge-graph.js";
+import { syntheticChokepointRecords, syntheticScenarioEvents, SYNTHETIC_CHOKEPOINT_ID, SCENARIO_STAGES } from "./data/fixtures/synthetic-chokepoint-scenario.js";
+import { SHIPPING_DENSITY_META } from "./data/maritime-overlays.js";
+import { activityUiLabel, densityUiLabel, ORBITAL_MODULE_ONLY, recordedWindUiLabel, SYNTHETIC_WIND } from "./map/overlay-labels.js";
+import { renderWatchDock } from "./ui/watch-dock.js";
 import { renderSourceHealth } from "./ui/source-health.js";
 import { renderSourcesStatusPanel, emptyDomainMessage } from "./ui/sources-status-panel.js";
 import { loadSavedViews, saveView, serializeView } from "./ui/saved-views.js";
@@ -43,57 +55,22 @@ import {
 import { buildEventArtifact, buildClusterArtifact } from "./artifacts/event-artifacts.js";
 import { runArtifactExportAction } from "./ui/osint-dashboard-v2/artifact-export.js";
 import { filterChokepoints, renderChokepointCards, renderChokepointDetail, renderStrategicWatch } from "./ui/chokepoints.js";
+import { indexItemsByChokepoint, renderChokepointBriefList } from "./ui/chokepoint-brief.js";
 import { renderLatestIntelligence } from "./ui/latest-intelligence.js";
+import { renderInvestigationWorkbench, workbenchFilename } from "./ui/investigation-workbench.js";
+import { applyEvidenceMutation, createInvestigationCase, reviewAssessment, SYNTHETIC_NOW } from "./intelligence/investigation-cycle.js";
+import { parseCaseFile, serializeCase } from "./intelligence/case-io.js";
+import {isAviationCase, AVIATION_CASE_ID} from './intelligence/aviation-incident.js';
+import { projectPublicAssessment, renderPublicMarkdown } from "./intelligence/public-projection.js";
 
 function ids(names) {
   return Object.fromEntries(names.map((id) => [id, document.getElementById(id)]));
 }
 
 const EVENT_CACHE_KEY = "live-map-last-successful-events-v2";
+let densityGridCache = null;
 const RETRY_BASE_MS = 30000;
 const RETRY_CAP_MS = 5 * 60 * 1000;
-
-function quakeSeverity(magnitude) {
-  return magnitude >= 7 ? "critical" : magnitude >= 6 ? "high" : magnitude >= 4.5 ? "medium" : "low";
-}
-
-function normalizeUSGS(feature) {
-  const properties = feature.properties || {};
-  const coords = feature.geometry?.coordinates || [0, 0, 0];
-  const magnitude = Number(properties.mag || 0);
-  const depth = Number(coords[2] || 0);
-  return normalizeEvent({
-    id: `usgs-${feature.id}`,
-    providerId: feature.id,
-    category: "earthquake",
-    severity: quakeSeverity(magnitude),
-    title: properties.title || `Magnitude ${magnitude.toFixed(1)} earthquake`,
-    summary: `Magnitude ${magnitude.toFixed(1)} earthquake at approximately ${depth.toFixed(1)} km depth. ${properties.status === "reviewed" ? "Reviewed by USGS." : "Preliminary automated solution; details may change."}`,
-    lat: coords[1],
-    lon: coords[0],
-    country: (properties.place || "Unknown").split(",").pop().trim(),
-    place: properties.place || "Unknown location",
-    occurredAt: properties.time,
-    updatedAt: properties.updated,
-    source: "USGS Earthquake Hazards Program",
-    sourceUrl: properties.url,
-    sourceType: "Official",
-    providerUrl: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php",
-    confidence: properties.status === "reviewed" ? 98 : 90,
-    verificationStatus: properties.status === "reviewed" ? "Provider reviewed" : "Preliminary",
-    coordinateMethod: "official epicenter",
-    severityReason: `Magnitude ${magnitude.toFixed(1)} earthquake at ${depth.toFixed(1)} km depth.`,
-    details: {
-      Magnitude: magnitude.toFixed(1),
-      Depth: `${depth.toFixed(1)} km`,
-      Status: properties.status || "unknown",
-      Tsunami: properties.tsunami ? "Possible/flagged" : "No flag",
-      Felt: properties.felt ?? "Not reported",
-      Significance: properties.sig ?? "-",
-      Coordinates: `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`,
-    },
-  });
-}
 
 function classifyFetchError(error) {
   if (!navigator.onLine) return "browser-offline";
@@ -102,7 +79,7 @@ function classifyFetchError(error) {
   if (/JSON|Unexpected token/i.test(message)) return "non-json-response";
   if (/API 5|Function/i.test(message)) return "event-api-unavailable";
   if (/Failed to fetch|NetworkError|ERR_NAME_NOT_RESOLVED|Name not resolved|Load failed/i.test(message)) return "dns-network-failure";
-  if (/API [4-5]\d\d|USGS [4-5]\d\d/i.test(message)) return "http-error";
+  if (/API [4-5]\d\d/i.test(message)) return "http-error";
   return "request-failure";
 }
 
@@ -119,7 +96,7 @@ function safeFailureMessage(kind) {
     case "dns-network-failure":
       return "DNS or network request failed. Event data temporarily unavailable.";
     case "http-error":
-      return "Event provider returned an HTTP error.";
+      return "Event API returned an HTTP error.";
     default:
       return "Event data temporarily unavailable.";
   }
@@ -127,7 +104,7 @@ function safeFailureMessage(kind) {
 
 function readEventCache() {
   try {
-    return JSON.parse(localStorage.getItem(EVENT_CACHE_KEY) || "null");
+    return JSON.parse(workspaceStorage.getItem(EVENT_CACHE_KEY) || "null");
   } catch {
     return null;
   }
@@ -135,7 +112,8 @@ function readEventCache() {
 
 function writeEventCache(result) {
   try {
-    localStorage.setItem(EVENT_CACHE_KEY, JSON.stringify({
+    workspaceStorage.setItem(EVENT_CACHE_KEY, JSON.stringify({
+      localPreview: result.localPreview || null,
       events: result.events || [],
       generatedAt: result.generatedAt || Date.now(),
       sources: result.sources || [],
@@ -150,100 +128,50 @@ function writeEventCache(result) {
   }
 }
 
-async function directFallback() {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), CONFIG.requestTimeoutMs);
-  let data;
-  try {
-    const response = await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson", { cache: "no-store", signal: controller.signal });
-    if (!response.ok) throw new Error(`USGS ${response.status}`);
-    data = await response.json();
-  } finally {
-    clearTimeout(timeout);
-  }
-  return {
-    events: data.features.map(normalizeUSGS),
-    generatedAt: Date.now(),
-    sources: ["USGS direct fallback"],
-    sourceStatus: { usgs: { ok: true, count: data.features.length, message: "Direct fallback" } },
-    errors: ["Event API was unavailable, so the browser loaded USGS directly."],
-    mode: "fallback",
-  };
-}
-
-function sourceButton(event) {
-  if (!event.sourceUrl) return sourceLink(null, "Source", "mini-source-link");
-  return sourceLink(event.sourceUrl, "Source", "mini-source-link");
-}
-
-function countryForDisplay(event) {
-  return countryForEvent(event);
-}
-
-function qualityBadges(event) {
-  const kind = (event.recordKind || "event").replace(/-/g, " ");
-  const verification = consumerVerificationLabel(event.verificationStatus || event.verification?.state || "reported");
-  return `<div class="quality-row"><span class="advanced-only">Content type: ${escapeHtml(kind)}</span><span>Severity: ${escapeHtml(event.severity)}</span><span class="advanced-only">Confidence: ${escapeHtml(confidenceText(event.confidence))}</span><span>${escapeHtml(verification)}</span><span>Sources: ${escapeHtml(event.independentSourceCount || 1)}</span><span>Last updated: ${escapeHtml(relativeTime(event.updatedAt))}</span></div>`;
-}
-
-function consumerVerificationLabel(value = "") {
-  const normalized = String(value).toLowerCase();
-  if (normalized.includes("corroborated")) return "Confirmed by multiple sources";
-  if (normalized.includes("primary")) return "Official source";
-  if (normalized.includes("unverified")) return "Unverified report";
-  if (normalized.includes("single")) return "Single source";
-  return "Reported";
-}
-
-/** Latest change-status map for feed cards (set each render from change-awareness). */
+/** Change statuses belong to the workspace; the card renderer receives values. */
 let activeChangeStatusById = new Map();
-
-function changeBadgeHtml(changeStatus) {
-  if (changeStatus === "new") return '<span class="change-badge change-badge-new" title="New since last mark seen">New</span>';
-  if (changeStatus === "updated") return '<span class="change-badge change-badge-updated" title="Updated since last mark seen">Updated</span>';
-  return "";
-}
-
 function renderEventCard(event) {
-  const expanded = state.cardMode === "expanded";
-  const country = countryForDisplay(event);
-  const countryLabel = country ? `<button type="button" class="country-badge" data-country-select="${country.iso3}">${escapeHtml(country.shortName || country.name)}</button>` : `<span>${escapeHtml(event.country)}</span>`;
-  const summary = expanded ? `<p>${escapeHtml(event.summary)}</p>` : "";
-  const details = expanded ? `<div class="event-facts"><span class="fact-chip">Occurred: ${escapeHtml(exactTime(event.occurredAt))}</span><span class="fact-chip">Reported: ${escapeHtml(exactTime(event.firstReportedAt))}</span><span class="fact-chip">Updated: ${escapeHtml(exactTime(event.updatedAt))}</span>${event.geographic === false ? `<span class="fact-chip">Not mapped: ${escapeHtml(event.nonGeographicReason || "no supported geography")}</span>` : ""}${event.incidentSize > 1 ? `<span class="fact-chip">Incident: ${escapeHtml(event.incidentSize)} linked events</span>` : ""}</div>` : "";
-  const location = event.geographic === false ? "No map location" : event.place || event.country || "Location pending";
-  const chokepointContext = event.affectedChokepoints?.length ? `<p class="event-chokepoint-line">Strategic area: ${escapeHtml(event.affectedChokepoints.slice(0, 2).join(", "))}</p>` : "";
-  const kind = event.recordKind || "event";
-  const isSelected = state.selectedEventId && String(state.selectedEventId) === String(event.id);
-  const changeStatus = activeChangeStatusById.get(String(event.id))
-    || activeChangeStatusById.get(event.id)
-    || null;
-  const changeClass = changeStatus === "new" ? " is-new" : changeStatus === "updated" ? " is-updated" : "";
-  return `<article class="event-card ${expanded ? "expanded" : "compact"} record-${escapeHtml(kind)}${isSelected ? " is-selected" : ""}${changeClass}" data-id="${escapeHtml(event.id)}" data-change="${escapeHtml(changeStatus || "")}"${isSelected ? ' aria-current="true"' : ""}><div class="event-meta"><span class="category-pill" style="--cat:${event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color}">${escapeHtml(event.domainLabel || CATEGORIES[event.category]?.label || "Other")}</span><span>${escapeHtml(event.typeLabel || event.category)}</span>${countryLabel}${changeBadgeHtml(changeStatus)}<span class="record-kind advanced-only">${escapeHtml(kind)}</span><span class="severity-tag" style="--sev:${SEVERITIES[event.severity]?.color || SEVERITIES.low.color}">${SEVERITIES[event.severity]?.label || event.severity}</span></div><h2>${escapeHtml(event.title)}</h2><div class="consumer-card-line"><span>${escapeHtml(location)}</span><span>${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</span></div>${summary}${chokepointContext}${qualityBadges(event)}${details}<div class="source-row ${state.interfaceMode === "standard" ? "standard-source-row" : ""}"><span>${escapeHtml(event.sourceName || "Source")}</span><span>${escapeHtml(consumerVerificationLabel(event.verificationStatus))}</span>${event.incidentSize > 1 ? `<span class="advanced-only">${escapeHtml(event.incidentTitle || "Incident cluster")}</span>` : ""}${sourceButton(event)}<button type="button" class="mini-source-link event-detail-button" data-event-detail="${escapeHtml(event.id)}">View details</button></div><div class="event-foot advanced-only"><span>${relativeTime(event.occurredAt)} occurred - ${escapeHtml(event.sourceType)}</span><span class="confidence">${escapeHtml(confidenceText(event.confidence))} confidence</span></div></article>`;
+  return renderWatchEventCard(event, { cardMode: state.cardMode, selectedEventId: state.selectedEventId, changeStatus: activeChangeStatusById.get(event.id) });
 }
-
+function updateFeedMarkup(container, markup) {
+  if (container.dataset.renderedMarkup === markup) return;
+  const focused = container.contains(document.activeElement) ? document.activeElement : null;
+  const focusAttribute = ['data-watch-source','data-watch-changes','data-v2-mark-seen','data-event-detail','data-evidence-back','data-evidence-select','data-investigate-tab','data-investigate-close'].find(name => focused?.hasAttribute(name));
+  const focusValue = focusAttribute ? focused.getAttribute(focusAttribute) : null;
+  container.innerHTML = markup;
+  container.dataset.renderedMarkup = markup;
+  if (focusAttribute) container.querySelector(`button[${focusAttribute}="${CSS.escape(focusValue)}"]`)?.focus({ preventScroll: true });
+}
 function renderList(els, events) {
   if (state.activeArea === "chokepoints") {
     const chokepoints = filterChokepoints(STRATEGIC_CHOKEPOINTS, state.chokepointAssessments, state.chokepointFilters);
-    els.eventList.innerHTML = renderChokepointCards(chokepoints, state.chokepointAssessments, state.selectedChokepointId);
+    const hours = Number(state.hours || 168);
+    const end = Date.now();
+    const start = end - hours * 3600 * 1000;
+    const index = indexItemsByChokepoint(chokepoints, events, state.chokepointCorrelations || [], state.observationRecords || [], { start, end });
+    updateFeedMarkup(els.eventList, renderChokepointBriefList(chokepoints, state.chokepointAssessments, index, state.selectedChokepointId, { expandedId: state.expandedChokepointId }));
     return;
   }
   if (state.activeArea === "latest-intelligence") {
-    els.eventList.innerHTML = renderLatestIntelligence(state.storylines, state.observations);
+    updateFeedMarkup(els.eventList, renderLatestIntelligence(state.storylines, state.observations));
     return;
   }
   if (!events.length) {
     const filters = dashboardFilters();
     const selectedDomain = filters.domains.size === 1 ? [...filters.domains][0] : null;
     const message = selectedDomain ? emptyDomainMessage(selectedDomain, state.events, true, state.sourceStatus) : "No events match the selected filters and time range.";
-    els.eventList.innerHTML = `<div class="empty">${escapeHtml(message)}</div>`;
+    updateFeedMarkup(els.eventList, `<div class="empty">${escapeHtml(message)}</div>`);
     return;
   }
-  const groups = groupEvents(events, state.groupBy, state.sourceStatus);
-  els.eventList.innerHTML = groups.map((group) => {
+  const pageCount = Math.ceil(events.length / 60);
+  state.listPage = Math.min(state.listPage, pageCount - 1);
+  const groups = groupEvents(events.slice(state.listPage*60,(state.listPage+1)*60), state.groupBy, state.sourceStatus);
+  const markup = groups.map((group) => {
     const collapsed = state.collapsedGroups.has(group.id);
     const warning = group.stats.providerWarning ? '<span class="group-warning">provider warning</span>' : "";
     return `<section class="event-group"><button class="group-header" type="button" data-group-toggle="${escapeHtml(group.id)}"><span>${collapsed ? "+" : "-"}</span><strong>${escapeHtml(group.label)}</strong><small>${group.stats.total} events / ${group.stats.highCount} high / ${group.stats.newCount} new / updated ${group.stats.newestUpdate}</small>${warning}</button><div class="group-body" ${collapsed ? "hidden" : ""}>${group.events.slice(0, 80).map(renderEventCard).join("")}${group.events.length > 80 ? `<div class="empty">${group.events.length - 80} more events hidden for performance.</div>` : ""}</div></section>`;
   }).join("");
+  updateFeedMarkup(els.eventList, markup + `<div class="list-pagination"><button data-list-page="prev" ${state.listPage===0?'disabled':''}>Previous</button><span>${state.listPage+1} / ${pageCount} · ${events.length} records</span><button data-list-page="next" ${state.listPage===pageCount-1?'disabled':''}>Next</button></div>`);
 }
 
 function renderFilters(els) {
@@ -252,6 +180,8 @@ function renderFilters(els) {
   els.layerFilters.innerHTML = Object.entries(CATEGORIES).map(([key, category]) => `<button class="filter-item ${filters.categories.has(key) ? "active" : ""}" title="Layers control which concrete event types appear on the map." style="--category:${category.color}" data-category="${key}"><span><i class="dot"></i>${category.label}</span><b>${state.events.filter((event) => event.category === key).length}</b></button>`).join("");
   els.severityFilters.innerHTML = Object.entries(SEVERITIES).map(([key, severity]) => `<button class="severity-btn ${filters.severities.has(key) ? "active" : ""}" style="--sev:${severity.color}" data-severity="${key}">${severity.label}</button>`).join("");
   const activeDomains = domainOptions().filter((domain) => state.events.some((event) => event.domain === domain.id));
+  const layerQuery = document.getElementById('layerSearch')?.value.toLowerCase() || '';
+  els.layerFilters.querySelectorAll('button').forEach(button=>{button.hidden=!button.textContent.toLowerCase().includes(layerQuery); button.setAttribute('aria-pressed',String(button.classList.contains('active')));const records=state.events.filter(e=>e.category===button.dataset.category);button.title=records.length ? `${records.length} reports. Sources: ${[...new Set(records.map(e=>e.sourceName))].join(', ')}. Latest event ${relativeTime(Math.max(...records.map(e=>e.occurredAt)))}` : 'No available reports. Check Sources for coverage and provider access.';});
   const recordLegend = state.events.some((event) => (event.recordKind || "event") !== "event")
     ? '<div class="legend-row"><i class="dot record-dot"></i>Lead / observation</div>'
     : "";
@@ -269,10 +199,14 @@ function renderFilters(els) {
 
 function renderMapHealth(element, health) {
   if (!element || !health) return;
+  if (document.getElementById("map")?.hidden) {
+    element.hidden = true;
+    return;
+  }
   const show = ["degraded", "unavailable"].includes(health.tileStatus) || health.containerWidth <= 0 || health.containerHeight <= 0;
   element.hidden = !show;
   if (!show) return;
-  element.innerHTML = `<strong>Map ${escapeHtml(health.tileStatus)}</strong><p>${escapeHtml(health.safeMessage)}</p><div><button type="button" data-basemap-switch="dark">Switch to Dark Map</button><button type="button" data-basemap-switch="street">Switch to Street Map</button></div>`;
+  element.innerHTML = `<strong>Map ${escapeHtml(health.tileStatus)}</strong><p>${escapeHtml(health.safeMessage)}</p><div><button type="button" data-basemap-switch="dark">Use offline dark</button><button type="button" data-basemap-switch="dark-online">Retry online dark tiles</button><button type="button" data-basemap-switch="street">Switch to Street Map</button></div>`;
 }
 
 function renderFeedError(element) {
@@ -341,6 +275,7 @@ function updateCountriesLink(element) {
 }
 
 function renderPublicDataStatus() {
+  if(state.demo) return '<strong>Synthetic demo</strong><p>Invented scenarios for interface testing. No live event or tracking providers are queried. 2D uses no remote basemap; 3D uses vendored Natural Earth II.</p>';
   const statuses = Object.values(state.sourceStatus || {});
   const available = statuses.filter((status) => status.ok).length;
   const stale = statuses.filter((status) => status.stale || status.status === "degraded").length;
@@ -348,7 +283,7 @@ function renderPublicDataStatus() {
   const unavailable = statuses.filter((status) => !status.ok && !["disabled", "configuration-required"].includes(status.status)).length;
   const label = state.systemStatus === "operational" ? "Operational" : state.systemStatus === "partial-data" ? "Some data delayed" : state.systemStatus === "major-provider-outage" ? "Offline" : "Some data delayed";
   const tools = state.interfaceMode === "advanced" ? '<p><a href="/diagnostics">Technical diagnostics</a></p>' : "";
-  return `<strong>Public data status</strong><p>${escapeHtml(label)}. Last refreshed ${state.lastLoaded ? escapeHtml(relativeTime(state.lastLoaded)) : "never"}. ${available} live, ${stale} degraded, ${unavailable} unavailable, ${disabled} disabled or credential-gated.</p><p>Public data only. May be delayed or incomplete. Verify with original sources; not for emergency or professional decisions.</p>${tools}`;
+  return `<strong>Public data status</strong><p>${escapeHtml(label)}. Last refreshed ${state.lastLoaded ? escapeHtml(relativeTime(state.lastLoaded)) : "never"}. ${available} retrieved, ${stale} degraded, ${unavailable} unavailable, ${disabled} disabled or credential-gated.</p><p>Public data only. May be delayed or incomplete. Verify with original sources; not for emergency or professional decisions.</p>${tools}`;
 }
 
 function renderRiskTable(scores) {
@@ -380,6 +315,7 @@ function renderCountrySummary(scores, events) {
 function applyPreset(presetId, renderAfter = true) {
   const preset = presetById(presetId);
   state.selectedPreset = preset.id;
+  state.spaceLens = false;
   state.dashboard = preset.dashboard;
   state.activeArea = preset.activeArea || "explore";
   state.selectedChokepointId = preset.chokepointId || null;
@@ -387,6 +323,12 @@ function applyPreset(presetId, renderAfter = true) {
   state.hours = preset.timeWindow;
   state.tracking.aircraft = Boolean(preset.aviationEnabled);
   state.tracking.vessels = Boolean(preset.maritimeEnabled);
+  state.tracking.ports = preset.id === 'ships';
+  state.tracking.airports = preset.id === 'flights';
+  state.mapView.chokepoints = preset.id === 'ships' || preset.activeArea === 'chokepoints';
+  state.listPage = 0;
+  state.selectedEventId = null;
+  state.selectedClusterId = null;
   const filters = dashboardFilters(state.dashboard);
   filters.domains = state.domainsByDashboard.get(state.dashboard);
   filters.domains.clear();
@@ -397,7 +339,7 @@ function applyPreset(presetId, renderAfter = true) {
   state.severitiesByDashboard.set(state.dashboard, severitySetFromMinimum(SEVERITIES, preset.minimumSeverity));
   if (!state.recordKindsByDashboard) state.recordKindsByDashboard = new Map();
   state.recordKindsByDashboard.set(state.dashboard, new Set(preset.recordKinds));
-  localStorage.setItem("live-map-preset-v1", preset.id);
+  workspaceStorage.setItem("live-map-preset-v1", preset.id);
   syncUrlState();
   if (renderAfter) window.dispatchEvent(new CustomEvent("live-map-render-request"));
 }
@@ -406,8 +348,6 @@ function standardEventVisible(event) {
   if (state.interfaceMode === "advanced") return true;
   const recordKind = event.recordKind || "event";
   if (recordKind === "discovery-lead" || recordKind === "observation") return false;
-  if (!["high", "critical"].includes(event.severity) && !["weather", "natural-disaster", "infrastructure", "technology-cyber", "major-news"].includes(event.domain)) return false;
-  if (event.category === "earthquake" && event.severity === "low") return false;
   const verification = String(event.verificationStatus || event.verification?.state || "").toLowerCase();
   if (verification.includes("unverified") || verification.includes("retracted")) return false;
   return true;
@@ -421,9 +361,11 @@ function renderPresetList() {
 }
 
 function renderTrackingStatus() {
+  if(state.demo) return 'Synthetic aircraft and vessel observations. Local scale only; dim positions are stale. No provider requests.';
   const statuses = state.movingObjectStatus || {};
-  const aircraft = statuses.opensky?.ok ? `Aircraft: ${statuses.opensky.count || 0}` : "Flight tracking is not configured";
-  const vessels = statuses["global-fishing-watch"]?.ok ? `Vessels: ${statuses["global-fishing-watch"].count || 0}` : "Vessel activity is not configured";
+  const describe=(key,label,type)=>{const s=statuses[key];if(!s)return `${label}: configuration not confirmed`;if(s.ok)return `${label}: ${state.movingObjects.filter(o=>o.objectType===type).length} observations in view`;return `${label}: ${String(s.status || 'unavailable').replaceAll('-',' ')}`;};
+  const aircraft = describe('opensky','Aircraft','aircraft');
+  const vessels = describe('global-fishing-watch','Vessels','vessel');
   if (state.tracking.aircraft || state.tracking.vessels) return `${aircraft}. ${vessels}.`;
   return "Zoom in to view aircraft or vessel activity.";
 }
@@ -498,6 +440,16 @@ function applyShellState(els) {
   document.body.classList.toggle("view-feed", area === "feed" || area === "explore");
   els.filterDrawer?.classList.toggle("open", state.leftDrawerOpen);
   els.eventDrawer?.classList.toggle("open", state.rightDrawerOpen);
+  document.body.dataset.mobileView = state.mobilePane || 'map';
+  const narrow = window.matchMedia('(max-width:900px)').matches;
+  if (els.eventDrawer) els.eventDrawer.inert = !state.rightDrawerOpen || (narrow && (state.mobilePane === 'map' || state.leftDrawerOpen));
+  if (els.filterDrawer) els.filterDrawer.inert = !state.leftDrawerOpen;
+  const mapStage = document.querySelector('.map-stage');
+  if (mapStage) mapStage.inert = narrow && (state.mobilePane === 'feed' || state.leftDrawerOpen);
+  document.querySelectorAll('[data-mobile-pane]').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.mobilePane === state.mobilePane)));
+  document.querySelector('[data-space-lens]')?.setAttribute('aria-pressed',String(Boolean(state.spaceLens)));
+  document.querySelectorAll('[data-preset]').forEach(button => button.setAttribute('aria-pressed',String(!state.spaceLens && button.dataset.preset===state.selectedPreset)));
+  renderLensGuide(document.getElementById('lensGuide'), state);
   if (els.advancedMode) els.advancedMode.checked = state.interfaceMode === "advanced";
   if (els.aircraftToggle) els.aircraftToggle.checked = state.tracking.aircraft;
   if (els.vesselToggle) els.vesselToggle.checked = state.tracking.vessels;
@@ -559,10 +511,31 @@ function renderAlerts(events) {
 }
 
 export function bootLiveMap() {
-  const els = ids(["dashboardNav", "domainFilters", "layerFilters", "severityFilters", "eventList", "visibleCount", "highCount", "countryCount", "updatedAt", "search", "globalSearch", "globalSearchResults", "clearDomains", "clearFilters", "timeWindow", "sortOrder", "groupBy", "cardMode", "savedViews", "saveView", "fitWorld", "fitEvents", "themeToggle", "eventDialog", "dialogContent", "closeDialog", "methodologyDialog", "methodologyContent", "closeMethodology", "onboardingDialog", "mapLegend", "systemStatus", "feedAge", "baseMap", "refreshNow", "sourceHealth", "publicDataStatus", "countrySummaryPanel", "sourcesStatusPanel", "dashboardPanel", "dashboardEyebrow", "dashboardTitle", "mapMode", "mapHealth", "feedError", "ciiToggle", "sourcesLink", "filterDrawer", "eventDrawer", "presetList", "advancedMode", "aircraftToggle", "vesselToggle", "airportsToggle", "portsToggle", "trackingStatus", "mapListToggle", "locateMap", "resetWorkspace", "osintDashboardV2", "eventDetailDrawer", "chokepointDetailDrawer", "chokepointControls", "chokepointSearch", "chokepointRegion", "chokepointType", "chokepointStatus", "chokepointDomain", "chokepointSort", "resetChokepointFilters"]);
-  const mapController = createMapController({ onHealthChange: (health) => { state.mapHealth = health; renderMapHealth(els.mapHealth, health); } });
+  document.body.dataset.liveMapBoot = "started";
+  const els = ids(["dashboardNav", "domainFilters", "layerFilters", "severityFilters", "eventList", "visibleCount", "highCount", "countryCount", "updatedAt", "search", "globalSearch", "globalSearchResults", "clearDomains", "clearFilters", "timeWindow", "sortOrder", "groupBy", "cardMode", "savedViews", "saveView", "fitWorld", "fitEvents", "themeToggle", "eventDialog", "dialogContent", "closeDialog", "methodologyDialog", "methodologyContent", "closeMethodology", "onboardingDialog", "mapLegend", "systemStatus", "feedAge", "baseMap", "refreshNow", "sourceHealth", "publicDataStatus", "countrySummaryPanel", "sourcesStatusPanel", "dashboardPanel", "dashboardEyebrow", "dashboardTitle", "mapMode", "mapHealth", "feedError", "ciiToggle", "sourcesLink", "filterDrawer", "eventDrawer", "presetList", "advancedMode", "aircraftToggle", "vesselToggle", "airportsToggle", "portsToggle", "trackingStatus", "mapListToggle", "locateMap", "resetWorkspace", "osintDashboardV2", "eventDetailDrawer", "chokepointDetailDrawer", "dataMode", "chokepointControls", "chokepointSearch", "chokepointRegion", "chokepointType", "chokepointStatus", "chokepointDomain", "chokepointSort", "resetChokepointFilters"]);
+  const startupQuery = new URLSearchParams(window.location.search);
+  const investigation = {
+    open: startupQuery.get("workbench") === "1" || startupQuery.get("investigate") === "1",
+    tab: "evidence",
+    caseObject: null,
+    mode: startupQuery.get('case') === AVIATION_CASE_ID ? 'aviation' : startupQuery.get("case") === "synthetic-hormuz-2026-06" ? "synthetic" : "genuine",
+    selectionNotice: null,
+  };
+  const mapController = createMapController({ view: { ...state.mapView, basemap: state.mapView.basemap || "street" }, onHealthChange: (health) => { state.mapHealth = health; renderMapHealth(els.mapHealth, health); } });
+  els.baseMap.value = state.mapView.basemap;
   let refreshTimer = null;
+  let eventRequestGeneration=0,eventRequestController=null;
+  let changeTimer = null;
+  let changeCursor = null;
   let retryAttempts = 0;
+  let derivedEvents = null, derivedIntelligence = null, derivedRisk = null, derivedAsOf = null;
+
+  function activeViewport() {
+    const globe = state.mapMode !== "2d" && getGlobeHandle()?.ok ? getGlobeHandle() : null;
+    return globe
+      ? { bbox: globe.currentBbox?.(), zoom: globe.currentTarget?.().zoom ?? mapController.map.getZoom() }
+      : { bbox: mapController.currentBbox(), zoom: mapController.map.getZoom() };
+  }
 
   function currentEvents(sourceEvents = state.intelligenceEvents.length ? state.intelligenceEvents : state.events) {
     const filters = dashboardFilters();
@@ -570,16 +543,29 @@ export function bootLiveMap() {
     const source = state.dashboard === "finance" ? [...sourceEvents, ...exchangeMarkers().map(normalizeEvent)] : sourceEvents;
     const byDashboard = source.filter((event) => dashboard.categories.includes(event.category) || state.dashboard === "primary");
     const byCountry = state.selectedCountryIso3 ? byDashboard.filter((event) => countryForEvent(event)?.iso3 === state.selectedCountryIso3) : byDashboard;
-    return filteredEvents(byCountry.filter(standardEventVisible), filters, state.hours, state.sort);
+    const viewport = activeViewport();
+    const statuses=buildChangeStatusMap(computeChangeSummary(state.events,loadSnapshotWithMeta().snapshot));
+    return filterWatchEvents(filteredEvents(byCountry.filter(standardEventVisible), filters, state.hours, state.sort, workspaceWindowEnd(state)).filter(event =>
+      (!state.mapView.viewportOnly || inViewport(event.lat,event.lon,viewport.bbox)) &&
+      (state.mapView.verification !== 'supported' || ['corroborated', 'primary-confirmed'].includes(normalizeVerificationStatus(event.verification?.state ?? event.verificationStatus)))),state,statuses);
   }
 
   function buildChokepointIntelligence() {
+    if(derivedEvents===state.events && derivedAsOf===state.mapView.asOf && derivedIntelligence)return derivedIntelligence;
     const correlations = correlateEventsToChokepoints(state.events, STRATEGIC_CHOKEPOINTS, { now: state.lastLoaded || Date.now() });
     const events = enrichEventsWithChokepoints(state.events, correlations, STRATEGIC_CHOKEPOINTS);
-    const assessments = assessChokepoints(events, correlations, { now: state.lastLoaded || Date.now(), sourceStatus: state.sourceStatus });
+    const records = [...(state.observationRecords || []), ...(state.demo ? syntheticChokepointRecords() : [])];
+    const replayAt = state.mapView.asOf ? Date.parse(state.mapView.asOf) : NaN;
+    const evaluationNow = Number.isFinite(replayAt) ? replayAt : (state.lastLoaded || Date.now());
+    const assessments = assessChokepoints(events, correlations, { now: evaluationNow, sourceStatus: state.sourceStatus, records, asOf: state.mapView.asOf });
     state.intelligenceEvents = events;
     state.chokepointAssessments = assessments;
-    return { correlations, events, assessments };
+    state.chokepointCorrelations = correlations;
+    derivedEvents=state.events;
+    derivedAsOf=state.mapView.asOf;
+    derivedRisk=null;
+    derivedIntelligence={ correlations, events, assessments, records };
+    return derivedIntelligence;
   }
 
   function selectCountry(value, zoom = true) {
@@ -591,12 +577,137 @@ export function bootLiveMap() {
     render();
   }
 
+  let contactReturnView = null;
+  function inspectContact(object) {
+    if (!contactReturnView) contactReturnView = { center:mapController.map.getCenter(), zoom:mapController.map.getZoom() };
+    state.selectedMovingObjectId = object.id;
+    state.rightDrawerOpen = true;
+    document.getElementById('contactsPanel').open = true;
+    mapController.map.setView([object.latitude,object.longitude], mapController.map.getZoom());
+    render();
+    document.getElementById('contactsPanel').scrollTop = 0;
+  }
+  document.getElementById('contactsPanel').addEventListener('click', event => {
+    const row = event.target.closest('[data-contact-id]');
+    if(row) { const object=state.movingObjects.find(item=>item.id===row.dataset.contactId); if(object) inspectContact(object); }
+    if(event.target.closest('[data-contact-close]')) { state.selectedMovingObjectId=null; render(); }
+    if(event.target.closest('[data-contact-return]') && contactReturnView) {
+      const previous=contactReturnView;contactReturnView=null;state.selectedMovingObjectId=null;
+      mapController.map.setView(previous.center,previous.zoom);render();
+    }
+  });
+
+  async function hydrateSnapshotRecords() {
+    try {
+      const response = await fetch("./data/development-fixtures/portwatch-hormuz-2025-01-extract.json", { cache: "no-store" });
+      if (!response.ok) return;
+      const json = await response.json();
+      const { createGenuineHormuzCase } = await import("./intelligence/portwatch-frozen-sample.js");
+      const genuine = createGenuineHormuzCase({ json });
+      state.observationRecords = genuine.evidence || [];
+      state.genuineHormuzCase = genuine;
+    } catch (error) {
+      console.warn("Snapshot records unavailable", error);
+    }
+  }
+
+  async function loadPublicSnapshots() {
+    const [kevRes, nhcRes] = await Promise.all([
+      fetch("./data/development-fixtures/cisa-kev-frozen.json", { cache: "no-store" }),
+      fetch("./data/development-fixtures/nhc-twoat-frozen.xml", { cache: "no-store" }),
+    ]);
+    const { eventsFromCisaFrozen, eventsFromNhcXml } = await import("./data/snapshots/public-source-snapshots.js");
+    const extra = [];
+    if (kevRes.ok) extra.push(...eventsFromCisaFrozen(await kevRes.json()).events);
+    if (nhcRes.ok) extra.push(...eventsFromNhcXml(await nhcRes.text()).events);
+    if (extra.length) {
+      state.events = [...state.events, ...extra];
+      render();
+    }
+  }
+
+  async function hydrateGenuineHormuz() {
+    const response = await fetch("./data/development-fixtures/portwatch-hormuz-2025-01-extract.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("genuine extract unavailable");
+    const json = await response.json();
+    const { createGenuineHormuzCase } = await import("./intelligence/portwatch-frozen-sample.js");
+    return createGenuineHormuzCase({ json });
+  }
+
+  let caseLoadGeneration = 0;
+  async function ensureInvestigation(chokepointId) {
+    const generation = ++caseLoadGeneration;
+    if (investigation.mode === 'imported' && investigation.caseObject) return investigation.caseObject;
+    if (investigation.mode === 'aviation') {
+      if (isAviationCase(investigation.caseObject)) return investigation.caseObject;
+      try {
+        const response = await fetch('./data/development-fixtures/aviation-riyadh-2026-10.json', {cache:'no-store'});
+        if (!response.ok) throw Error('Frozen aviation case unavailable');
+        const parsed = parseCaseFile(await response.text());
+        if (!parsed.ok) throw Error(parsed.errors.join('; '));
+        // An older load cannot replace a later case switch/import.
+        if (generation !== caseLoadGeneration || investigation.mode !== 'aviation') return investigation.caseObject;
+        investigation.caseObject = parsed.caseObject;
+      } catch (error) {
+        if (generation === caseLoadGeneration && els.feedError) {els.feedError.hidden=false;els.feedError.textContent=`Aviation case unavailable: ${error.message}`;}
+      }
+      return investigation.caseObject;
+    }
+    const wantGenuine = investigation.mode === "genuine" && chokepointId === "strait-of-hormuz";
+    if (wantGenuine) {
+      if (!investigation.caseObject?.genuine || investigation.caseObject.requirement?.chokepointId !== chokepointId) {
+        try {
+          const loaded = await hydrateGenuineHormuz();
+          if (generation !== caseLoadGeneration) return investigation.caseObject;
+          investigation.caseObject = loaded;
+        } catch (error) {
+          if (generation !== caseLoadGeneration) return investigation.caseObject;
+          console.warn("Genuine Hormuz case unavailable; synthetic fixture remains.", error);
+          investigation.mode = "synthetic";
+          investigation.caseObject = createInvestigationCase({ chokepointId, now: new Date(SYNTHETIC_NOW) });
+        }
+      }
+      return investigation.caseObject;
+    }
+    if (!investigation.caseObject || investigation.caseObject.genuine || investigation.caseObject.requirement?.chokepointId !== chokepointId) {
+      investigation.caseObject = createInvestigationCase({ chokepointId, now: new Date(SYNTHETIC_NOW) });
+    }
+    return investigation.caseObject;
+  }
+
+  function workbenchMarkup(chokepoint) {
+    if (!chokepoint) return "";
+    if (investigation.mode === 'aviation' && !isAviationCase(investigation.caseObject)) return '<p role="status">Frozen aviation case loading or unavailable. No assessment is substituted. Choose another case or retry after checking the error.</p>';
+    return renderInvestigationWorkbench({
+      chokepoint,
+      caseObject: investigation.caseObject,
+      tab: investigation.tab,
+      advanced: state.interfaceMode === "advanced",
+      open: investigation.open,
+      selectedEvidenceId: state.selectedEvidenceId,
+      selectionNotice: investigation.selectionNotice,
+    });
+  }
+
+  function downloadText(filename, text, type) {
+    const blob = new Blob([text], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.rel = "noopener";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   function render() {
+    const renderStarted=performance.now();
+    try {
     const intelligence = buildChokepointIntelligence();
     const events = currentEvents(intelligence.events);
     updateCountDebug(events);
-    const riskScores = computeCountryRiskScores(state.events);
-    const correlations = correlateEventsToMarkets(state.events, EXCHANGES);
+    const riskScores = derivedRisk || (derivedRisk=computeCountryRiskScores(state.events));
+    const correlations = state.interfaceMode==='advanced' && ['finance','commodity'].includes(state.dashboard) ? correlateEventsToMarkets(state.events, EXCHANGES) : [];
     const layers = layersForDashboard(state.dashboard);
     renderFilters(els);
     const clusters = buildEventClusters(events);
@@ -605,67 +716,125 @@ export function bootLiveMap() {
     const selectedChokepoint = chokepointById(state.selectedChokepointId);
     const relatedEventIds = selectedChokepoint ? new Set(intelligence.correlations.filter((item) => item.chokepointId === selectedChokepoint.id).map((item) => item.eventId)) : null;
     const { snapshot: changeSnapshot, corrupt: corruptSnapshot, unavailable: storageUnavailable } = loadSnapshotWithMeta();
-    const changeSummary = computeChangeSummary(events, changeSnapshot, clusters);
+    const changeSummary = computeChangeSummary(state.events, changeSnapshot, buildEventClusters(state.events));
     changeSummary.corruptSnapshot = corruptSnapshot;
     changeSummary.storageUnavailable = storageUnavailable;
     const changeStatusById = buildChangeStatusMap(changeSummary);
     activeChangeStatusById = changeStatusById;
-    renderMarkers(mapController.markerLayer, events, (event) => {
+    const operator=document.getElementById('watchOperator');
+    document.getElementById('contactsPanel').hidden=!(state.tracking.aircraft||state.tracking.vessels);
+    operator.hidden=investigation.open||['chokepoints','latest-intelligence'].includes(state.activeArea);
+    updateFeedMarkup(operator,renderWatchOperator(state,changeSummary));
+    const viewport = activeViewport();
+    const presentation = selectMapEvents(events,{zoom:viewport.zoom,bbox:viewport.bbox,selectedId:state.selectedEventId});
+    state.visibleMapEvents = presentation.displayed.length;
+    document.getElementById('mapScale').textContent = presentation.band;
+    document.getElementById('mapCount').textContent = `${presentation.displayed.length} map records · ${presentation.eligible} geographically eligible`;
+    renderWorkspaceSummary(document.getElementById('workspaceSummary'), { state, events, band: presentation.band });
+    document.getElementById('attentionNote').textContent = `${presentation.hiddenByScale} hidden until closer zoom; ${presentation.hiddenByBudget} hidden by the ${presentation.budget}-marker limit. ${events.length} records available in the list. ${presentation.explanation}`;
+    const markerStats = renderMarkers(mapController.markerLayer, presentation.displayed, (event) => {
       openEventInspector(event);
     }, {
       selectedEventId: state.selectedEventId,
       clusterMemberIds: highlightMemberIds,
       relatedEventIds,
       changeStatusById,
+      priorityLayer: mapController.priorityLayer,
     });
+    document.body.dataset.liveMapMarkerCreates = String(markerStats.created);
+    document.body.dataset.liveMapMarkerRetained = String(markerStats.retained);
     mapController.clearClusterHighlight();
     if (selectedCluster) renderClusterHighlight(mapController.clusterHighlightLayer, selectedCluster);
     mapController.renderCountryRisk(riskScores, state.ciiVisible);
-    mapController.renderCountryBoundaries(COUNTRIES, riskScores, state.selectedCountryIso3, (country) => selectCountry(country.iso3, false));
-    mapController.renderChokepoints(STRATEGIC_CHOKEPOINTS, intelligence.assessments, state.selectedChokepointId, (chokepoint) => openChokepointInspector(chokepoint));
-    mapController.renderMovingObjects(state.movingObjects, (object) => {
-      state.selectedMovingObjectId = object.id;
-      syncUrlState();
-      openEventDialog({
-        id: object.id,
-        title: object.displayName,
-        summary: `${object.objectType === "aircraft" ? "Aircraft" : "Vessel"} ${object.status || "observed"} from ${object.sourceName || "tracking source"}.`,
-        category: "infrastructure",
-        severity: "low",
-        confidence: object.stale ? 45 : 70,
-        verificationStatus: object.stale ? "Some data delayed" : "Reported",
-        sourceName: object.sourceName,
-        sourceUrl: object.sourceUrl,
-        sourceType: "Moving object",
-        lat: object.latitude,
-        lon: object.longitude,
-        place: object.displayName,
-        country: "",
-        occurredAt: object.observedAt,
-        updatedAt: object.receivedAt,
-        details: {
-          Type: object.objectType,
-          Status: object.status,
-          Speed: object.speed ?? "-",
-          Heading: object.heading ?? "-",
-          Altitude: object.altitude ?? "-",
-          "Data age": `${object.dataAgeSeconds}s`,
-        },
-      }, els.eventDialog, els.dialogContent, mapController.map);
-    });
+    mapController.renderCountryBoundaries(state.selectedCountryIso3 ? COUNTRIES.filter(c=>c.iso3===state.selectedCountryIso3) : [], riskScores, state.selectedCountryIso3, (country) => selectCountry(country.iso3, false));
+    mapController.renderChokepoints(state.mapView.chokepoints || state.activeArea==='chokepoints' ? STRATEGIC_CHOKEPOINTS : [], intelligence.assessments, state.selectedChokepointId, (chokepoint) => openChokepointInspector(chokepoint));
+    mapController.renderMovingObjects(state.movingObjects, inspectContact, state.selectedMovingObjectId);
+    const center = mapController.map.getCenter();
+    document.getElementById('contactRoster').innerHTML = renderContactRoster(nearbyContacts(state.movingObjects, {lat:center.lat,lon:center.lng}, mapController.currentBbox()), state.selectedMovingObjectId, Boolean(contactReturnView));
+    const selectedContact = state.movingObjects.find(object => object.id===state.selectedMovingObjectId);
+    const contactDetail = document.getElementById('contactDetail');
+    contactDetail.hidden = !selectedContact;
+    contactDetail.innerHTML = renderContactDetail(selectedContact);
     mapController.renderReferencePoints({ airports: state.tracking.airports ? AIRPORTS : [], ports: state.tracking.ports ? PORTS : [] });
-    setGlobeMode(state.mapMode, events);
+    const sharedView = { ...state.mapView, lat: center.lat, lon: center.lng, zoom: mapController.map.getZoom() };
+    const graphRecords = (intelligence.records || []).filter((record) => record.recordKind !== "relationship");
+    const graphNodes = [
+      ...graphRecords.map((record) => graphNodeFromRecord(record)),
+      ...STRATEGIC_CHOKEPOINTS.map((item) => ({ id: item.id, nodeType: "infrastructure", title: item.name, lat: item.center?.lat, lon: item.center?.lon, geographic: true })),
+    ];
+    const graphEdges = (intelligence.records || []).filter((record) => record.recordKind === "relationship").map(graphEdgeFromRelationship);
+    const graphView = state.mapView.graph || state.selectedChokepointId
+      ? neighborhood({ selectedId: state.selectedChokepointId || SYNTHETIC_CHOKEPOINT_ID, nodes: graphNodes, edges: graphEdges, bbox: mapController.currentBbox() })
+      : { nodes: [], edges: [] };
+    mapController.renderGraph(state.mapView.graph ? graphView : { nodes: [], edges: [] });
+    if (state.mapView.density) {
+      const applyDensity = (grid) => { if (grid && state.mapView.density) mapController.renderDensity(grid.cells || [], { ...SHIPPING_DENSITY_META, title: densityUiLabel() }); };
+      if (densityGridCache) applyDensity(densityGridCache);
+      else fetch("./data/development-fixtures/shipping-density-sample.json").then((response) => response.ok ? response.json() : null).then((grid) => { densityGridCache = grid; applyDensity(grid); }).catch(() => {});
+    } else mapController.renderDensity([]);
+    const overlay = document.getElementById("overlayStatus");
+    if (overlay) {
+      const notes = [];
+      if (state.mapView.density) notes.push(densityUiLabel());
+      if (state.mapView.activity) notes.push(activityUiLabel());
+      if (state.mapView.orbital) notes.push(ORBITAL_MODULE_ONLY);
+      if (state.mapView.weather) notes.push(recordedWindUiLabel());
+      overlay.textContent = notes.join(" · ") || "Pins stay independent of Auto. Spatial clusters are not corroborated incidents.";
+    }
+    state._graphView = graphView;
+    setGlobeMode(state.mapMode, events, sharedView, {
+      onContextLoss() { state.mapMode = "2d"; state.mapView.mapMode = "2d"; syncUrlState(); render(); },
+      onViewChange(view) {
+        if (state.mapMode === "2d" || !Number.isFinite(view.lat) || !Number.isFinite(view.lon) || !Number.isFinite(view.zoom)) return;
+        // Leaflet remains the shared viewport for feed attention and the 2D return path.
+        mapController.map.setView([view.lat, view.lon], view.zoom, { animate: false });
+      },
+      onViewportChange() { if (state.mapMode !== "2d") render(); },
+      onSelectId(id) {
+        if (id.startsWith("event:")) {
+          const event = events.find((item) => String(item.id) === id.slice(6));
+          if (event) openEventInspector(event);
+          return;
+        }
+        const found = chokepointById(id.replace(/^chokepoint:|^edge:|^node:/, ""));
+        if (found) openChokepointInspector(found);
+      },
+      visibleEvents: presentation.displayed,
+      selectedEventId: state.selectedEventId,
+      selectedEvent: events.find((item) => item.id === state.selectedEventId) || null,
+      graph: state.mapView.graph ? graphView : { nodes: [], edges: [] },
+      chokepoints: (state.mapView.chokepoints || state.activeArea === "chokepoints") ? STRATEGIC_CHOKEPOINTS : [],
+      assessments: intelligence.assessments,
+      selectedChokepointId: state.selectedChokepointId,
+      basemap: state.mapView.basemap,
+    });
     mapController.invalidateMapSize();
     renderList(els, events);
+    if (state.selectedEventId && state._scrolledEventId !== state.selectedEventId) {
+      state._scrolledEventId = state.selectedEventId;
+      document.querySelector(".event-card.is-selected")?.scrollIntoView({ block: "nearest" });
+    }
     renderStats(els, events);
     renderFeedError(els.feedError);
-    renderMapHealth(els.mapHealth, state.mapHealth || mapController.health());
+    if (state.mapMode !== "2d" && els.mapHealth) els.mapHealth.hidden = true;
+    else renderMapHealth(els.mapHealth, state.mapHealth || mapController.health());
     updateSourcesLink(els.sourcesLink);
     applyShellState(els);
+    document.getElementById('viewportOnly').checked = state.mapView.viewportOnly;
+    document.getElementById('chokepointsToggle').checked = state.mapView.chokepoints;
+    document.getElementById('verificationFilter').value = state.mapView.verification;
+    els.mapMode.value = state.mapMode;
+    for (const [id, key] of [['graphToggle','graph'],['densityToggle','density'],['activityToggle','activity'],['orbitalToggle','orbital'],['recordedWindToggle','weather']]) {
+      const el = document.getElementById(id);
+      if (el) el.checked = Boolean(state.mapView[key]);
+    }
+    document.querySelectorAll('[data-preset]').forEach(el => { el.classList.toggle('active',el.dataset.preset===state.selectedPreset); el.setAttribute('aria-pressed',String(el.dataset.preset===state.selectedPreset)); });
+    document.querySelectorAll('[data-open-drawer]').forEach(el=>el.setAttribute('aria-expanded',String(el.dataset.openDrawer==='left'?state.leftDrawerOpen:state.rightDrawerOpen)));
+    if (mapController.map.getZoom()<7 && (state.tracking.aircraft || state.tracking.vessels)) els.trackingStatus.textContent = 'Zoom to local scale to request positions. No global fleet is loaded.';
     if (els.presetList) els.presetList.innerHTML = renderPresetList();
     els.publicDataStatus.innerHTML = renderPublicDataStatus();
-    els.countrySummaryPanel.innerHTML = renderCountrySummary(riskScores, state.events);
-    els.sourcesStatusPanel.innerHTML = renderSourcesStatusPanel(state.events, state.sourceStatus);
+    els.countrySummaryPanel.innerHTML = state.selectedCountryIso3 ? renderCountrySummary(riskScores, state.events) : '';
+    els.sourcesStatusPanel.innerHTML = state.interfaceMode==='advanced' ? renderSourcesStatusPanel(state.events, state.sourceStatus) : '';
     applyDashboardTitle(state.dashboard, els.dashboardEyebrow, els.dashboardTitle);
     if (state.activeArea === "latest-intelligence") {
       els.dashboardEyebrow.textContent = "OPEN WEB";
@@ -675,7 +844,7 @@ export function bootLiveMap() {
       els.dashboardTitle.textContent = "Chokepoints";
     } else if (state.activeArea === "feed") {
       els.dashboardEyebrow.textContent = "EVENTS";
-      els.dashboardTitle.textContent = "Event feed";
+      els.dashboardTitle.textContent = state.localPreview ? "Current public reports" : "Event feed";
     }
 
     // Context-specific left extras — do not leave chokepoint watch stuck on other tabs
@@ -685,14 +854,17 @@ export function bootLiveMap() {
       els.dashboardPanel.innerHTML = renderLatestIntelligence(state.storylines, state.observations) + renderCountDebug();
     } else if (state.activeArea === "feed") {
       els.dashboardPanel.innerHTML = renderAlerts(events) + renderCountDebug();
-    } else {
+    } else if(state.interfaceMode==='advanced') {
       els.dashboardPanel.innerHTML = renderDashboardPanel(state.dashboard, { riskScores, correlations, events, sourceStatus: state.sourceStatus, providerResults: state.providerResults }) + renderLayerSummary(layers) + renderRiskTable(riskScores) + renderAlerts(events) + renderCountDebug();
+    } else {
+      els.dashboardPanel.innerHTML='';
     }
 
     const selectedEvent = selectedCluster
       ? null
-      : events.find((event) => event.id === state.selectedEventId) || state.events.find((event) => event.id === state.selectedEventId) || null;
-    renderOsintDashboardShell(els.osintDashboardV2, {
+      : events.find((event) => event.id === state.selectedEventId) || null;
+    if(state.selectedEventId && !selectedEvent && state.lastLoaded != null) { state.selectedEventId=null; syncUrlState(); document.getElementById('attentionNote').textContent+=' Previous selection is excluded by the current filters.'; }
+    if(state.interfaceMode==='advanced') renderOsintDashboardShell(els.osintDashboardV2, {
       events,
       sourceStatus: state.sourceStatus,
       providerResults: state.providerResults,
@@ -707,6 +879,7 @@ export function bootLiveMap() {
       loading: state.apiStatus === "loading",
       error: state.apiFailure?.message || null,
     });
+    else els.osintDashboardV2.innerHTML='';
     const selectedChangeStatus = selectedEvent ? changeStatusById.get(selectedEvent.id) || null : null;
     const chokepointActive = state.activeArea === "chokepoints" && selectedChokepoint;
     if (chokepointActive) {
@@ -721,10 +894,56 @@ export function bootLiveMap() {
         clusters,
       });
     }
-    els.chokepointDetailDrawer.hidden = !chokepointActive;
-    els.chokepointDetailDrawer.innerHTML = chokepointActive
-      ? renderChokepointDetail(selectedChokepoint, intelligence.assessments, new Map(intelligence.events.map((event) => [String(event.id), event])))
-      : "";
+    const showWorkbench = chokepointActive && investigation.open;
+    if (showWorkbench && isAviationCase(investigation.caseObject)) {els.dashboardTitle.textContent='Aviation case review';els.dashboardEyebrow.textContent='DATED LOCAL REPORTING';}
+    els.chokepointDetailDrawer.hidden = !showWorkbench;
+    updateFeedMarkup(els.chokepointDetailDrawer, showWorkbench
+      ? isAviationCase(investigation.caseObject) ? workbenchMarkup(selectedChokepoint) : renderChokepointDetail(selectedChokepoint, intelligence.assessments, new Map(intelligence.events.map((event) => [String(event.id), event])), state._graphView, intelligence.records || [], workbenchMarkup(selectedChokepoint))
+      : "");
+    if(state.stressDemo) { const output=document.getElementById('demoPerf');output.hidden=false;output.textContent=`SYNTHETIC STRESS · ${state.events.length} events / ${state.movingInputCount || 0} input objects · last synchronous UI update ${(performance.now()-renderStarted).toFixed(1)} ms · target <250 ms`; }
+    const watchChip = document.getElementById("watchModeChip");
+    if (watchChip) {
+      watchChip.hidden = state.selectedChokepointId !== 'strait-of-hormuz';
+      const synthetic = Boolean(state.demo && state.mapView.scenarioStage);
+      watchChip.dataset.watchMode = synthetic ? "synthetic-plus-historical" : "historical";
+      watchChip.textContent = synthetic
+        ? "Synthetic map scenario · historical chart stays separate"
+        : "Historical public extract · operating status unknown";
+      watchChip.title = watchChip.textContent;
+    }
+    const dockHost = document.getElementById("watchDockHost");
+    if (dockHost) {
+      dockHost.hidden = state.selectedChokepointId !== 'strait-of-hormuz';
+      const markup = renderWatchDock(state.genuineHormuzCase, { scenarioStage: state.demo ? (state.mapView.scenarioStage || "") : "" });
+      const wasOpen = dockHost.querySelector("#watchDock")?.open;
+      if (dockHost.dataset.markup !== markup) {
+        dockHost.dataset.markup = markup;
+        dockHost.innerHTML = markup;
+        if (wasOpen !== true) {
+          const details = dockHost.querySelector("#watchDock");
+          if (details) details.open = false;
+        }
+      }
+    }
+    document.body.dataset.liveMapReady = "1";
+    document.body.dataset.liveMapMode = state.mapMode;
+    document.body.dataset.liveMapAsOf = state.mapView.asOf || "";
+    document.body.dataset.liveMapScenario = state.mapView.scenarioStage || "";
+    document.body.dataset.liveMapWorkbench = investigation.open ? "1" : "0";
+    document.body.dataset.liveMapChokepoint = state.selectedChokepointId || "";
+    document.body.dataset.liveMapDataMode = state.demo ? "mixed" : (state.dataMode || "public");
+    if (els.dataMode) els.dataMode.value = state.demo ? "mixed" : (state.dataMode || "public");
+    if (els.refreshNow) els.refreshNow.textContent = state.demo ? "Reload demo" : "Refresh reports";
+    if (els.baseMap && state.mapView.basemap) els.baseMap.value = state.mapView.basemap;
+    } catch (error) {
+      console.error(error);
+      document.body.dataset.liveMapReady = "1";
+      document.body.dataset.liveMapError = String(error?.message || error).slice(0, 240);
+      if (els.feedError) {
+        els.feedError.hidden = false;
+        els.feedError.textContent = "Workspace render recovered from an error. Chrome remains available; see console.";
+      }
+    }
   }
 
   /**
@@ -733,10 +952,13 @@ export function bootLiveMap() {
    */
   function setActiveArea(nextArea, { forceRightOpen = false } = {}) {
     const area = String(nextArea || "explore");
+    if (state.selectedEventId && area !== state.activeArea) clearInspectorSelection();
     const previous = state.activeArea;
     state.activeArea = area;
 
     if (area !== "chokepoints") {
+      investigation.open = false; state.selectedEvidenceId = null;
+      syncInvestigationUrl();
       state.selectedChokepointId = null;
     }
     if (area === "chokepoints") {
@@ -749,7 +971,7 @@ export function bootLiveMap() {
 
     if (forceRightOpen || ["feed", "latest-intelligence", "chokepoints"].includes(area)) {
       state.rightDrawerOpen = true;
-      localStorage.setItem("live-map-right-drawer-v1", "open");
+      workspaceStorage.setItem("live-map-right-drawer-v1", "open");
     }
 
     // Leaving a specialized view: ensure left panel context is re-evaluated
@@ -761,31 +983,99 @@ export function bootLiveMap() {
     renderNav();
   }
 
+  function syncInvestigationUrl() {
+    syncUrlState();
+    const url = new URL(location.href);
+    if (investigation.open) {
+      url.searchParams.set('workbench', '1');
+      url.searchParams.set('case', investigation.mode === 'aviation' ? AVIATION_CASE_ID : investigation.mode === 'imported' ? 'imported-local' : investigation.caseObject?.genuine ? 'portwatch-hormuz-2025-01' : investigation.mode === 'synthetic' ? 'synthetic-hormuz-2026-06' : 'imported-local');
+    } else {url.searchParams.delete('workbench');url.searchParams.delete('case');}
+    if (investigation.open && state.selectedEvidenceId) url.searchParams.set('evidence', state.selectedEvidenceId); else url.searchParams.delete('evidence');
+    history.replaceState(null, '', url);
+  }
+
+  async function openInvestigation(id = state.selectedChokepointId || 'strait-of-hormuz') {
+    const requestedEvidenceId = state.selectedEvidenceId;
+    openChokepointInspector(chokepointById(id));
+    state.selectedEvidenceId = requestedEvidenceId;
+    investigation.open = true; investigation.tab = 'evidence';
+    state.mobilePane = 'feed'; state.leftDrawerOpen = false;
+    await ensureInvestigation(id);
+    investigation.selectionNotice = startupQuery.get('case') === 'imported-local' ? 'Imported cases are session-only. Reimport the JSON case to inspect its evidence after reload.' : null;
+    if (state.selectedEvidenceId && !investigation.caseObject?.evidence.some(record => record.id === state.selectedEvidenceId)) {
+      investigation.selectionNotice = 'Requested evidence is unavailable in this case. Choose a current ledger record or reimport its JSON case.';
+      state.selectedEvidenceId = null;
+    }
+    syncInvestigationUrl(); render(); renderNav();
+    els.chokepointDetailDrawer.querySelector(state.selectedEvidenceId ? '[data-evidence-back]' : '[data-evidence-select]')?.focus();
+  }
+
+  let inspectorReturnView = null;
+  let inspectorReturnId = null;
+  let inspectorReturnScroll = 0;
+  let inspectorReturnPane = 'feed';
   function clearInspectorSelection({ closeDrawer = false } = {}) {
+    const hadInspector = Boolean(state.selectedEventId || inspectorReturnView);
     state.selectedEventId = null;
     state.selectedClusterId = null;
     state.selectedChokepointId = null;
+    if (hadInspector) state.mobilePane = inspectorReturnPane;
     if (els.eventDialog.open) els.eventDialog.close();
     if (closeDrawer) {
       state.rightDrawerOpen = false;
-      localStorage.setItem("live-map-right-drawer-v1", "closed");
+      workspaceStorage.setItem("live-map-right-drawer-v1", "closed");
     }
+    if (inspectorReturnView) {
+      // Return geographic context without undoing a lens, layer or time edit.
+      const { lat, lon, zoom } = inspectorReturnView;
+      Object.assign(state.mapView, { lat, lon, zoom });
+      mapController.map.setView([inspectorReturnView.lat, inspectorReturnView.lon], inspectorReturnView.zoom, { animate: false });
+      getGlobeHandle()?.applyView?.(inspectorReturnView);
+      inspectorReturnView = null;
+    }
+    syncUrlState();
     render();
+    els.eventList.scrollTop = inspectorReturnScroll;
+    if (inspectorReturnId && !closeDrawer) els.eventList.querySelector(`[data-event-detail="${CSS.escape(inspectorReturnId)}"]`)?.focus({ preventScroll: true });
+    inspectorReturnId = null;
   }
 
   function openEventInspector(eventRecord, { openModal = false, flyTo = true } = {}) {
     if (!eventRecord) return;
+    if (!state.selectedEventId) {
+      inspectorReturnView = { ...state.mapView };
+      inspectorReturnScroll = els.eventList.scrollTop;
+      inspectorReturnId = eventRecord.id;
+      inspectorReturnPane = state.mobilePane === 'map' ? 'map' : 'feed';
+    }
     state.selectedEventId = eventRecord.id;
+    state.selectedEvidenceId = null;
+    investigation.open = false;
+    syncInvestigationUrl();
     state.selectedClusterId = null;
     state.selectedChokepointId = null;
     state.rightDrawerOpen = true;
-    localStorage.setItem("live-map-right-drawer-v1", "open");
+    state.leftDrawerOpen = false;
+    state.mobilePane = 'detail';
+    workspaceStorage.setItem("live-map-right-drawer-v1", "open");
     if (els.eventDialog.open) els.eventDialog.close();
+    const canFly = flyTo && Number.isFinite(eventRecord.lat) && Number.isFinite(eventRecord.lon);
+    if (canFly && state.mapMode !== "2d") {
+      const zoom = Math.max(mapController.map.getZoom(), 5);
+      mapController.map.setView([eventRecord.lat, eventRecord.lon], zoom, { animate: false });
+      state.mapView.lat = eventRecord.lat;
+      state.mapView.lon = eventRecord.lon;
+      state.mapView.zoom = zoom;
+    }
+    syncUrlState();
     render();
     if (openModal) openEventDialog(eventRecord, els.eventDialog, els.dialogContent, mapController.map);
-    else if (flyTo && Number.isFinite(eventRecord.lat) && Number.isFinite(eventRecord.lon)) {
+    else if (canFly && state.mapMode === "2d") {
       mapController.map.flyTo([eventRecord.lat, eventRecord.lon], Math.max(mapController.map.getZoom(), 5));
+    } else if (canFly) {
+      getGlobeHandle()?.applyView?.(state.mapView);
     }
+    if (!openModal) els.eventDetailDrawer.querySelector('.inspector-back')?.focus({ preventScroll: true });
   }
 
   function openClusterInspector(cluster) {
@@ -794,7 +1084,7 @@ export function bootLiveMap() {
     state.selectedEventId = null;
     state.selectedChokepointId = null;
     state.rightDrawerOpen = true;
-    localStorage.setItem("live-map-right-drawer-v1", "open");
+    workspaceStorage.setItem("live-map-right-drawer-v1", "open");
     if (els.eventDialog.open) els.eventDialog.close();
     render();
     fitClusterOnMap(mapController.map, cluster);
@@ -802,29 +1092,32 @@ export function bootLiveMap() {
 
   function openChokepointInspector(chokepoint) {
     if (!chokepoint) return;
+    if (state.selectedChokepointId !== chokepoint.id) state.selectedEvidenceId = null;
     state.selectedChokepointId = chokepoint.id;
     state.selectedEventId = null;
     state.selectedClusterId = null;
     setActiveArea("chokepoints", { forceRightOpen: true });
+    if (state.mapMode !== "2d" && Number.isFinite(chokepoint.center?.lat) && Number.isFinite(chokepoint.center?.lon)) {
+      const zoom = Math.max(state.mapView.zoom || 2, 5);
+      mapController.map.setView([chokepoint.center.lat, chokepoint.center.lon], zoom, { animate: false });
+      state.mapView.lat = chokepoint.center.lat;
+      state.mapView.lon = chokepoint.center.lon;
+      state.mapView.zoom = zoom;
+    }
     render();
-    mapController.fitChokepoint(chokepoint);
+    if (state.mapMode === "2d") mapController.fitChokepoint(chokepoint);
+    else getGlobeHandle()?.applyView?.(state.mapView);
   }
 
   function renderNav() {
-    const items = [
-      ["explore", "Overview"],
-      ["feed", "Events"],
-      ["latest-intelligence", "Latest Intelligence"],
-      ["chokepoints", "Chokepoints"],
-      ["countries", "Countries"],
-      ["sources", "Sources"],
-      ["diagnostics", "Diagnostics"],
-    ];
+    const items = [["explore", "Watch"], ["chokepoints", "Passages"], ["latest-intelligence", "Open reports"], ["investigate", "Evidence ledger"]];
     els.dashboardNav.innerHTML = items.map(([id, label]) => {
       if (id === "sources") return `<a class="dashboard-tab" href="/sources" data-sources-link>${label}</a>`;
       if (id === "diagnostics") return `<a class="dashboard-tab" href="/diagnostics">${label}</a>`;
       if (id === "countries") return `<a class="dashboard-tab ${state.activeArea === id ? "active" : ""}" href="/countries">${label}</a>`;
-      return `<button class="dashboard-tab ${state.activeArea === id ? "active" : ""}" data-area="${id}" type="button">${label}</button>`;
+      if (id === "investigate") return `<button class="dashboard-tab ${investigation.open ? "active" : ""}" data-investigate-nav type="button">${label}</button>`;
+      const active = state.activeArea === id || (id === 'explore' && state.activeArea === 'feed');
+      return `<button class="dashboard-tab ${active ? "active" : ""}" aria-pressed="${active}" data-area="${id}" type="button">${label}</button>`;
     }).join("");
   }
 
@@ -844,6 +1137,26 @@ export function bootLiveMap() {
     els.chokepointStatus.innerHTML = optionList("All conditions", CHOKEPOINT_STATUSES, state.chokepointFilters.status);
     els.chokepointDomain.innerHTML = optionList("All event domains", domains, state.chokepointFilters.domain);
     els.chokepointSort.innerHTML = [["priority", "Priority"], ["status", "Condition"], ["recency", "Recent"], ["name", "Name"]].map(([value, label]) => `<option value="${value}" ${state.chokepointFilters.sort === value ? "selected" : ""}>${label}</option>`).join("");
+    const stageSelect = document.getElementById("scenarioStage");
+    const stageLabel = document.getElementById("scenarioStageLabel");
+    const stageHelp = document.getElementById("scenarioStageHelp");
+    const showStage = Boolean(state.demo);
+    if (stageSelect) {
+      stageSelect.hidden = !showStage;
+      if (stageLabel) stageLabel.hidden = !showStage;
+      if (stageHelp) stageHelp.hidden = !showStage;
+      stageSelect.innerHTML = SCENARIO_STAGES.map((stage) => `<option value="${escapeHtml(stage.id)}" ${state.mapView.scenarioStage === stage.id ? "selected" : ""}>${escapeHtml(stage.id.replace(/-/g, " "))}</option>`).join("");
+    }
+  }
+
+  function applyScenarioStage(id, { renderAfter = true } = {}) {
+    const stage = SCENARIO_STAGES.find((item) => item.id === id) || SCENARIO_STAGES.find((item) => item.id === "diplomacy-with-low-throughput") || SCENARIO_STAGES[0];
+    state.mapView.scenarioStage = stage.id;
+    state.mapView.asOf = stage.asOf;
+    derivedEvents = null;
+    derivedIntelligence = null;
+    syncUrlState();
+    if (renderAfter) render();
   }
 
   function scheduleNextLoad(delayMs) {
@@ -851,10 +1164,34 @@ export function bootLiveMap() {
     refreshTimer = window.setTimeout(() => loadEvents(false), delayMs);
   }
 
+  function scheduleChangePoll(cursor, delayMs = 30000) {
+    if (changeTimer) window.clearTimeout(changeTimer);
+    changeCursor = cursor || null;
+    if (changeCursor) changeTimer = window.setTimeout(pollChanges, delayMs);
+  }
+
+  async function pollChanges() {
+    if (!changeCursor) return;
+    if (document.hidden) { scheduleChangePoll(changeCursor, 60000); return; }
+    const requestedCursor = changeCursor;
+    try {
+      const response = await fetch(`/api/changes?cursor=${encodeURIComponent(requestedCursor)}&limit=50`, { cache: "no-store" });
+      if (response.status === 409) { await loadEvents(false); return; }
+      if (!response.ok) throw new Error(`Changes API ${response.status}`);
+      const body = await response.json();
+      if (changeCursor !== requestedCursor) return;
+      if (body.changes?.length) { await loadEvents(false); return; }
+      scheduleChangePoll(body.nextCursor, 30000);
+    } catch {
+      if (changeCursor === requestedCursor) scheduleChangePoll(changeCursor, 30000);
+    }
+  }
+
   function applyResult(result) {
     const normalizedEvents = (result.events || []).map(normalizeEvent).filter((event) => event.geographic === false || (Number.isFinite(event.lat) && Number.isFinite(event.lon)));
     const incidentResult = annotateIncidents(normalizedEvents);
     state.events = incidentResult.events;
+    state.localPreview=result.localPreview||null;
     state.intelligenceEvents = [];
     state.incidents = incidentResult.incidents;
     state.lastLoaded = Number(result.generatedAt || Date.now());
@@ -870,29 +1207,43 @@ export function bootLiveMap() {
   }
 
   async function loadEvents(manual = false) {
+    if (state.demo) {
+      const { foundationEvents } = await import('./data/foundation-demo.js');
+      const demoNow=Date.now();
+      const fixtures=[...foundationEvents(demoNow,state.stressDemo?10000:120).map((e,i)=>({...e,occurredAt:demoNow-(i%120+1)*600000,updatedAt:demoNow-(i%120)*300000})), ...syntheticScenarioEvents(demoNow)];
+      applyResult({events:fixtures,generatedAt:demoNow,sources:['Synthetic test fixture'],systemStatus:'demo',sourceStatus:{demo:{ok:true,status:'demo',count:fixtures.length}}});
+      await hydrateSnapshotRecords();
+      els.systemStatus.textContent = 'Synthetic demo';
+      els.sourceHealth.textContent = 'Synthetic test scenarios. No live provider requests.';
+      render();
+      loadPublicSnapshots().catch(() => {});
+      return;
+    }
+    const generation=++eventRequestGeneration;
+    eventRequestController?.abort();
+    state.apiStatus='loading';
+    render();
     els.systemStatus.innerHTML = "<i></i> Updating";
     els.refreshNow.disabled = true;
-    const controller = new AbortController();
+    const controller = eventRequestController = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CONFIG.requestTimeoutMs);
     try {
-      let result;
-      try {
-        const response = await fetch(`${CONFIG.endpoint}?hours=${state.hours}&t=${Date.now()}`, { cache: "no-store", signal: controller.signal });
-        if (!response.ok) throw new Error(`API ${response.status}`);
-        const contentType = response.headers.get("content-type") || "";
-        if (!contentType.includes("json")) throw new Error("Non-JSON event API response");
-        result = await response.json();
-      } catch (apiError) {
-        console.warn("Event API unavailable; using direct USGS fallback.", apiError);
-        try {
-          result = await directFallback();
-        } catch (fallbackError) {
-          fallbackError.apiError = apiError;
-          throw fallbackError;
-        }
+      const response = await fetch(`${CONFIG.endpoint}?hours=${state.hours}&t=${Date.now()}`, { cache: "no-store", signal: controller.signal });
+      if (!response.ok) {
+        let body = null;
+        try { body = await response.json(); } catch { body = null; }
+        const error = new Error(`API ${response.status}`);
+        error.offlinePreview = body?.error === "offline-preview";
+        throw error;
       }
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("json")) throw new Error("Non-JSON event API response");
+      const result = await response.json();
+      if(generation!==eventRequestGeneration)return;
+      state.apiStatus='ready';
       applyResult(result);
       writeEventCache(result);
+      scheduleChangePoll(result.changeCursor);
       retryAttempts = 0;
       state.apiFailure = null;
       state.retryDelayMs = 0;
@@ -900,49 +1251,80 @@ export function bootLiveMap() {
       const isPartial = result.systemStatus === "partial-data" || result.mode === "partial-netlify-function" || state.errors.length > 0;
       const noData = result.systemStatus === "no-current-provider-data" || !state.events.length;
       els.systemStatus.classList.toggle("warn", isPartial);
-      els.systemStatus.innerHTML = `<i></i> ${noData ? "No provider data" : isPartial ? "Partial data" : result.mode === "fallback" ? "Live fallback" : "Operational"}`;
+      els.systemStatus.innerHTML = `<i></i> ${result.localPreview ? (result.localPreview.cacheOnly ? 'Saved public reads' : 'Local public data') : noData ? "No provider data" : isPartial ? "Partial data" : "Operational"}`;
       renderSourceHealth(els.sourceHealth, result, state.errors);
       render();
       scheduleNextLoad(CONFIG.refreshSeconds * 1000);
     } catch (error) {
+      if(generation!==eventRequestGeneration)return;
+      state.apiStatus='error';
+      if (changeTimer) window.clearTimeout(changeTimer);
       console.error(error);
-      const kind = classifyFetchError(error.apiError || error);
+      const kind = error.offlinePreview ? "offline-preview" : classifyFetchError(error);
       const cached = readEventCache();
-      if (cached && !state.events.length) applyResult({ ...cached, mode: "browser-cache", errors: ["Showing last successful browser cache because live requests failed."] });
+      if (cached && !state.events.length && kind !== "offline-preview") applyResult({ ...cached, mode: "browser-cache", errors: ["Showing last successful browser cache because live requests failed."] });
       retryAttempts += 1;
       const retryDelay = Math.min(RETRY_CAP_MS, RETRY_BASE_MS * 2 ** Math.min(retryAttempts - 1, 4));
-      state.retryDelayMs = retryDelay;
-      state.nextRetryAt = Date.now() + retryDelay;
-      state.apiFailure = { kind, message: safeFailureMessage(kind), detail: error.message || "Request failed" };
+      state.retryDelayMs = kind === "offline-preview" ? 0 : retryDelay;
+      state.nextRetryAt = kind === "offline-preview" ? null : Date.now() + retryDelay;
+      state.apiFailure = { kind, message: kind === "offline-preview" ? "Local preview has no provider APIs. Use ?demo=foundation for synthetic fixtures." : safeFailureMessage(kind), detail: error.message || "Request failed" };
       els.systemStatus.classList.add("warn");
       els.systemStatus.innerHTML = "<i></i> Feed unavailable";
-      if (els.sourceHealth) els.sourceHealth.textContent = cached ? "Showing last successful cached data" : "No live source connected";
-      if (!state.events.length) els.eventList.innerHTML = '<div class="empty">Event data temporarily unavailable. Filters and the map remain usable; use Retry when connectivity returns.</div>';
+      if (els.sourceHealth) els.sourceHealth.textContent = kind === "offline-preview" ? "Preview APIs return 503 by design. This is not live data and is not retried as a production outage." : cached ? "Showing last successful cached data" : "No live source connected";
+      if (kind === "offline-preview") {
+        await hydrateSnapshotRecords();
+        await loadPublicSnapshots();
+        els.systemStatus.innerHTML = "<i></i> Public snapshots";
+        if (els.sourceHealth) els.sourceHealth.textContent = "Loaded local public snapshots. Preview /api remains JSON 503 by design — this is not live coverage.";
+        if (els.publicDataStatus) els.publicDataStatus.innerHTML = "<strong>Public snapshots</strong><p>Genuine saved records only. Capture time and observation period are on each card. Not a live feed.</p>";
+        state.dataMode = "public";
+      } else if (!state.events.length) {
+        els.eventList.innerHTML = '<div class="empty">Event data temporarily unavailable. Filters and the map remain usable; use Retry when connectivity returns.</div>';
+      }
       render();
-      scheduleNextLoad(retryDelay);
+      if (kind !== "offline-preview") scheduleNextLoad(retryDelay);
     } finally {
       clearTimeout(timeout);
-      els.refreshNow.disabled = false;
+      if(generation!==eventRequestGeneration)return;
+      if(generation===eventRequestGeneration)els.refreshNow.disabled = false;
       if (manual) els.refreshNow.textContent = "Refreshed";
       setTimeout(() => (els.refreshNow.textContent = "Refresh"), 1200);
     }
   }
 
+  let movingAbort = null, movingRequest = 0;
   async function loadMovingObjects() {
+    const requestId = ++movingRequest;
+    movingAbort?.abort();
     if (!state.tracking.aircraft && !state.tracking.vessels) {
       state.movingObjects = [];
       state.movingObjectStatus = {};
       render();
       return;
     }
-    if (document.hidden) return;
+    const bbox = mapController.currentBbox();
+    const bounded = { ...bbox, west:wrapLongitude(bbox.west),east:wrapLongitude(bbox.east) };
+    if (document.hidden || mapController.map.getZoom()<7 || !validateBbox([bounded.south,bounded.west,bounded.north,bounded.east].join(',')).valid) { state.movingObjects=[]; render(); return; }
+    if (state.demo) {
+      const { foundationObjects } = await import('./data/foundation-demo.js');
+      if(requestId!==movingRequest) return;
+      const demoObjects=foundationObjects(Date.now(),state.stressDemo?2000:40).map(o=>({...o,observedTrack:[3,2,1,0].map(n=>({latitude:o.latitude-n*.01,longitude:o.longitude-n*.02,observedAt:o.observedAt-n*60000}))}));
+      state.movingInputCount=demoObjects.length; state.movingObjects = selectMovingObjects(demoObjects,{bbox,...state.tracking});
+      state.movingObjectStatus = { demo: { status:'synthetic-demo' } }; render(); return;
+    }
+    movingAbort = new AbortController();
     const type = state.tracking.aircraft && state.tracking.vessels ? "all" : state.tracking.aircraft ? "aircraft" : "vessel";
     try {
-      const response = await fetch(`/api/moving-objects?type=${type}&bbox=${encodeURIComponent(bboxParam(mapController))}&limit=500&t=${Date.now()}`, { cache: "no-store" });
+      const response = await fetch(`/api/moving-objects?type=${type}&bbox=${encodeURIComponent([bounded.south,bounded.west,bounded.north,bounded.east].join(','))}&limit=500`, { signal:movingAbort.signal });
+      if (!response.ok) throw new Error('Tracking unavailable');
       const body = await response.json();
-      state.movingObjects = Array.isArray(body.data?.data) ? body.data.data : Array.isArray(body.data) ? body.data : [];
+      if(requestId!==movingRequest) return;
+      const incoming=Array.isArray(body.data?.data) ? body.data.data : Array.isArray(body.data) ? body.data : [];
+      const incomingIds=new Set(incoming.map(o=>o.id));
+      state.movingObjects = selectMovingObjects([...state.movingObjects.filter(o=>incomingIds.has(o.id)),...incoming],{bbox,...state.tracking});
       state.movingObjectStatus = body.data?.providerStatus || body.sourceStatus || {};
     } catch {
+      if(requestId!==movingRequest) return;
       state.movingObjects = [];
       state.movingObjectStatus = {
         opensky: { ok: false, status: "provider-unavailable", message: "Aircraft data is temporarily delayed." },
@@ -955,6 +1337,7 @@ export function bootLiveMap() {
   let movingRefreshTimer = null;
   function scheduleMovingRefresh(delay = 30000) {
     if (movingRefreshTimer) window.clearTimeout(movingRefreshTimer);
+    if(document.hidden || (!state.tracking.aircraft && !state.tracking.vessels) || mapController.map.getZoom()<7) return;
     movingRefreshTimer = window.setTimeout(async () => {
       await loadMovingObjects();
       scheduleMovingRefresh(document.hidden ? delay * 4 : delay);
@@ -964,24 +1347,150 @@ export function bootLiveMap() {
   renderNav();
   renderFeedControls();
   renderChokepointControls();
-  if (!state.onboardingComplete && els.onboardingDialog) els.onboardingDialog.showModal();
   const startupParams = new URLSearchParams(window.location.search);
-  if (state.selectedPreset === "explore" && !startupParams.has("tracking") && !startupParams.has("view")) applyPreset("explore", false);
+  state.mobilePane = state.selectedEventId ? 'detail' : investigation.open || state.activeArea==='feed' ? 'feed' : 'map';
+  if (state.selectedPreset === "explore" && !startupParams.has("tracking") && !startupParams.has("view") && !startupParams.has('mapState') && !state.selectedEventId && !investigation.open) applyPreset("explore", false);
   if (els.timeWindow) els.timeWindow.value = String(state.hours);
   els.search.value = dashboardFilters().query;
   if (els.globalSearch) els.globalSearch.value = dashboardFilters().query;
   window.addEventListener("live-map-render-request", () => { renderNav(); renderFeedControls(); renderChokepointControls(); render(); loadMovingObjects(); });
   document.addEventListener("click", (event) => {
     if (event.target.closest("a")) return;
+    const watchSource=event.target.closest('[data-watch-source]'),watchChanges=event.target.closest('[data-watch-changes]');
+    if(watchSource||watchChanges){if(watchSource)state.watchSource=watchSource.dataset.watchSource;else state.watchChangeFilter=watchChanges.dataset.watchChanges;state.listPage=0;syncUrlState();render();return;}
+    if(event.target.closest('[data-watch-reset]')){clearInspectorSelection();state.mobilePane='feed';state.rightDrawerOpen=true;state.watchSource='';state.watchChangeFilter='all';state.selectedCountryIso3=null;state.mapView.viewportOnly=false;state.mapView.asOf=null;resetDashboardFilters();els.search.value='';els.globalSearch.value='';els.globalSearchResults.hidden=true;state.listPage=0;syncUrlState();render();els.search.focus();return;}
+    const mobileButton = event.target.closest('[data-mobile-pane]');
+    if (mobileButton) {
+      if (state.selectedEventId) clearInspectorSelection();
+      state.mobilePane = mobileButton.dataset.mobilePane;
+      state.rightDrawerOpen = true;
+      render();
+      mapController.invalidateMapSize();
+      if (state.mobilePane === 'feed') els.search.focus({preventScroll:true});
+      return;
+    }
+    if (event.target.closest('[data-space-lens]')) {
+      state.spaceLens = !state.spaceLens;
+      event.target.closest('[data-space-lens]').setAttribute('aria-pressed',String(state.spaceLens));
+      render();
+      document.getElementById('lensGuide').open = state.spaceLens;
+      return;
+    }
+    if (event.target.closest('[data-open-contacts]')) {
+      state.mobilePane = 'feed'; state.rightDrawerOpen = true; render();
+      const panel = document.getElementById('contactsPanel'); panel.open = true; panel.querySelector('summary').focus();
+      return;
+    }
+    if (event.target.closest('[data-wind-proof-toggle]')) {
+      // The existing wind proof draws on Leaflet; expose its actual renderer.
+      if (state.mapMode !== '2d') {
+        els.mapMode.value = '2d';
+        els.mapMode.dispatchEvent(new Event('change', { bubbles:true }));
+      }
+      const toggle = document.getElementById('windToggle');
+      toggle.checked = !toggle.checked;
+      toggle.dispatchEvent(new Event('change',{bubbles:true}));
+      return;
+    }
+    const page = event.target.closest('[data-list-page]');
+    if(page) { state.listPage = Math.max(0,state.listPage + (page.dataset.listPage==='next'?1:-1)); render(); els.eventList.scrollTop=0; return; }
+    const investigateNav = event.target.closest("[data-investigate-nav]");
+    if (investigateNav) {
+      openInvestigation();
+      return;
+    }
+    const investigateOpen = event.target.closest("[data-investigate-open]");
+    if (investigateOpen) {
+      openInvestigation(investigateOpen.dataset.investigateOpen);
+      return;
+    }
+    const evidenceSelect = event.target.closest('[data-evidence-select]');
+    if (evidenceSelect) {
+      const id = evidenceSelect.dataset.evidenceSelect;
+      if (!investigation.caseObject?.evidence.some(record => record.id === id)) return;
+      state.selectedEvidenceId = id; syncInvestigationUrl(); render();
+      els.chokepointDetailDrawer.querySelector('[data-evidence-back]')?.focus();
+      return;
+    }
+    if (event.target.closest('[data-evidence-back]')) {
+      const id = state.selectedEvidenceId;
+      state.selectedEvidenceId = null; syncInvestigationUrl(); render();
+      els.chokepointDetailDrawer.querySelector('[data-evidence-select="'+CSS.escape(id)+'"]')?.focus();
+      return;
+    }
+    const caseSwitch = event.target.closest("[data-investigate-case]");
+    if (caseSwitch && event.type === "click") return;
+    if (event.target.closest("[data-investigate-review]") && investigation.caseObject?.genuine) {
+      return;
+    }
+    if (event.target.closest("[data-investigate-close]")) {
+      investigation.open = false; state.selectedEvidenceId = null;
+      syncInvestigationUrl(); render(); renderNav();
+      document.querySelector('[data-investigate-nav]')?.focus({preventScroll:true});
+      return;
+    }
+    const investigateTab = event.target.closest("[data-investigate-tab]");
+    if (investigateTab) {
+      investigation.tab = investigateTab.dataset.investigateTab;
+      render();
+      return;
+    }
+    if (event.target.closest("[data-investigate-review]") && investigation.caseObject && !investigation.caseObject.genuine) {
+      const current = investigation.caseObject.assessments.at(-1);
+      const reviewed = reviewAssessment(current, { reviewer: "human-operator", audience: "local-analyst", now: new Date() });
+      if (reviewed.ok) {
+        investigation.caseObject.assessments[investigation.caseObject.assessments.length - 1] = reviewed.assessment;
+        investigation.tab = "assessment";
+      }
+      render();
+      return;
+    }
+    const removeEvidence = event.target.closest("[data-investigate-remove]");
+    if (removeEvidence && investigation.caseObject) {
+      const mutated = applyEvidenceMutation(investigation.caseObject, { removeId: removeEvidence.dataset.investigateRemove, now: new Date(SYNTHETIC_NOW) });
+      investigation.caseObject = mutated.caseObject;
+      investigation.tab = "changes";
+      render();
+      return;
+    }
+    const refreshOnly = event.target.closest("[data-investigate-refresh]");
+    if (refreshOnly && investigation.caseObject) {
+      const mutated = applyEvidenceMutation(investigation.caseObject, { retrievedAtOnly: { id: refreshOnly.dataset.investigateRefresh, retrievedAt: new Date().toISOString() }, now: new Date() });
+      investigation.caseObject = mutated.caseObject;
+      investigation.tab = "changes";
+      render();
+      return;
+    }
+    const exportBtn = event.target.closest("[data-investigate-export]");
+    if (exportBtn && investigation.caseObject) {
+      const assessment = investigation.caseObject.assessments.at(-1);
+      if (exportBtn.dataset.investigateExport === "markdown") {
+        const projection = projectPublicAssessment(assessment, investigation.caseObject, { audience: "local-preview" });
+        downloadText(workbenchFilename("markdown"), renderPublicMarkdown(projection), "text/markdown");
+      } else {
+        downloadText(workbenchFilename("json", investigation.caseObject), serializeCase(investigation.caseObject), "application/json");
+      }
+      return;
+    }
     const area = event.target.closest("[data-area]");
     if (area) {
+      investigation.open = false; state.selectedEvidenceId = null;
+      syncInvestigationUrl();
       setActiveArea(area.dataset.area);
       render();
       mapController.invalidateMapSize();
       return;
     }
+    const expand = event.target.closest("[data-chokepoint-expand], [data-open-history]");
+    if (expand) {
+      const id = expand.dataset.chokepointExpand || expand.dataset.openHistory;
+      state.expandedChokepointId = id;
+      state.selectedChokepointId = id;
+      openChokepointInspector(chokepointById(id));
+      return;
+    }
     const chokepointSelect = event.target.closest("[data-chokepoint-select]");
-    if (chokepointSelect) {
+    if (chokepointSelect && !event.target.closest("[data-event-detail]")) {
       openChokepointInspector(chokepointById(chokepointSelect.dataset.chokepointSelect));
       return;
     }
@@ -993,7 +1502,10 @@ export function bootLiveMap() {
     }
     const preset = event.target.closest("[data-preset]");
     if (preset) {
+      if (state.selectedEventId) clearInspectorSelection();
       applyPreset(preset.dataset.preset);
+      document.getElementById('contactsPanel').open = ['ships','flights'].includes(preset.dataset.preset);
+      document.getElementById('lensGuide').open = preset.dataset.preset === 'weather';
       els.timeWindow.value = String(state.hours);
       renderFeedControls();
       return;
@@ -1003,10 +1515,12 @@ export function bootLiveMap() {
       const side = openDrawer.dataset.openDrawer;
       if (side === "left") state.leftDrawerOpen = true;
       if (side === "right") state.rightDrawerOpen = true;
-      localStorage.setItem("live-map-left-drawer-v1", state.leftDrawerOpen ? "open" : "closed");
-      localStorage.setItem("live-map-right-drawer-v1", state.rightDrawerOpen ? "open" : "closed");
+      if (side === "right") state.mobilePane = 'feed';
+      workspaceStorage.setItem("live-map-left-drawer-v1", state.leftDrawerOpen ? "open" : "closed");
+      workspaceStorage.setItem("live-map-right-drawer-v1", state.rightDrawerOpen ? "open" : "closed");
       render();
       mapController.invalidateMapSize();
+      if (side === 'left') els.filterDrawer.querySelector('[data-close-drawer]')?.focus();
       return;
     }
     const closeDrawer = event.target.closest("[data-close-drawer]");
@@ -1014,8 +1528,9 @@ export function bootLiveMap() {
       const side = closeDrawer.dataset.closeDrawer;
       if (side === "left") state.leftDrawerOpen = false;
       if (side === "right") state.rightDrawerOpen = false;
-      localStorage.setItem("live-map-left-drawer-v1", state.leftDrawerOpen ? "open" : "closed");
-      localStorage.setItem("live-map-right-drawer-v1", state.rightDrawerOpen ? "open" : "closed");
+      if (side === "right") state.mobilePane = 'map';
+      workspaceStorage.setItem("live-map-left-drawer-v1", state.leftDrawerOpen ? "open" : "closed");
+      workspaceStorage.setItem("live-map-right-drawer-v1", state.rightDrawerOpen ? "open" : "closed");
       render();
       mapController.invalidateMapSize();
       return;
@@ -1025,13 +1540,13 @@ export function bootLiveMap() {
       const selected = onboardingPreset.dataset.onboardingPreset === "country" ? "explore" : onboardingPreset.dataset.onboardingPreset;
       if (onboardingPreset.dataset.onboardingPreset === "country") window.location.href = "/countries";
       applyPreset(selected);
-      localStorage.setItem("live-map-onboarding-v1", "done");
+      workspaceStorage.setItem("live-map-onboarding-v1", "done");
       state.onboardingComplete = true;
       els.onboardingDialog?.close();
       return;
     }
     if (event.target.closest("[data-onboarding-skip]")) {
-      localStorage.setItem("live-map-onboarding-v1", "done");
+      workspaceStorage.setItem("live-map-onboarding-v1", "done");
       state.onboardingComplete = true;
       els.onboardingDialog?.close();
       return;
@@ -1086,7 +1601,7 @@ export function bootLiveMap() {
     if (groupToggle) {
       const key = groupToggle.dataset.groupToggle;
       state.collapsedGroups.has(key) ? state.collapsedGroups.delete(key) : state.collapsedGroups.add(key);
-      localStorage.setItem("live-map-collapsed-groups-v1", JSON.stringify([...state.collapsedGroups]));
+      workspaceStorage.setItem("live-map-collapsed-groups-v1", JSON.stringify([...state.collapsedGroups]));
       render();
       return;
     }
@@ -1099,9 +1614,10 @@ export function bootLiveMap() {
       return;
     }
     if (event.target.closest("[data-v2-mark-seen]")) {
-      const visibleEvents = currentEvents();
-      const visibleClusters = buildEventClusters(visibleEvents);
-      saveSnapshot(buildSnapshotFromEvents(visibleEvents, visibleClusters));
+      const saved=saveSnapshot(buildSnapshotFromEvents(state.events,buildEventClusters(state.events)));
+      document.getElementById('workspaceMessage').textContent=saved?'All loaded reports marked read. Later source revisions will be compared with this baseline.':'Browser storage is unavailable. The read baseline was not saved.';
+      if(saved)state.watchChangeFilter='all';
+      syncUrlState();
       render();
       return;
     }
@@ -1128,7 +1644,19 @@ export function bootLiveMap() {
         }
       }
       if (artifact) {
-        runArtifactExportAction(action, artifact).catch(() => {});
+        const group = artifactActionButton.closest('[aria-label="Export artifact"]');
+        let output = group?.querySelector('[data-export-status]');
+        if (group && !output) {
+          output = document.createElement('output');
+          output.dataset.exportStatus = '';
+          output.setAttribute('role', 'status');
+          group.appendChild(output);
+        }
+        runArtifactExportAction(action, artifact).then((ok) => {
+          if (output) output.textContent = ok
+            ? action.startsWith('copy') ? 'Copied to clipboard.' : 'Download requested. Check your browser downloads.'
+            : 'Export could not complete. Try the other copy or download option.';
+        }).catch(() => { if (output) output.textContent = 'Export could not complete. Try the other copy or download option.'; });
       }
       return;
     }
@@ -1147,7 +1675,9 @@ export function bootLiveMap() {
     }
     const detailButton = event.target.closest("[data-event-detail]");
     if (detailButton) {
-      const eventRecord = [...state.events, ...exchangeMarkers()].find((item) => item.id === detailButton.dataset.eventDetail);
+      // Chokepoint briefs can contain derived scenario events absent from the raw provider array.
+      const eventRecord = [...buildChokepointIntelligence().events, ...state.events, ...exchangeMarkers()]
+        .find((item) => item.id === detailButton.dataset.eventDetail);
       if (eventRecord) openEventInspector(eventRecord);
       return;
     }
@@ -1206,7 +1736,13 @@ export function bootLiveMap() {
     }
   });
 
+  let lastDrawerTrigger = null;
   document.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === "k") {
+      event.preventDefault();
+      els.globalSearch?.focus();
+      return;
+    }
     const chokepointCard = event.target.closest?.("[data-chokepoint-select]");
     if (chokepointCard && (event.key === "Enter" || event.key === " ")) {
       event.preventDefault();
@@ -1214,10 +1750,22 @@ export function bootLiveMap() {
       return;
     }
     if (event.key === "Escape") {
+      if (investigation.open) {
+        if (state.selectedEvidenceId) {
+          if (investigation.tab === 'evidence') document.querySelector('[data-evidence-back]')?.click();
+          else {state.selectedEvidenceId = null; investigation.tab = 'evidence'; syncInvestigationUrl(); render();}
+          return;
+        }
+        investigation.open = false;
+        syncInvestigationUrl(); render(); renderNav();
+        return;
+      }
+      if (state.selectedEventId && !state.leftDrawerOpen) { clearInspectorSelection(); return; }
       state.leftDrawerOpen = false;
-      localStorage.setItem("live-map-left-drawer-v1", "closed");
+      workspaceStorage.setItem("live-map-left-drawer-v1", "closed");
       render();
       mapController.invalidateMapSize();
+      (lastDrawerTrigger || document.getElementById("layersDrawerToggle"))?.focus();
     }
   });
 
@@ -1247,12 +1795,14 @@ export function bootLiveMap() {
   });
   els.globalSearch?.addEventListener("input", (event) => {
     const query = event.target.value;
-    const results = buildGlobalSearchResults(query, state.events, state.movingObjects);
+    const results = buildGlobalSearchResults(query, currentEvents(), state.movingObjects);
     const grouped = groupSearchResults(results);
-    els.globalSearchResults.hidden = !results.length;
+    els.globalSearchResults.hidden = !query.trim();
     els.globalSearchResults.innerHTML = Object.entries(grouped).map(([group, items]) => `<section><strong>${escapeHtml(group)}</strong>${items.map((item, index) => `<button type="button" data-search-result="${escapeHtml(group)}:${index}"><span>${escapeHtml(item.label)}</span><small>${escapeHtml(item.description || "")}</small></button>`).join("")}</section>`).join("");
+    if(query.trim()&&!results.length)els.globalSearchResults.innerHTML='<p class="search-no-results" role="status">No matches in this view. Try another place or clear report filters.</p><button type="button" data-watch-reset>Clear report filters</button>';
     els.globalSearchResults._results = grouped;
   });
+  els.globalSearch?.addEventListener('keydown',event=>{if(event.key==='ArrowDown'){event.preventDefault();els.globalSearchResults.querySelector('button')?.focus();}if(event.key==='Escape'){els.globalSearchResults.hidden=true;event.stopPropagation();}});
   els.globalSearchResults?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-search-result]");
     if (!button) return;
@@ -1262,18 +1812,48 @@ export function bootLiveMap() {
     const payload = item.payload;
     if (payload.action === "country") selectCountry(payload.iso3);
     if (["airport", "port"].includes(payload.action)) mapController.map.setView([payload.latitude, payload.longitude], 8);
-    if (payload.action === "event" && Number.isFinite(payload.lat) && Number.isFinite(payload.lon)) mapController.map.setView([payload.lat, payload.lon], 7);
+    if(payload.action==='event'){const found=currentEvents().find(e=>e.id===payload.id);if(found)openEventInspector(found);}
     if (payload.action === "moving-object") mapController.map.setView([payload.latitude, payload.longitude], 8);
+    if (payload.action === "chokepoint") openChokepointInspector(chokepointById(payload.id));
+    if (payload.action === "case") {
+      investigation.mode = payload.id === "synthetic-hormuz-2026-06" ? "synthetic" : "genuine";
+      investigation.caseObject = null;
+      investigation.open = true;
+      openChokepointInspector(chokepointById(payload.chokepointId));
+      ensureInvestigation(payload.chokepointId).then(() => render());
+    }
+    if (payload.action === "source" && payload.url) window.open(payload.url, "_blank", "noopener,noreferrer");
     els.globalSearchResults.hidden = true;
     syncUrlState();
   });
-  els.timeWindow.addEventListener("change", (event) => { state.hours = Number(event.target.value); loadEvents(true); });
+  els.timeWindow.addEventListener("change", (event) => { state.hours = Number(event.target.value); syncUrlState(); loadEvents(true); });
+  document.getElementById('applyTime')?.addEventListener('click', () => {
+    const input = document.getElementById('asOfInput');
+    const end = input.value ? Date.parse(`${input.value}Z`) : NaN;
+    if (!Number.isFinite(end)) { input.setCustomValidity('Choose a valid UTC date and time.'); input.reportValidity(); return; }
+    input.setCustomValidity('');
+    clearInspectorSelection();
+    state.mapView.asOf = new Date(end).toISOString(); state.listPage = 0;
+    syncUrlState(); render();
+    document.getElementById('timeBrowser').open = false;
+    document.querySelector('#timeBrowser>summary').focus();
+  });
+  document.getElementById('asOfInput')?.addEventListener('input', event => event.target.setCustomValidity(''));
+  document.getElementById('availableTime')?.addEventListener('click', () => {
+    clearInspectorSelection();
+    state.mapView.asOf = null; state.listPage = 0;
+    syncUrlState(); render();
+    document.getElementById('asOfInput').value = '';
+    document.getElementById('timeBrowser').open = false;
+    document.querySelector('#timeBrowser>summary').focus();
+  });
   els.sortOrder.addEventListener("change", (event) => { state.sort = event.target.value; syncUrlState(); render(); });
   els.groupBy.addEventListener("change", (event) => { state.groupBy = event.target.value; syncUrlState(); render(); });
   els.cardMode.addEventListener("change", (event) => { state.cardMode = event.target.value; syncUrlState(); render(); });
   els.savedViews.addEventListener("change", (event) => {
     const view = loadSavedViews().find((item) => item.name === event.target.value);
     if (!view) return;
+    clearInspectorSelection();
     if (view.dashboard) setDashboard(view.dashboard);
     if (view.sort) state.sort = view.sort;
     if (view.groupBy) state.groupBy = view.groupBy;
@@ -1281,26 +1861,62 @@ export function bootLiveMap() {
     const filters = dashboardFilters();
     filters.domains.clear();
     (view.domains || []).forEach((domain) => filters.domains.add(domain));
+    if(view.categories) { filters.categories.clear(); view.categories.filter(k=>CATEGORIES[k]).forEach(k=>filters.categories.add(k)); }
+    if(view.severities) { filters.severities.clear(); view.severities.filter(k=>SEVERITIES[k]).forEach(k=>filters.severities.add(k)); }
+    if(view.recordKinds) { filters.recordKinds.clear();view.recordKinds.filter(k=>['event','observation','discovery-lead','moving-object'].includes(k)).forEach(k=>filters.recordKinds.add(k)); }
+    if([24,72,168,720].includes(view.hours)) state.hours=view.hours;
+    state.queryByDashboard.set(state.dashboard,String(view.query || '').slice(0,200));
+    if(view.version===1 && view.mapView) { state.mapView=validateMapView(view.mapView); state.mapMode=state.mapView.mapMode; Object.keys(state.tracking).forEach(k=>state.tracking[k]=state.mapView[k]); mapController.map.setView([state.mapView.lat,state.mapView.lon],state.mapView.zoom); mapController.switchBase(state.mapView.basemap); }
+    els.search.value=dashboardFilters().query; els.timeWindow.value=String(state.hours); els.baseMap.value=state.mapView.basemap;
     renderFeedControls();
     syncUrlState();
     render();
+    if (state.mapMode !== '2d') getGlobeHandle()?.applyView?.(state.mapView);
   });
   els.saveView.addEventListener("click", () => {
     const name = window.prompt("Save current view as:", `${getDashboard(state.dashboard).label} view`);
     if (!name) return;
-    saveView(serializeView(state, dashboardFilters(), name));
+    const saved = saveView(serializeView(state, dashboardFilters(), name));
+    document.getElementById('workspaceMessage').textContent = saved ? 'View saved.' : 'Storage is blocked. Copy the browser URL to keep this view.';
     renderFeedControls();
   });
   els.clearDomains.addEventListener("click", () => { dashboardFilters().domains.clear(); syncUrlState(); render(); });
   els.clearFilters.addEventListener("click", () => { resetDashboardFilters(); els.search.value = ""; renderFeedControls(); render(); });
-  els.fitWorld.addEventListener("click", () => mapController.fitWorld());
+  els.fitWorld.addEventListener("click", () => {
+    if (state.mapMode !== '2d' && getGlobeHandle()?.ok) getGlobeHandle().viewGlobal();
+    else mapController.fitWorld();
+  });
   els.fitEvents.addEventListener("click", () => mapController.fitEvents(currentEvents()));
-  els.baseMap.addEventListener("change", (event) => mapController.switchBase(event.target.value));
-  els.mapMode.addEventListener("change", (event) => { state.mapMode = event.target.value; render(); mapController.invalidateMapSize(); });
+  els.baseMap.addEventListener("change", (event) => { state.mapView.basemap=event.target.value; mapController.switchBase(event.target.value); syncUrlState(); });
+  els.dataMode?.addEventListener("change", (event) => {
+    const next = event.target.value;
+    const url = new URL(window.location.href);
+    if (next === "public") {
+      url.searchParams.delete("demo");
+      url.searchParams.set("data", "public");
+    } else {
+      url.searchParams.set("demo", "foundation");
+      url.searchParams.set("data", "mixed");
+    }
+    window.location.assign(url.href);
+  });
+  els.mapMode.addEventListener("change", (event) => {
+    const view = { ...state.mapView };
+    state.mapMode = event.target.value;
+    state.mapView.mapMode = event.target.value;
+    syncUrlState();
+    render();
+    if (state.mapMode === '2d') window.requestAnimationFrame(() => {
+      mapController.map.invalidateSize({ pan: false });
+      mapController.map.setView([view.lat, view.lon], view.zoom, { animate: false });
+      render();
+    });
+    mapController.invalidateMapSize();
+  });
   els.ciiToggle.addEventListener("click", () => { state.ciiVisible = !state.ciiVisible; els.ciiToggle.classList.toggle("active", state.ciiVisible); render(); });
   els.advancedMode?.addEventListener("change", (event) => {
     state.interfaceMode = event.target.checked ? "advanced" : "standard";
-    localStorage.setItem("live-map-interface-mode-v1", state.interfaceMode);
+    workspaceStorage.setItem("live-map-interface-mode-v1", state.interfaceMode);
     render();
     mapController.invalidateMapSize();
   });
@@ -1308,17 +1924,21 @@ export function bootLiveMap() {
     state.tracking.aircraft = event.target.checked;
     syncUrlState();
     loadMovingObjects();
+    scheduleMovingRefresh();
   });
   els.vesselToggle?.addEventListener("change", (event) => {
     state.tracking.vessels = event.target.checked;
     syncUrlState();
     loadMovingObjects();
+    scheduleMovingRefresh();
   });
-  els.airportsToggle?.addEventListener("change", (event) => { state.tracking.airports = event.target.checked; render(); });
-  els.portsToggle?.addEventListener("change", (event) => { state.tracking.ports = event.target.checked; render(); });
+  els.airportsToggle?.addEventListener("change", (event) => { state.tracking.airports = event.target.checked; syncUrlState();render(); });
+  els.portsToggle?.addEventListener("change", (event) => { state.tracking.ports = event.target.checked; syncUrlState();render(); });
   els.mapListToggle?.addEventListener("click", () => {
+    state.mobilePane = state.mobilePane === 'map' ? 'feed' : 'map';
     state.rightDrawerOpen = !state.rightDrawerOpen;
-    localStorage.setItem("live-map-right-drawer-v1", state.rightDrawerOpen ? "open" : "closed");
+    if (window.matchMedia('(max-width:900px)').matches) state.rightDrawerOpen = true;
+    workspaceStorage.setItem("live-map-right-drawer-v1", state.rightDrawerOpen ? "open" : "closed");
     render();
     mapController.invalidateMapSize();
   });
@@ -1327,16 +1947,30 @@ export function bootLiveMap() {
     navigator.geolocation.getCurrentPosition((position) => mapController.map.setView([position.coords.latitude, position.coords.longitude], 6));
   });
   els.resetWorkspace?.addEventListener("click", () => {
+    clearInspectorSelection();
+    state.mobilePane = 'map';
     state.leftDrawerOpen = false;
     state.rightDrawerOpen = true;
     state.selectedCountryIso3 = null;
     state.selectedEventId = null;
     state.selectedClusterId = null;
     state.selectedChokepointId = null;
+    state.spaceLens = false;
+    state.mapView.asOf = null;
+    state.mapView.viewportOnly = false;
+    state.mapView.verification = 'all';
+    for (const key of ['graph','weather','density','activity','orbital']) state.mapView[key] = false;
+    for (const id of ['windToggle','recordedWindToggle']) {
+      const toggle = document.getElementById(id);
+      if (toggle?.checked) { toggle.checked = false; toggle.dispatchEvent(new Event('change', { bubbles:true })); }
+    }
+    for (const key of state.queryByDashboard.keys()) state.queryByDashboard.set(key, '');
+    state.queryByDashboard.set('primary', '');
+    els.search.value = ''; if (els.globalSearch) els.globalSearch.value = '';
     state.tracking.aircraft = false;
     state.tracking.vessels = false;
-    localStorage.setItem("live-map-left-drawer-v1", "closed");
-    localStorage.setItem("live-map-right-drawer-v1", "open");
+    workspaceStorage.setItem("live-map-left-drawer-v1", "closed");
+    workspaceStorage.setItem("live-map-right-drawer-v1", "open");
     applyPreset("explore");
   });
   els.refreshNow.addEventListener("click", () => loadEvents(true));
@@ -1346,9 +1980,97 @@ export function bootLiveMap() {
   els.eventDialog.addEventListener("click", (event) => { if (event.target === els.eventDialog) els.eventDialog.close(); });
   els.methodologyDialog.addEventListener("click", (event) => { if (event.target === els.methodologyDialog) els.methodologyDialog.close(); });
 
-  loadEvents();
+  if (state.demo) {
+    const stageId = state.mapView.scenarioStage || (state.selectedChokepointId === SYNTHETIC_CHOKEPOINT_ID ? "diplomacy-with-low-throughput" : "restriction");
+    if (state.selectedChokepointId || startupParams.has('scenario')) applyScenarioStage(stageId, { renderAfter: false });
+    if (state.selectedChokepointId === SYNTHETIC_CHOKEPOINT_ID) state.mapView.chokepoints = true;
+    state.mapView.basemap = "local-earth";
+    state.dataMode = "mixed";
+    mapController.switchBase("local-earth");
+  } else if (state.mapView.basemap === "dark" || state.mapView.basemap === "local-earth") {
+    mapController.switchBase(state.mapView.basemap);
+  }
+  loadEvents().then(() => {
+    if (state.selectedChokepointId) {
+      const selected = chokepointById(state.selectedChokepointId);
+      if (selected) openChokepointInspector(selected);
+    }
+  });
   loadMovingObjects();
   scheduleMovingRefresh();
-  document.addEventListener("visibilitychange", () => scheduleMovingRefresh(document.hidden ? 120000 : 30000));
+  document.addEventListener("visibilitychange", () => {
+    if(document.hidden) { movingRequest++; movingAbort?.abort(); }
+    else if (changeCursor) scheduleChangePoll(changeCursor, 1000);
+    scheduleMovingRefresh();
+  });
+  let viewportTimer;
+  mapController.map.on('moveend',()=>{
+    const center=mapController.map.getCenter(); Object.assign(state.mapView,{lat:center.lat,lon:center.lng,zoom:mapController.map.getZoom()}); syncUrlState();
+    movingRequest++; movingAbort?.abort(); clearTimeout(viewportTimer);
+    viewportTimer=setTimeout(()=>{render();loadMovingObjects();scheduleMovingRefresh();},200);
+  });
+  for(const [id,key] of [['viewportOnly','viewportOnly'],['chokepointsToggle','chokepoints'],['graphToggle','graph'],['densityToggle','density'],['activityToggle','activity'],['orbitalToggle','orbital'],['recordedWindToggle','weather']]) document.getElementById(id)?.addEventListener('change',e=>{state.mapView[key]=e.target.checked;state.listPage=0;syncUrlState();render();});
+  document.getElementById('verificationFilter').addEventListener('change',e=>{state.mapView.verification=e.target.value;state.listPage=0;syncUrlState();render();});
+  document.getElementById('layerSearch').addEventListener('input',e=>{const q=e.target.value.toLowerCase();els.layerFilters.querySelectorAll('button').forEach(b=>b.hidden=!b.textContent.toLowerCase().includes(q));});
+  document.getElementById('demoBanner').hidden=!state.demo;
+  document.getElementById('windControls').hidden=!state.demo;
+  if(state.demo) {
+    let wind;
+    let recordedWind;
+    const updateWind=async()=>{
+      const toggle=document.getElementById('windToggle');
+      const recorded=document.getElementById('recordedWindToggle');
+      if(!wind && toggle.checked) { const module=await import('./map/wind-proof.js'); wind=module.createWindProof(mapController.map); }
+      wind?.set(toggle.checked,Number(document.getElementById('windOpacity').value));
+      if (recorded?.checked && !recordedWind) {
+        const [fieldModule, json] = await Promise.all([import('./map/wind-field.js'), fetch('./data/development-fixtures/gfs-10m-recorded-sample.json').then((r)=>r.json())]);
+        recordedWind = fieldModule.createWindFieldRenderer(mapController.map, json, { synthetic: false });
+      }
+      recordedWind?.set(Boolean(recorded?.checked), Number(document.getElementById('windOpacity').value));
+      document.getElementById('demoBanner').textContent=toggle.checked?SYNTHETIC_WIND: recorded?.checked ? recordedWindUiLabel():'SYNTHETIC DEMO — invented test scenarios, not live intelligence';
+    };
+    document.getElementById('windToggle').addEventListener('change',updateWind);
+    document.getElementById('recordedWindToggle')?.addEventListener('change',updateWind);
+    document.getElementById('windOpacity').addEventListener('input',updateWind);
+  }
+  document.getElementById("scenarioStage")?.addEventListener("change", (event) => applyScenarioStage(event.target.value));
+  document.addEventListener("change", (event) => {
+    const caseSwitch = event.target.closest?.("[data-investigate-case]");
+    if (caseSwitch) {
+      investigation.mode = caseSwitch.value === AVIATION_CASE_ID ? 'aviation' : caseSwitch.value === "synthetic-hormuz-2026-06" ? "synthetic" : "genuine";
+      investigation.caseObject = null;
+      investigation.open = true; state.selectedEvidenceId = null; investigation.selectionNotice = null;
+      ensureInvestigation(state.selectedChokepointId || "strait-of-hormuz").then(() => {syncInvestigationUrl(); render();});
+      return;
+    }
+    const input = event.target.closest?.("[data-investigate-import]");
+    if (!input?.files?.[0]) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      const parsed = parseCaseFile(String(reader.result || ""));
+      if (!parsed.ok) {
+        if (els.feedError) {
+          els.feedError.hidden = false;
+          els.feedError.textContent = `Import rejected: ${parsed.errors.join("; ")}`;
+        }
+        return;
+      }
+      state.selectedEvidenceId = null;
+      caseLoadGeneration += 1;
+      investigation.mode = 'imported';
+      investigation.caseObject = parsed.caseObject;
+      investigation.open = true;
+      investigation.tab = "changes";
+      syncInvestigationUrl(); render();
+    };
+    reader.readAsText(file);
+  });
+  document.addEventListener("click", (event) => {
+    const opener = event.target.closest?.("[data-open-drawer]");
+    if (opener) lastDrawerTrigger = opener;
+  });
+  window.matchMedia('(max-width:900px)').addEventListener('change', () => { applyShellState(els); mapController.invalidateMapSize(); });
+  if (investigation.open) openInvestigation();
   setInterval(() => renderStats(els, currentEvents()), 30000);
 }

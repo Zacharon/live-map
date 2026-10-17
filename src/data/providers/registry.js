@@ -5,6 +5,7 @@ function sourceMetadata(id) {
 }
 
 export const EVENT_PROVIDERS = [
+  {...sourceMetadata('nhc-current-storms'), id:'nhc-current-storms', name:'NOAA NHC / CPHC current storms', enabled:true, activation:{billingClass:'free',enableEnvVar:'NHC_ENABLED'}, categories:['storm'], refreshIntervalMs:300000, timeoutMs:12000, fetchAttempts:1, integrationType:'official-json-opt-in', freshnessMs:8*3600000},
   {
     ...sourceMetadata("usgs"),
     id: "usgs",

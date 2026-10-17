@@ -90,3 +90,12 @@ export const LAYER_CATALOG = [
 export function layersForDashboard(dashboardId) {
   return LAYER_CATALOG.filter((layerItem) => layerItem.dashboard === dashboardId || dashboardId === "primary");
 }
+
+// Presentation metadata extends the existing catalog; it is not a provider activation.
+for (const item of LAYER_CATALOG) {
+  item.renderKind = ['ports','airports','stock-exchanges','submarine-cables'].includes(item.id) ? 'reference' : ['commercial-aircraft','maritime-vessels'].includes(item.id) ? 'moving-object' : 'events';
+  if (['ports','airports'].includes(item.id)) Object.assign(item,{implemented:true,enabled:false,status:'Reference sample',sourceType:'Reference',refreshInterval:'Static curated sample',description:'Small existing reference registry; no live traffic or complete coverage.'});
+  if (['commercial-aircraft','maritime-vessels'].includes(item.id)) Object.assign(item,{minimumZoom:7,status:'Authorization / configuration required',enabled:false});
+}
+LAYER_CATALOG.push(layer('synthetic-wind-proof','Synthetic wind proof','Weather fields','primary','Synthetic mathematical test field','https://example.com/synthetic-fixture',{implemented:true,enabled:false,status:'Demo only',sourceType:'Synthetic test',refreshInterval:'No polling',description:'Explicit demo mode only; vector arrows in m/s, surface 10 m. No real weather.'}));
+Object.assign(LAYER_CATALOG.at(-1),{renderKind:'field',demoOnly:true,opacity:true});

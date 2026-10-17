@@ -7,8 +7,8 @@ export const DOMAIN_SOURCE_STATUS = [
   ["technology-cyber", "live", "CISA KEV is live for non-geographic exploited-vulnerability records; NVD enrichment is configured conservatively."],
   ["commodity-supply-chain", "configuration-required", "EIA adapter foundation is implemented but requires EIA_API_KEY before live queries."],
   ["infrastructure", "configuration-required", "Statuspage feeds are live for approved service incidents; RIPEstat requires resource configuration."],
-  ["aviation", "configuration-required", "OpenSky viewport-limited tracking boundary is implemented but requires server-side OAuth credentials."],
-  ["maritime", "configuration-required", "Global Fishing Watch and AISHub boundaries require authorization and attribution review before live use."],
+  ["aviation", "configuration-required", "Optional ADSB.lol requires production/ODbL review and remains off. OpenSky requires a written operational license and server-side OAuth configuration."],
+  ["maritime", "configuration-required", "Optional Finnish Digitraffic AIS is implemented locally but remains off. Global Fishing Watch and AISHub boundaries need authorization/attribution review; no global completeness."],
   ["humanitarian", "configuration-required", "ReliefWeb adapter is implemented but requires a pre-approved RELIEFWEB_APPNAME before live queries."],
   ["positive-development", "planned", "Positive developments require measurable outcomes from primary sources."],
   ["health", "planned", "Health sources are planned; patient-level data and restricted outbreak sources are not ingested."],
@@ -17,6 +17,9 @@ export const DOMAIN_SOURCE_STATUS = [
 ];
 
 export const PROVIDER_SOURCE_REGISTRY = [
+  {"id":"digitraffic-ais","sourceRegistryId":"fintraffic-digitraffic-ais","name":"Fintraffic Digitraffic Marine AIS","domains":["maritime"],"categories":["infrastructure"],"official":true,"sourceUrl":"https://meri.digitraffic.fi/api/ais/v1/locations","documentationUrl":"https://www.digitraffic.fi/en/marine-traffic/","termsUrl":"https://www.digitraffic.fi/en/terms-of-service/","licensingStatus":"CC-BY-4.0","licenseUrl":"https://creativecommons.org/licenses/by/4.0/","attribution":"Fintraffic / digitraffic.fi","geographicCoverage":"Finnish waterways; incomplete receiver coverage","limitations":"AIS positions do not confirm cargo or dark transits. timestampExternal is provider location-record time. Viewport circle capped at 250 km.","environmentVariables":["DIGITRAFFIC_ENABLED"],"refreshInterval":"at most one upstream request per minute per warm instance; shared cache","status":"configuration-required","implemented":true,"credentialRequired":false,"termsReviewedAt":"2026-10-02","implementationEvidence":{"catalogued":true,"connectorImplemented":true,"locallyTested":true,"liveActivated":false}},
+  {"id":"adsb-lol","sourceRegistryId":"adsb-lol-aircraft","name":"ADSB.lol aircraft observations","domains":["aviation"],"categories":["infrastructure"],"official":false,"sourceUrl":"https://api.adsb.lol/docs","documentationUrl":"https://www.adsb.lol/docs/open-data/api/","termsUrl":"https://opendatacommons.org/licenses/odbl/1-0/","licensingStatus":"ODbL-1.0-production-review-required","licenseUrl":"https://opendatacommons.org/licenses/odbl/1-0/","attribution":"ADSB.lol contributors","geographicCoverage":"Volunteer receiver network; incomplete worldwide coverage","limitations":"Production use asks maintainer contact. Keep ODbL records segregated pending downstream database/share-alike review. No published numeric quota or SLA verified. Viewport radius capped at 250 NM.","environmentVariables":["ADSB_LOL_ENABLED","ADSB_LOL_TERMS_REVIEWED"],"refreshInterval":"one upstream request per minute per warm instance; shared cache","status":"configuration-required","implemented":true,"credentialRequired":false,"termsReviewedAt":"2026-10-02","implementationEvidence":{"catalogued":true,"connectorImplemented":true,"locallyTested":true,"liveActivated":false}},
+  {"id":"nhc-current-storms","sourceRegistryId":"noaa-nhc-current-storms","name":"NOAA NHC / CPHC Current Storms","domains":["weather"],"categories":["storm"],"official":true,"sourceUrl":"https://www.nhc.noaa.gov/CurrentStorms.json","documentationUrl":"https://www.nhc.noaa.gov/productexamples/","termsUrl":"https://www.weather.gov/disclaimer","licensingStatus":"NOAA-public-information","licenseUrl":"https://www.weather.gov/disclaimer","attribution":"NOAA NHC / CPHC","geographicCoverage":"Atlantic, eastern and central North Pacific","limitations":"Issued advisories; forecast cones are forecast context. No current-position interpolation or global cyclone completeness. Empty activeStorms is legitimate.","environmentVariables":["NHC_ENABLED"],"refreshInterval":"5 minutes shared cache; hourly proposed when empty","status":"configuration-required","implemented":true,"credentialRequired":false,"termsReviewedAt":"2026-10-02","implementationEvidence":{"catalogued":true,"connectorImplemented":true,"locallyTested":true,"liveActivated":false}},
   {
     id: "usgs",
     sourceRegistryId: "usgs-earthquake-geojson",
@@ -429,7 +432,7 @@ export const PROVIDER_SOURCE_REGISTRY = [
     sourceUrl: "https://opensky-network.org/",
     documentationUrl: "https://openskynetwork.github.io/opensky-api/",
     attribution: "OpenSky Network",
-    limitations: "Never request the whole world continuously. Requires OPENSKY_ENABLED, OPENSKY_CLIENT_ID, and OPENSKY_CLIENT_SECRET.",
+    limitations: "Never request the whole world continuously. Requires OPENSKY_ENABLED, OPENSKY_OPERATIONAL_LICENSE_CONFIRMED, OPENSKY_CLIENT_ID, and OPENSKY_CLIENT_SECRET. Operational REST use requires written license.",
   },
   {
     id: "global-fishing-watch",

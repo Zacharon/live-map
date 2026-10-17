@@ -29,11 +29,14 @@ export function shouldCluster(a, b) {
 export function buildIncidents(events) {
   const incidents = [];
   for (const event of events) {
-    const existing = incidents.find((incident) => incident.events.some((candidate) => shouldCluster(candidate, event)));
+    // A 120 km match cannot span more than 1.1 degrees of latitude. This cheap
+    // rejection preserves the pair predicate and transitive incident behavior.
+    const existing = incidents.find((incident) => (!Number.isFinite(event.lat) || !Number.isFinite(incident.minLat) || (event.lat>=incident.minLat-1.1 && event.lat<=incident.maxLat+1.1)) && incident.events.some((candidate) => shouldCluster(candidate, event)));
     if (existing) {
       existing.events.push(event);
+      if(Number.isFinite(event.lat)){existing.minLat=Math.min(existing.minLat,event.lat);existing.maxLat=Math.max(existing.maxLat,event.lat);}
     } else {
-      incidents.push({ events: [event] });
+      incidents.push({ events: [event],minLat:Number.isFinite(event.lat)?event.lat:NaN,maxLat:Number.isFinite(event.lat)?event.lat:NaN });
     }
   }
   return incidents.map((incident) => {

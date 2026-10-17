@@ -14,10 +14,6 @@ export const FIRMS_DAY_RANGE = 1;
 export const FIRMS_MAX_EVENTS = 80;
 export const FIRMS_GRID_DEG = 0.25;
 
-function env(name) {
-  return globalThis?.process?.env?.[name] || "";
-}
-
 export function firmsAreaUrl(mapKey, source = FIRMS_SOURCE, dayRange = FIRMS_DAY_RANGE) {
   const key = encodeURIComponent(String(mapKey || "").trim());
   return `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${key}/${source}/world/${dayRange}`;
@@ -172,7 +168,7 @@ export function normalizeFirmsRow(row, now = new Date()) {
 }
 
 export async function fetchFirmsEvents(context) {
-  const mapKey = env("NASA_FIRMS_MAP_KEY") || context.env?.NASA_FIRMS_MAP_KEY || "";
+  const mapKey = (context.env ?? globalThis?.process?.env ?? {}).NASA_FIRMS_MAP_KEY || "";
   if (!String(mapKey).trim()) {
     return {
       events: [],

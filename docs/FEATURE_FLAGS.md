@@ -8,7 +8,11 @@ Unfinished features default to `false`. A default-off flag means the structure m
 
 | Flag | Default | Scope | Status | Notes |
 | --- | --- | --- | --- | --- |
-| `FEATURE_EVIDENCE_FRAMEWORK` | `false` | Server-only until UI is implemented | Planned | Enables future evidence record handling after schemas and review rules exist. |
+| `FEATURE_EVIDENCE_FRAMEWORK` | `false` | Frontend-affecting in demo; calculations always on for chokepoint unknown-vs-normal | Partial local | Typed records + chokepoint inspector. Public API shapes unchanged. |
+| `FEATURE_SEMANTIC_GLOBE` | `false` | Frontend 2D/3D/Auto | Partial local | Cesium lazy-load; Leaflet fallback. Off unless the user selects 3D/Auto. |
+| `FEATURE_WEATHER_FIELD` | `false` | Frontend overlay | Partial local | Compact JSON decoder + synthetic cache. Not live GFS. |
+| `FEATURE_MARITIME_OVERLAYS` | `false` | Frontend overlay | Partial local | Historical density format + PortWatch discovery. Not live traffic. |
+| `FEATURE_ORBITAL_PROOF` | `false` | Frontend overlay | Module only | OMM parse/throttle/propagate helpers. satellite.js not vendored. |
 | `FEATURE_SOURCE_MODE` | `false` | Frontend-affecting | Planned | Enables advanced provenance/source inspection only after backed by existing source data. |
 | `FEATURE_CONTROL_ASSESSMENTS` | `false` | Server-only until UI is implemented | Planned | Enables reviewed control-assessment records after reviewer workflow is documented. |
 | `FEATURE_MOVING_OBJECTS` | `false` | Server-only with frontend-affecting views | Existing bounded prototype remains separately guarded | Future flag for additional moving-object expansion; credentials remain server-side. |
