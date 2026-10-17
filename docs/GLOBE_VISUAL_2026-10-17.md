@@ -21,8 +21,7 @@ The 2D Leaflet map, the WebGL/Cesium fallback card (`?failWebgl=1`, `?failCesium
 ## CSP implications
 
 - **No new origins.** The imagery, sky box, star textures, border file and marker canvases are all same-origin, or canvas objects passed directly to Cesium. The existing `img-src 'self' data: blob:` and `connect-src 'self'` cover them.
-- **The production blocker is unchanged.** Cesium 1.145 bundles Knockout 3.5.1, which calls `eval("this")` when the module loads. Production `netlify.toml` sends `script-src 'self' 'wasm-unsafe-eval'` without `'unsafe-eval'`, so on the deployed site the 3D globe fails to start and the 2D fallback card is shown. Only the local preview servers add `'unsafe-eval'`.
-- Choices for the owner (not made here): (a) add `'unsafe-eval'` to production `script-src`, which weakens XSS defence site-wide; (b) serve the globe from a separate route or page with its own relaxed CSP; or (c) replace the vendored bundle with a Cesium build without Knockout (engine only, `CesiumWidget` instead of `Viewer`). This pass works with all three.
+- **Production CSP (resolved by owner choice, 2026-10-17): separate globe page.** Cesium 1.145 bundles Knockout 3.5.1, which calls `eval("this")` when the module loads. `/globe.html` now gets `'unsafe-eval'` in `netlify.toml`; every other page keeps `script-src 'self' 'wasm-unsafe-eval'`. On other pages the 3D fallback card links to the globe page. See [Frontend Stability and CSP](FRONTEND_STABILITY_AND_CSP.md). The rejected options were adding `'unsafe-eval'` site-wide, and a Knockout-free Cesium build.
 
 ## Evidence
 
