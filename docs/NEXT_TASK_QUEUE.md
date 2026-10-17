@@ -1,3 +1,10 @@
+## 2026-10-17 - Globe visual pass awaiting owner review
+
+- Owner visual acceptance of the globe pass (`docs/GLOBE_VISUAL_2026-10-17.md`, screenshots in `artifacts/globe-visual-2026-10-17/`).
+- Owner decision on the production CSP for Cesium (`'unsafe-eval'`, a separate globe route, or a build without Knockout). Until that is decided, the deployed site shows the 2D fallback.
+- Vendor the Natural Earth 1:110m boundary lines (public domain) if borders are approved; the loader is already in place.
+- Merge order: draft PR #75 first, then the stacked follow-up PR.
+
 ## 2026-10-12 - Aviation installation decision pending
 
 - Review the exact-file installation map, full hashes, ownership, dependencies and rollback card before any canonical writes. [Aviation scope and use](AVIATION_LOCAL_INTEGRATION_2026-10-12.md) describes the proposed local capability; installation remains NOT RUN pending a separate authorization and verified receipt.

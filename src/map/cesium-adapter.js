@@ -1,7 +1,11 @@
 /**
  * Lazy CesiumJS adapter. No ion account, no default demo token, no paid terrain.
  * Local Natural Earth II when vendored; otherwise ellipsoid + Leaflet fallback.
+ * Styling (night atlas, atmosphere, graticule, borders, markers) uses only
+ * same-origin assets, so it needs no CSP origin beyond 'self', data: and blob:.
  */
+
+import { BORDER_CREDIT, GLOBE_STYLES, NATURAL_EARTH_BORDERS_URL, borderLines, clusterSpec, flightDuration, globeStyleFor, graticuleLines, markerSpec } from "./globe-style.js";
 
 export const CESIUM_VERSION = "1.145.0";
 export const CESIUM_BASE = "./vendor/cesium/";
@@ -24,6 +28,67 @@ export function webglAvailable() {
   } catch {
     return false;
   }
+}
+
+const glyphCache = new Map();
+
+function canvas(size) {
+  const element = document.createElement("canvas");
+  const ratio = Math.min(2, globalThis.devicePixelRatio || 1);
+  element.width = Math.ceil(size * ratio);
+  element.height = Math.ceil(size * ratio);
+  const context = element.getContext("2d");
+  context.scale(ratio, ratio);
+  return { element, context };
+}
+
+function hexToRgba(hex, alpha) {
+  const value = /^#([0-9a-f]{6})$/i.exec(hex)?.[1] || "45a3ff";
+  const n = parseInt(value, 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
+/** Severity ring + category core, with a soft halo for high/critical and selection. */
+function markerGlyph(spec) {
+  if (glyphCache.has(spec.key)) return glyphCache.get(spec.key);
+  const { element, context } = canvas(spec.size);
+  const c = spec.size / 2;
+  context.globalAlpha = spec.alpha;
+  if (spec.halo) {
+    const glow = context.createRadialGradient(c, c, spec.core, c, c, c);
+    glow.addColorStop(0, spec.selected ? `rgba(94, 234, 255, ${spec.haloAlpha})` : hexToRgba(spec.ring, spec.haloAlpha));
+    glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+    context.fillStyle = glow;
+    context.beginPath(); context.arc(c, c, c, 0, Math.PI * 2); context.fill();
+  }
+  context.beginPath(); context.arc(c, c, spec.core + 4, 0, Math.PI * 2);
+  context.fillStyle = "rgba(4, 10, 20, 0.85)"; context.fill();
+  context.lineWidth = spec.selected ? 3 : 2.25;
+  context.strokeStyle = spec.selected ? "#5eeaff" : spec.ring; context.stroke();
+  context.beginPath(); context.arc(c, c, spec.core, 0, Math.PI * 2);
+  context.fillStyle = spec.fill; context.fill();
+  const result = { image: element, size: spec.size };
+  glyphCache.set(spec.key, result);
+  return result;
+}
+
+function clusterGlyph(spec) {
+  const key = `cluster|${spec.label}|${spec.ring}|${spec.size}`;
+  if (glyphCache.has(key)) return glyphCache.get(key);
+  const { element, context } = canvas(spec.size);
+  const c = spec.size / 2;
+  context.beginPath(); context.arc(c, c, c - 1, 0, Math.PI * 2);
+  context.fillStyle = hexToRgba(spec.ring, 0.22); context.fill();
+  context.beginPath(); context.arc(c, c, c - 6, 0, Math.PI * 2);
+  context.fillStyle = "rgba(6, 14, 28, 0.92)"; context.fill();
+  context.lineWidth = 2.5; context.strokeStyle = spec.ring; context.stroke();
+  context.fillStyle = "#f4f7fb";
+  context.font = `600 ${spec.label.length > 2 ? 11 : 13}px system-ui, sans-serif`;
+  context.textAlign = "center"; context.textBaseline = "middle";
+  context.fillText(spec.label, c, c + 0.5);
+  const result = { image: element, size: spec.size };
+  glyphCache.set(key, result);
+  return result;
 }
 
 function ensureWidgetsCss(baseHref) {
@@ -137,37 +202,105 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
     baseLayer: imagery[0] ? new Cesium.ImageryLayer(imagery[0]) : false,
     requestRenderMode: true,
     maximumRenderTimeChange: Infinity,
-    skyBox: false,
     contextOptions: { webgl: { preserveDrawingBuffer: true } },
   });
   } catch (error) {
     return { ok: false, reason: error.message || "Cesium Viewer failed to start", fallback: "leaflet" };
   }
-  viewer.scene.globe.enableLighting = false;
-  viewer.scene.fog.enabled = false;
-  viewer.scene.globe.depthTestAgainstTerrain = false;
-  viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString(options.darkAtlas ? "#0b1220" : "#1a3654");
-  if (options.darkAtlas && imagery[0] && viewer.imageryLayers.length) {
-    viewer.imageryLayers.get(0).saturation = 0.25;
-    viewer.imageryLayers.get(0).brightness = 0.55;
-    viewer.imageryLayers.get(0).contrast = 1.15;
+  let alive = true;
+  const styleName = options.darkAtlas ? "night" : globeStyleFor(options);
+  const style = GLOBE_STYLES[styleName];
+  const { scene } = viewer;
+  container.dataset.globeStyle = styleName;
+  scene.fog.enabled = false;
+  scene.globe.depthTestAgainstTerrain = false;
+  scene.globe.baseColor = Cesium.Color.fromCssColorString(style.baseColor);
+  scene.backgroundColor = Cesium.Color.fromCssColorString(style.background);
+  if (style.imagery && imagery[0] && viewer.imageryLayers.length) Object.assign(viewer.imageryLayers.get(0), style.imagery);
+  // Sun-lit day/night terminator at global scale; Cesium fades lighting out as the camera closes in.
+  viewer.clock.currentTime = Cesium.JulianDate.now();
+  scene.globe.enableLighting = true;
+  scene.globe.dynamicAtmosphereLighting = true;
+  scene.globe.dynamicAtmosphereLightingFromSun = true;
+  scene.globe.showGroundAtmosphere = true;
+  scene.globe.lightingFadeOutDistance = 6_000_000;
+  scene.globe.lightingFadeInDistance = 14_000_000;
+  if (scene.skyAtmosphere) {
+    scene.skyAtmosphere.show = true;
+    scene.skyAtmosphere.brightnessShift = styleName === "night" ? -0.08 : 0;
+    scene.skyAtmosphere.saturationShift = styleName === "night" ? -0.1 : 0;
   }
-  viewer.scene.globe.translucency.enabled = false;
+  if (scene.sun) scene.sun.show = false;
+  if (scene.moon) scene.moon.show = false;
+  scene.globe.translucency.enabled = false;
+
+  // Static reference layers: polylines with no id, so picks fall through to events.
+  const referenceLines = scene.primitives.add(new Cesium.PolylineCollection());
+  const addLine = (points, color, width) => referenceLines.add({
+    positions: Cesium.Cartesian3.fromDegreesArray(points.flat()),
+    width,
+    material: Cesium.Material.fromType("Color", { color: Cesium.Color.fromCssColorString(color) }),
+  });
+  for (const line of graticuleLines(30)) addLine(line.points, line.kind === "equator" ? style.equator : style.graticule, line.kind === "equator" ? 1.4 : 1);
+  container.dataset.globeGraticule = "30";
+  if (options.borders !== false && typeof fetch === "function") {
+    fetch(new URL(NATURAL_EARTH_BORDERS_URL, globalThis.location?.href || "http://127.0.0.1/").href)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        const lines = borderLines(data);
+        container.dataset.globeBorderLines = String(lines.length);
+        if (!alive || !lines.length) return;
+        for (const points of lines) addLine(points, style.border, 1.1);
+        viewer.creditDisplay?.addStaticCredit?.(new Cesium.Credit(BORDER_CREDIT));
+        scene.requestRender();
+      })
+      .catch(() => { container.dataset.globeBorderLines = "0"; });
+  }
   const graphEntities = [];
   const chokepointEntities = [];
   const chokepointLabels = [];
   const eventEntities = [];
   const eventRecords = new Map();
+  const eventSource = new Cesium.CustomDataSource("live-map-events");
+  eventSource.clustering.enabled = true;
+  eventSource.clustering.pixelRange = 34;
+  eventSource.clustering.minimumClusterSize = 3;
+  const entitySeverity = new WeakMap();
+  eventSource.clustering.clusterEvent.addEventListener((clustered, cluster) => {
+    const glyph = clusterGlyph(clusterSpec(clustered.map((entity) => entitySeverity.get(entity) || "low")));
+    cluster.label.show = false;
+    cluster.point.show = false;
+    cluster.billboard.show = true;
+    cluster.billboard.id = cluster.label.id;
+    cluster.billboard.image = glyph.image;
+    cluster.billboard.width = glyph.size;
+    cluster.billboard.height = glyph.size;
+    cluster.billboard.verticalOrigin = Cesium.VerticalOrigin.CENTER;
+    cluster.billboard.disableDepthTestDistance = 0;
+  });
+  viewer.dataSources.add(eventSource);
+  // The selected record never joins a cluster, so it stays individually visible.
+  const selectionSource = new Cesium.CustomDataSource("live-map-selection");
+  viewer.dataSources.add(selectionSource);
   let eventCreateCount = 0;
   let selectedEventLocation = null;
   const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
   handler.setInputAction((click) => {
     const picked = viewer.scene.pick(click.position);
+    if (Array.isArray(picked?.id)) {
+      // Cluster badge: zoom toward its members instead of selecting one arbitrarily.
+      const positions = picked.id.map((entity) => entity.position?.getValue?.(viewer.clock.currentTime)).filter(Boolean);
+      if (positions.length) {
+        const sphere = Cesium.BoundingSphere.fromPoints(positions);
+        viewer.camera.flyToBoundingSphere(sphere, { duration: 1.1, offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-90), Math.max(sphere.radius * 3.2, 250_000)) });
+      }
+      container.dataset.globeLastPick = `cluster:${picked.id.length}`;
+      return;
+    }
     const id = picked?.id?.id || picked?.id;
     container.dataset.globeLastPick = id ? String(id) : "";
     if (id) options.onSelectId?.(String(id));
   }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-  let alive = true;
   const lost = () => {
     if (!alive) return;
     options.onContextLoss?.({ induced: true, source: "webglcontextlost" });
@@ -179,23 +312,29 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
 
   let lastTarget = { lat: sharedView.lat, lon: sharedView.lon, zoom: sharedView.zoom };
 
-  function applyView(view) {
+  let initialized = false;
+  function applyView(view, { animate = initialized } = {}) {
     const lat = Number(view.lat);
     const lon = Number(view.lon);
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+    const from = lastTarget;
     lastTarget = { lat, lon, zoom: view.zoom };
     const height = options.cameraHeightFromZoom?.(view.zoom, lat, viewer.canvas.clientWidth || container.clientWidth) || 8_000_000;
     container.dataset.globeCameraHeight = String(Math.round(height));
     container.dataset.globeAppliedWidth = String(viewer.canvas.clientWidth || container.clientWidth);
     const destination = Cesium.Cartesian3.fromDegrees(lon, lat, height);
-    viewer.camera.setView({
-      destination,
-      orientation: {
-        heading: Cesium.Math.toRadians(Number(view.heading) || 0),
-        pitch: Cesium.Math.toRadians(Number.isFinite(Number(view.pitch)) ? Number(view.pitch) : -90),
-        roll: 0,
-      },
-    });
+    const orientation = {
+      heading: Cesium.Math.toRadians(Number(view.heading) || 0),
+      pitch: Cesium.Math.toRadians(Number.isFinite(Number(view.pitch)) ? Number(view.pitch) : -90),
+      roll: 0,
+    };
+    if (animate) {
+      const duration = flightDuration(from, lastTarget);
+      container.dataset.globeLastFlight = String(duration);
+      viewer.camera.flyTo({ destination, orientation, duration, easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT });
+    } else {
+      viewer.camera.setView({ destination, orientation });
+    }
     viewer.scene.requestRender();
   }
 
@@ -254,48 +393,66 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
       incoming.add(event.id);
       const selected = String(event.id) === String(selectedId);
       if (selected) selectedEventLocation = { lat: event.lat, lon: event.lon };
-      const lead = event.recordKind && event.recordKind !== "event";
-      const color = Cesium.Color.fromCssColorString(event.taxonomyColor || "#e9bb72") || Cesium.Color.fromCssColorString("#e9bb72");
-      const signature = JSON.stringify([event.lat, event.lon, event.title, event.taxonomyColor, event.severity, lead, selected]);
+      const marker = markerSpec(event, selected);
+      const signature = JSON.stringify([event.lat, event.lon, event.title, marker.key]);
       const existing = eventRecords.get(event.id);
       if (existing?.signature === signature) continue;
+      const glyph = markerGlyph(marker);
+      const collection = selected ? selectionSource.entities : eventSource.entities;
       const spec = {
         id: `event:${event.id}`,
         name: event.title,
         position: Cesium.Cartesian3.fromDegrees(event.lon, event.lat),
-        point: {
-          pixelSize: selected ? 16 : ["critical", "high"].includes(event.severity) ? 11 : 8,
-          color: lead ? color.withAlpha(0.45) : color,
-          outlineColor: selected ? Cesium.Color.CYAN : Cesium.Color.WHITE,
-          outlineWidth: selected ? 4 : lead ? 1 : 2,
+        billboard: {
+          image: glyph.image,
+          width: glyph.size,
+          height: glyph.size,
+          verticalOrigin: Cesium.VerticalOrigin.CENTER,
+          scaleByDistance: new Cesium.NearFarScalar(1.5e6, 1.1, 2.5e7, 0.75),
           disableDepthTestDistance: 0,
         },
+        label: selected ? {
+          text: String(event.title || "").slice(0, 64),
+          font: "600 13px system-ui, sans-serif",
+          fillColor: Cesium.Color.fromCssColorString("#f4f7fb"),
+          showBackground: true,
+          backgroundColor: Cesium.Color.fromCssColorString("rgba(6, 14, 28, 0.86)"),
+          backgroundPadding: new Cesium.Cartesian2(8, 5),
+          pixelOffset: new Cesium.Cartesian2(0, -(glyph.size / 2 + 6)),
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        } : undefined,
       };
-      if (existing) {
-        existing.entity.name = spec.name;
-        existing.entity.position = spec.position;
-        existing.entity.point = spec.point;
-        existing.signature = signature;
-      } else {
-        const entity = viewer.entities.add(spec);
-        eventRecords.set(event.id, { entity, signature });
-        eventCreateCount++;
-      }
+      // Entity ids are reused, so a changed record is replaced (possibly across collections).
+      if (existing) existing.collection.remove(existing.entity);
+      const entity = collection.add(spec);
+      entitySeverity.set(entity, event.severity || "low");
+      eventRecords.set(event.id, { entity, signature, collection });
+      if (!existing) eventCreateCount++;
     }
     for (const [id, record] of eventRecords) {
-      if (!incoming.has(id)) { viewer.entities.remove(record.entity); eventRecords.delete(id); }
+      if (!incoming.has(id)) { record.collection.remove(record.entity); eventRecords.delete(id); }
     }
     eventEntities.length = 0;
     eventEntities.push(...[...eventRecords.values()].map((record) => record.entity));
     container.dataset.globeEventCount = String(eventEntities.length);
     container.dataset.globeEventCreates = String(eventCreateCount);
     container.dataset.globeSelectedEvent = selectedId == null ? "" : String(selectedId);
+    settleRender();
+  }
+
+  // requestRenderMode draws only on demand, but clustering and the billboard
+  // atlas finish over the next frames; render a few more so markers appear.
+  let settleTimers = [];
+  function settleRender() {
     viewer.scene.requestRender();
+    for (const timer of settleTimers) clearTimeout(timer);
+    settleTimers = [40, 160, 450].map((delay) => setTimeout(() => { if (alive) viewer.scene.requestRender(); }, delay));
   }
 
   function focusSelection() {
     if (!selectedEventLocation) return false;
-    applyView({ ...currentTarget(), ...selectedEventLocation, zoom: Math.max(currentTarget().zoom || 2, 5) });
+    applyView({ ...currentTarget(), ...selectedEventLocation, zoom: Math.max(currentTarget().zoom || 2, 5) }, { animate: true });
     return true;
   }
 
@@ -414,7 +571,8 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
     viewer.scene.requestRender();
   }
 
-  applyView(sharedView);
+  applyView(sharedView, { animate: false });
+  initialized = true;
   let stableCanvasWidth = viewer.canvas.clientWidth || container.clientWidth;
   let lastContainerWidth = container.clientWidth;
   let resizing = false;
@@ -446,7 +604,7 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
       resizeFrameId = null;
       if (!alive) return;
       viewer.resize();
-      if (pendingWidthChange) applyView(preservedResizeView);
+      if (pendingWidthChange) applyView(preservedResizeView, { animate: false });
       stableCanvasWidth = viewer.canvas.clientWidth;
       resizing = false;
       viewer.scene.requestRender();
@@ -477,6 +635,7 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
     canvasCount() { return viewer.scene.canvas ? 1 : 0; },
     destroy() {
       alive = false;
+      for (const timer of settleTimers) clearTimeout(timer);
       resizeObserver?.disconnect();
       if (resizeFrameId != null) cancelAnimationFrame(resizeFrameId);
       viewer.camera.moveEnd.removeEventListener(onCameraMoveEnd);
@@ -484,7 +643,9 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
       handler.destroy();
       clearList(graphEntities);
       clearList(chokepointEntities);
-      clearList(eventEntities);
+      eventSource.entities.removeAll();
+      selectionSource.entities.removeAll();
+      eventEntities.length = 0;
       eventRecords.clear();
       delete container.dataset.globeEventCount;
       delete container.dataset.globeSelectedEvent;
