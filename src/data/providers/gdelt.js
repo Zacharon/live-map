@@ -7,8 +7,8 @@ import { createSourceObservation } from "../../intelligence/source-observations.
 
 export const GDELT_DOC_API_URL = "https://api.gdeltproject.org/api/v2/doc/doc";
 
-function gdeltEnabled() {
-  return String(globalThis?.process?.env?.GDELT_ENABLED || "").toLowerCase() === "true";
+function gdeltEnabled(context) {
+  return String((context.env ?? globalThis?.process?.env ?? {}).GDELT_ENABLED || "").toLowerCase() === "true";
 }
 
 export function gdeltDocUrl(pack, maxRecords = 6) {
@@ -110,7 +110,7 @@ export function observationFromGdeltArticle(article = {}, pack = {}, now = new D
 }
 
 export async function fetchGdeltDiscoveryLeads(context = {}) {
-  if (!gdeltEnabled()) {
+  if (!gdeltEnabled(context)) {
     return {
       events: [],
       rejected: [],

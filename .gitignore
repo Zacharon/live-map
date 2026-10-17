@@ -16,3 +16,5 @@ secrets/
 # Generated local artifacts
 /artifacts/
 /qa-artifacts/
+.gstack/
+node_modules/

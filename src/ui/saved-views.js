@@ -1,3 +1,4 @@
+import { workspaceStorage } from './workspace-storage.js';
 const STORAGE_KEY = "live-map-saved-views-v1";
 
 export const DEFAULT_VIEWS = [
@@ -13,7 +14,7 @@ export const DEFAULT_VIEWS = [
 
 export function loadSavedViews() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const parsed = JSON.parse(workspaceStorage.getItem(STORAGE_KEY) || "[]");
     return [...DEFAULT_VIEWS, ...parsed.filter((view) => view && view.name)];
   } catch {
     return DEFAULT_VIEWS;
@@ -22,6 +23,8 @@ export function loadSavedViews() {
 
 export function serializeView(state, filters, name = "Custom view") {
   return {
+    version: 1,
+    mapView: { ...state.mapView, ...state.tracking },
     name,
     dashboard: state.dashboard,
     sort: state.sort,
@@ -31,6 +34,7 @@ export function serializeView(state, filters, name = "Custom view") {
     domains: [...(filters.domains || [])],
     categories: [...(filters.categories || [])],
     severities: [...(filters.severities || [])],
+    recordKinds: [...(filters.recordKinds || [])],
     query: filters.query || "",
   };
 }
@@ -38,6 +42,6 @@ export function serializeView(state, filters, name = "Custom view") {
 export function saveView(view) {
   const custom = loadSavedViews().filter((item) => !DEFAULT_VIEWS.some((defaultView) => defaultView.name === item.name));
   const next = [...custom.filter((item) => item.name !== view.name), view].slice(-12);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  if (!workspaceStorage.setItem(STORAGE_KEY, JSON.stringify(next))) return null;
   return loadSavedViews();
 }

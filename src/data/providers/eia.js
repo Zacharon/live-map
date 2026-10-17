@@ -102,7 +102,7 @@ export function normalizeEiaRecord(dataset, record, previousRecord = null, now =
 }
 
 export async function fetchEiaEvents(context = {}) {
-  const apiKey = globalThis?.process?.env?.EIA_API_KEY;
+  const apiKey = (context.env ?? globalThis?.process?.env ?? {}).EIA_API_KEY;
   if (!apiKey) {
     return {
       events: [],

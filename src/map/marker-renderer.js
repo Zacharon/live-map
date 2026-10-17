@@ -3,7 +3,7 @@ import { escapeHtml, relativeTime } from "../events/event-normalizer.js";
 
 export function markerIcon(event, { selected = false, inCluster = false, changeStatus = null, dimmed = false } = {}) {
   const markerColor = event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color;
-  const recordClass = event.recordKind && event.recordKind !== "event" ? ` record-marker record-${event.recordKind}` : "";
+  const recordClass = (event.recordKind && event.recordKind !== "event" ? ` record-marker record-${event.recordKind}` : "") + (/approximate|region|city|unknown/i.test(event.coordinateMethod || event.locationPrecision || 'unknown') ? ' approximate-marker' : '');
   const selectedClass = selected ? " event-marker-selected" : "";
   const clusterClass = inCluster ? " event-marker-cluster" : "";
   const changeClass = changeStatus === "new" ? " event-marker-new" : changeStatus === "updated" ? " event-marker-updated" : "";
@@ -34,34 +34,81 @@ function geometryStyle(event, { selected = false, inCluster = false, dimmed = fa
   };
 }
 
+const renderedLayers = new WeakMap();
+
 export function renderMarkers(markerLayer, events, onSelect, options = {}) {
   const { selectedEventId = null, clusterMemberIds = null, changeStatusById = null, relatedEventIds = null } = options;
   const memberSet = clusterMemberIds ? new Set(clusterMemberIds) : null;
   const changeLookup = changeStatusById instanceof Map ? changeStatusById : new Map();
-  markerLayer.clearLayers();
+  let records = renderedLayers.get(markerLayer);
+  if (!records) { records = new Map(); renderedLayers.set(markerLayer, records); }
+  const retained = new Set();
+  const stats = { created: 0, updated: 0, removed: 0, retained: 0 };
   events.filter((event) => event.geographic !== false && Number.isFinite(event.lat) && Number.isFinite(event.lon)).forEach((event) => {
-    const markerColor = event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color;
+    retained.add(event.id);
     const selected = event.id === selectedEventId;
     const inCluster = memberSet?.has(event.id) || false;
     const changeStatus = changeLookup.get(event.id) || null;
     const dimmed = relatedEventIds instanceof Set && !relatedEventIds.has(event.id);
+    const style = { selected, inCluster, changeStatus, dimmed };
+    const signature = JSON.stringify([event.lat, event.lon, event.title, event.place, event.occurredAt, event.coordinateMethod, event.taxonomyColor, event.category, event.recordKind, event.severity, event.geometry, style]);
+    let record = records.get(event.id);
+    if (record && record.signature === signature) {
+      record.event = event; record.onSelect = onSelect;
+      stats.retained++;
+      return;
+    }
+    if (!record) {
+      record = { event, onSelect, marker: null, geometry: null };
+      records.set(event.id, record);
+      stats.created++;
+    } else { stats.updated++; }
+    record.event = event; record.onSelect = onSelect;
+    const targetLayer = options.priorityLayer && (['high','critical'].includes(event.severity) || selected) ? options.priorityLayer : markerLayer;
+    if (record.geometry) { record.layer.removeLayer(record.geometry); record.geometry = null; }
     if (event.geometry && event.geometry.type && event.geometry.type !== "Point") {
-      const geometryLayer = L.geoJSON(event.geometry, {
+      record.geometry = L.geoJSON(event.geometry, {
         pane: "of-events",
         style: geometryStyle(event, { selected, inCluster, dimmed }),
       });
-      geometryLayer.bindTooltip(`<strong>${escapeHtml(event.title)}</strong><br>${escapeHtml(event.place)} - ${relativeTime(event.occurredAt)}`, { direction: "top" });
-      geometryLayer.on("click", () => onSelect(event));
-      markerLayer.addLayer(geometryLayer);
+      record.geometry.bindTooltip(`<strong>${escapeHtml(event.title)}</strong><br>${escapeHtml(event.place)} - ${relativeTime(event.occurredAt)}`, { direction: "top" });
+      record.geometry.on("click", () => record.onSelect(record.event));
+      targetLayer.addLayer(record.geometry);
     }
-    const marker = L.marker([event.lat, event.lon], {
+    if (record.marker && record.layer !== targetLayer) record.layer.removeLayer(record.marker);
+    const markerOptions = {
+      title: event.title,
+      alt: `${event.title} · ${event.coordinateMethod || 'precision not supplied'}`,
       pane: "of-events",
       icon: markerIcon(event, { selected, inCluster, changeStatus, dimmed }),
       opacity: dimmed ? 0.28 : 1,
       zIndexOffset: selected ? 800 : changeStatus ? 400 : 0,
-    });
-    marker.bindTooltip(`<strong>${escapeHtml(event.title)}</strong><br>${escapeHtml(event.place)} - ${relativeTime(event.occurredAt)}`, { direction: "top" });
-    marker.on("click", () => onSelect(event));
-    markerLayer.addLayer(marker);
+    };
+    if (!record.marker) {
+      record.marker = L.marker([event.lat, event.lon], markerOptions);
+      record.marker.on("click", () => record.onSelect(record.event));
+      targetLayer.addLayer(record.marker);
+    } else {
+      record.marker.setLatLng([event.lat, event.lon]);
+      record.marker.setIcon(markerOptions.icon);
+      record.marker.setOpacity(markerOptions.opacity);
+      record.marker.setZIndexOffset(markerOptions.zIndexOffset);
+      record.marker.options.title = event.title;
+      record.marker.options.alt = markerOptions.alt;
+      const icon = record.marker.getElement?.();
+      if (icon) { icon.title = event.title; icon.setAttribute('aria-label', markerOptions.alt); }
+      if (record.layer !== targetLayer) targetLayer.addLayer(record.marker);
+    }
+    const marker = record.marker;
+    marker.bindTooltip(`<strong>${escapeHtml(event.title)}</strong><br>${escapeHtml(event.place)} - ${relativeTime(event.occurredAt)}<br>${escapeHtml(event.coordinateMethod || 'Geographic precision not supplied')}`, { direction: "top" });
+    record.layer = targetLayer;
+    record.signature = signature;
   });
+  for (const [id, record] of records) {
+    if (retained.has(id)) continue;
+    record.layer.removeLayer(record.marker);
+    if (record.geometry) record.layer.removeLayer(record.geometry);
+    records.delete(id); stats.removed++;
+  }
+  return stats;
 }

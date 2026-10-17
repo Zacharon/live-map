@@ -1,0 +1,15 @@
+{
+  "status": "development-fixture",
+  "live": false,
+  "source": "IMF PortWatch",
+  "portid": "chokepoint6",
+  "liveMapId": "strait-of-hormuz",
+  "publicationCadence": "weekly Tuesday 9 AM ET",
+  "observationCadence": "daily observations",
+  "note": "Schema sample for dated activity. Values are synthetic placeholders until a bounded official pull is stored. Do not treat as PortWatch measurements.",
+  "series": [
+    { "date": "2026-06-01", "estimatedTransitCalls": 90, "vintage": "fixture" },
+    { "date": "2026-06-07", "estimatedTransitCalls": 55, "vintage": "fixture" },
+    { "date": "2026-06-14", "estimatedTransitCalls": 52, "vintage": "fixture" }
+  ]
+}

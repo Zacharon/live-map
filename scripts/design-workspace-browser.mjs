@@ -1,0 +1,80 @@
+import assert from 'node:assert/strict';
+import {writeFileSync} from 'node:fs';
+import path from 'node:path';
+import {connect,preview,out} from './design-browser.mjs';
+const b=await connect();const checks=[];
+async function check(name,expression){const result=await b.evaluate(`(async()=>(${expression}))()`);assert.ok(result,name);checks.push({name,passed:true});}
+async function change(selector,value){await b.evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});e.value=${JSON.stringify(value)};e.dispatchEvent(new Event('change',{bubbles:true}));})()`);await b.pause(600);}
+try {
+  await b.size(1440,900);await b.go(`${preview}/?demo=foundation&mapMode=3d`);
+  await b.evaluate("localStorage.removeItem('live-map-preset-v1');localStorage.setItem('live-map-left-drawer-v1','closed');localStorage.setItem('live-map-right-drawer-v1','open')");
+  await b.go(`${preview}/?demo=foundation&mapMode=3d`);
+  await check('Real Cesium globe rendered',"document.body.dataset.liveMapRenderer==='cesium' && document.querySelector('#globeStage canvas').width>0");
+  await b.shot('after-1440-global');
+  await b.size(1280,800);await b.shot('after-1280-global');
+  await b.size(768,1024);await b.shot('after-768-map');
+  await b.size(390,844);await b.shot('after-390-map');
+  await check('Mobile map removes hidden feed from keyboard path',"document.getElementById('eventDrawer').inert && document.body.dataset.mobileView==='map'");
+  await b.click('[data-mobile-pane=feed]');await b.shot('after-390-feed');
+  await check('Reports has independent mobile pane',"document.body.dataset.mobileView==='feed' && document.querySelector('.map-stage').inert && !document.getElementById('eventDrawer').inert");
+  await b.click('[data-event-detail]');await b.shot('after-390-detail');
+  await check('Selection opens source inspector',"document.body.dataset.mobileView==='detail' && !!document.querySelector('.detail-source-evidence a')");
+  await check('Mobile report selection retains Cesium',"document.body.dataset.liveMapMode==='3d' && document.body.dataset.liveMapRenderer==='cesium'");
+  await b.click('[data-mobile-pane=feed]');
+  await check('Reports from detail closes selection and reveals list',"document.getElementById('eventDetailDrawer').hidden && !!document.querySelector('[data-event-detail]') && document.body.dataset.mobileView==='feed'");
+  await b.click('[data-event-detail]');await b.click('[data-mobile-pane=map]');await b.click('#resetWorkspace');
+  await check('Reset from mobile inspector restores map layout',"document.body.dataset.mobileView==='map' && document.getElementById('eventDetailDrawer').hidden");
+  await b.click('[data-mobile-pane=feed]');await b.click('[data-event-detail]');
+  await b.click('[data-v2-close-detail]');
+  await check('Close restores mobile feed',"document.body.dataset.mobileView==='feed'");
+  await b.size(1440,900);await b.click('[data-event-detail]');await b.pause(1500);await b.shot('after-1440-selected');
+  await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await b.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await b.pause(400);
+  await check('Escape closes inspector',"document.getElementById('eventDetailDrawer').hidden");
+  await b.evaluate("(async()=>{window.designViewer=(await import('/src/map/globe-controller.js')).getGlobeHandle()?.viewer;for(let i=0;i<40;i++){window.dispatchEvent(new Event('live-map-render-request'));await new Promise(r=>setTimeout(r,25));}})()");
+  await check('Forty rerenders retain the same Cesium viewer',"document.body.dataset.liveMapRenderer==='cesium' && window.designViewer===(await import('/src/map/globe-controller.js')).getGlobeHandle()?.viewer");
+  await b.click('#layersDrawerToggle');
+  for (let i=0;i<8;i++) {
+    await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
+    await b.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
+    await check('Keyboard target is visible '+i,"(()=>{const e=document.activeElement,r=e.getBoundingClientRect();return !e.closest('[inert]')&&r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden'})()");
+  }
+  await b.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await b.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await check('Escape restores drawer trigger focus',"document.activeElement.id==='layersDrawerToggle'");
+  await b.click('#timeBrowser>summary');await change('#asOfInput','2025-01-15T12:00');await b.click('#applyTime');
+  await check('Historical end is serialized honestly',"new URLSearchParams(location.search).get('asOf')==='2025-01-15T12:00:00.000Z' && document.querySelector('.scope-time').textContent.includes('Historical window')");
+  await b.shot('after-historical-empty');
+  await b.click('#timeBrowser>summary');await b.click('#availableTime');
+  await check('Available range clears historical end',"!new URLSearchParams(location.search).has('asOf') && document.querySelector('[data-event-detail]')!==null");
+  await b.evaluate("const e=document.getElementById('search');e.value='no-such-report-927';e.dispatchEvent(new Event('input',{bubbles:true}));");await b.pause(400);await b.shot('after-search-empty');
+  await b.click('[data-preset=ships]');await b.click('#resetWorkspace');
+  await check('Reset clears actual query state',"(await import('/src/state.js')).state.queryByDashboard.get((await import('/src/state.js')).state.dashboard)==='' && !!document.querySelector('[data-event-detail]')");
+  await b.click('[data-preset=weather]');await b.shot('after-weather-desk');
+  await b.click('[data-wind-proof-toggle]');await b.pause(700);await b.shot('after-weather-wind-proof');
+  await check('Wind proof visibly uses actual 2D renderer',"document.body.dataset.liveMapMode==='2d' && document.getElementById('windToggle').checked && !document.querySelector('.wind-proof').hidden");
+  await b.click('[data-preset=ships]');await check('Sea lens opens bounded contact roster',"document.getElementById('contactsPanel').open");await b.shot('after-sea');
+  await b.click('#timeBrowser>summary');await b.click('#availableTime');await check('Time action retains Sea layer flags',"(await import('/src/state.js')).state.mapView.chokepoints===true");
+  await b.click('[data-preset=flights]');await b.shot('after-air');
+  await b.click('[data-space-lens]');await b.shot('after-space');
+  await check('Space discloses unloaded orbital elements',"document.getElementById('lensGuide').textContent.includes('No satellites or live orbital elements')");
+  await change('#mapMode','3d');await b.pause(1600);await b.click('#resetWorkspace');
+  await b.send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+  await check('Reduced motion preference respected',"matchMedia('(prefers-reduced-motion:reduce)').matches && getComputedStyle(document.querySelector('.event-card')).animationDuration==='0s'");
+  await b.size(720,450);await b.shot('after-200-percent-reflow-equivalent');
+  await check('Narrow reflow has no page overflow',"document.documentElement.scrollWidth<=innerWidth");
+  await b.size(390,844);await b.evaluate("document.documentElement.style.fontSize='20px'");await b.shot('after-mobile-enlarged-root-text');
+  await check('Larger root text enlarges actual control type',"parseFloat(getComputedStyle(document.querySelector('[data-mobile-pane=map]')).fontSize)>16 && document.documentElement.scrollWidth<=innerWidth");
+  await b.evaluate("document.documentElement.style.fontSize=''");
+  await b.size(1440,900);await b.go(`${preview}/?mapMode=3d`);await b.shot('after-public-historical');
+  await check('Public local preview never claims current feed',"document.querySelector('[data-coverage]').textContent.includes('Historical snapshots')");
+  await b.go(`${preview}/?demo=foundation&mapMode=3d&view=chokepoints&chokepoint=strait-of-hormuz`);await b.click('#watchDock>summary');await b.shot('after-historical-workbench');
+  await check('Historical measurement context preserved',"document.getElementById('watchDock').open && document.querySelector('[data-observation-period]').textContent.includes('2025-01-01') && document.querySelector('[data-throughput-state]').textContent.includes('unknown')");
+  await b.click('[data-investigate-open="strait-of-hormuz"]');await b.pause(500);await b.shot('after-evidence-workbench');
+  await check('Evidence workbench remains reachable',"document.body.dataset.liveMapWorkbench==='1' && !!document.querySelector('[data-investigate-tab]')");
+  await check('No recovered render error',"!document.body.dataset.liveMapError");
+  assert.equal(b.errors.length,0,'Unhandled browser exceptions');
+  console.log(JSON.stringify({checks:checks.length,exceptions:b.errors.length,networkFailures:b.network.length}));
+} finally {
+  writeFileSync(path.join(out,'browser-results.json'),JSON.stringify({checks,errors:b.errors,networkFailures:b.network,zoomNote:'720x450 layout reflow equivalence, not a claimed native 200% browser zoom',rootTextNote:'20px root text scales the rem-based Watch typography'},null,2));b.close();
+}
