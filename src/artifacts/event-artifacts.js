@@ -1,3 +1,4 @@
+import { confidenceValue } from "../events/event-values.js";
 /**
  * Event Artifacts v1 — pure client-side OSINT artifact builders.
  * No DOM, fetch, localStorage, or mutation of input events/clusters.
@@ -526,8 +527,8 @@ export function buildClusterArtifact(cluster, opts = {}) {
 
 function resolveClusterConfidence(members) {
   const scores = members
-    .map((event) => Number(event?.confidence))
-    .filter((n) => Number.isFinite(n));
+    .map((event) => confidenceValue(event?.confidence))
+    .filter((n) => n !== null);
   if (!scores.length) return resolveConfidence(null);
   const min = Math.min(...scores);
   const max = Math.max(...scores);

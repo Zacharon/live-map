@@ -15,7 +15,7 @@ import { AIRPORTS } from "./data/airports.js";
 import { PORTS } from "./data/ports.js";
 import { STRATEGIC_CHOKEPOINTS, CHOKEPOINT_TYPES, CHOKEPOINT_STATUSES, chokepointById } from "./data/strategic-chokepoints.js";
 import { state, dashboardFilters, resetDashboardFilters, setDashboard, syncUrlState } from "./state.js";
-import { normalizeEvent, escapeHtml, relativeTime } from "./events/event-normalizer.js";
+import { normalizeEvent, escapeHtml, relativeTime, exactTime } from "./events/event-normalizer.js";
 import { filteredEvents } from "./events/event-filters.js";
 import { domainOptions } from "./events/taxonomy.js";
 import { GROUP_OPTIONS, SORT_OPTIONS, groupEvents } from "./events/feed-organization.js";

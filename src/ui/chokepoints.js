@@ -1,16 +1,9 @@
+import { safeSourceUrl as safeUrl } from "../sources/source-url.js";
 import { escapeHtml, relativeTime } from "../events/event-normalizer.js";
 import { renderMaritimeSignals } from "./maritime-signals.js";
 
 const STATUS_ORDER = { closed: 0, "severely-disrupted": 1, disrupted: 2, restricted: 3, recovering: 4, watch: 5, unknown: 6, normal: 7 };
 
-function safeUrl(value) {
-  try {
-    const url = new URL(value);
-    return ["http:", "https:"].includes(url.protocol) ? url.href : null;
-  } catch {
-    return null;
-  }
-}
 
 function assessmentFor(id, assessments) {
   return assessments.find((item) => item.chokepointId === id) || { status: "unknown", confidence: 0, activeEventCount: 0, updatedAt: null, explanation: "No assessment available.", operationalDimensions: [], topEvents: [], caveats: [] };

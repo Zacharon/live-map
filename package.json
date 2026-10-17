@@ -21,6 +21,7 @@
     "test:ingestion:native": "node scripts/test-usgs-native.mjs",
     "preview:usgs:stored": "node scripts/preview-usgs-stored-fixture.mjs",
     "test:browser:usgs:stored": "node scripts/runtime-usgs-stored-browser.mjs",
+    "test:audit-repair": "node --test tests/audit-repair-tests.mjs",
     "test:e2e": "node scripts/e2e-smoke.mjs",
     "test:sources": "node scripts/source-explorer-smoke-test.mjs",
     "test": "npm run test:platform && npm run validate && npm run test:e2e && npm run test:sources",

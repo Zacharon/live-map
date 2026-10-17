@@ -1,3 +1,5 @@
+import { sourceLink } from "../../sources/source-url.js";
+import { confidenceText, timestampMs } from "../../events/event-values.js";
 import { CATEGORIES, SEVERITIES } from "../../config.js";
 import { escapeHtml, exactTime, relativeTime } from "../../events/event-normalizer.js";
 import { renderEventArtifactSection, renderClusterArtifactSection } from "./event-artifact-card.js";
@@ -19,7 +21,9 @@ function whyShownCopy(event, changeStatus, connections) {
   } else if (connections?.relatedEvents?.length) {
     bits.push(`${connections.relatedEvents.length} related event(s) share place, time, provider, or category.`);
   } else {
-    bits.push("Included because it matches active filters and time window.");
+    bits.push(timestampMs(event.occurredAt) === null
+      ? "Source occurrence time is unknown; this record does not establish recency."
+      : "Included because it matches active filters and time window.");
   }
   if (event?.geographic === false) bits.push("Non-geographic record — listed without a map pin.");
   else if (!(Number.isFinite(event?.lat) && Number.isFinite(event?.lon))) bits.push("Coordinates missing or incomplete.");
@@ -104,14 +108,10 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
   const severityColor = SEVERITIES[event.severity]?.color || SEVERITIES.low.color;
   const categoryColor = event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color;
   const location = event.geographic === false ? "No map location" : event.place || event.country || "Location pending";
-  const confidence = Number.isFinite(event.confidence) ? `${Math.round(event.confidence)}%` : "Not scored";
+  const confidence = confidenceText(event.confidence);
   const sourceBadge = event.sourceName || event.provider || "Unknown source";
-  const sourceLink = event.sourceUrl
-    ? `<a class="v2-detail-link" href="${escapeHtml(event.sourceUrl)}" target="_blank" rel="noopener noreferrer">Open source</a>`
-    : `<span class="v2-detail-link secondary v2-detail-link-disabled" title="No source URL on this record">No source URL</span>`;
-  const providerLink = event.providerUrl
-    ? `<a class="v2-detail-link secondary" href="${escapeHtml(event.providerUrl)}" target="_blank" rel="noopener noreferrer">Provider info</a>`
-    : "";
+  const sourceAction = sourceLink(event.sourceUrl, "Open source", "v2-detail-link");
+  const providerLink = sourceLink(event.providerUrl, "Provider info", "v2-detail-link secondary");
   const mapLink = Number.isFinite(event.lat) && Number.isFinite(event.lon)
     ? `<a class="v2-detail-link secondary" href="https://www.openstreetmap.org/?mlat=${event.lat}&mlon=${event.lon}#map=7/${event.lat}/${event.lon}" target="_blank" rel="noopener noreferrer">Coordinates</a>`
     : `<span class="v2-detail-link secondary v2-detail-link-disabled" title="Coordinates unavailable">No coordinates</span>`;
@@ -138,7 +138,7 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
       <h2 class="v2-detail-title">${escapeHtml(event.title)}</h2>
     </div>
     <p class="v2-detail-summary">${escapeHtml(event.summary || "No summary available.")}</p>
-    <section class="detail-source-evidence" aria-label="Supporting source"><h3>Supporting source</h3><p>${escapeHtml(event.sourceName || 'Unknown source')} · ${escapeHtml(event.verificationStatus || 'unverified')}</p><div class="v2-detail-actions">${sourceLink}${providerLink}</div><p>Occurrence: ${escapeHtml(exactTime(event.occurredAt))}<br>Source revision: ${escapeHtml(exactTime(event.updatedAt))}</p></section>
+    <section class="detail-source-evidence" aria-label="Supporting source"><h3>Supporting source</h3><p>${escapeHtml(event.sourceName || 'Unknown source')} · ${escapeHtml(event.verificationStatus || 'unverified')}</p><div class="v2-detail-actions">${sourceAction}${providerLink}</div><p>Occurrence: ${escapeHtml(exactTime(event.occurredAt))}<br>Source revision: ${escapeHtml(exactTime(event.updatedAt))}</p></section>
     <dl class="v2-detail-facts">
       <div><dt>Source coverage</dt><dd>${escapeHtml(event.coverage || event.metadata?.coverage || "Not supplied; do not infer complete coverage")} </dd></div>
       <div><dt>Limits of this evidence</dt><dd>${escapeHtml(limitationText)}</dd></div>

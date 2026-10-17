@@ -1,3 +1,4 @@
+import { safeSourceUrl } from "../sources/source-url.js";
 import { computeQualityDimensions } from "./event-quality.js";
 import { classifyEvent } from "./taxonomy.js";
 import { finiteNumber, nullableScore, timestampMs, validCoordinates } from "./value-semantics.js";
@@ -76,11 +77,7 @@ export function validateNormalizedEvent(event) {
   if (!SEVERITY_LABELS.includes(event?.severityLabel)) errors.push("severityLabel is invalid");
   if (!VALID_STATUS.has(event?.status)) errors.push("status is invalid");
   if (!RECORD_KINDS.includes(event?.recordKind)) errors.push("recordKind is invalid");
-  try {
-    new URL(event?.sourceUrl || "");
-  } catch {
-    errors.push("sourceUrl must be a valid URL");
-  }
+  if (event?.sourceUrl != null && !safeSourceUrl(event.sourceUrl)) errors.push("sourceUrl must be an absolute HTTP(S) URL without credentials or null");
   return { valid: errors.length === 0, errors };
 }
 
@@ -140,7 +137,7 @@ export function createNormalizedEvent(input) {
     verificationStatus: input.verificationStatus ?? null,
     status: normalizeStatus(input.status),
     sourceName: input.sourceName || input.source || input.providerName || input.provider,
-    sourceUrl: input.sourceUrl || input.providerUrl,
+    sourceUrl: safeSourceUrl(input.sourceUrl ?? input.providerUrl),
     sourceType: input.sourceType || "Unknown",
     sourceTier: input.sourceTier || input.metadata?.sourceTier || null,
     publisher: input.publisher || input.sourceName || input.provider,
@@ -160,6 +157,9 @@ export function createNormalizedEvent(input) {
   };
   Object.assign(event, computeQualityDimensions(event));
   const validation = validateNormalizedEvent(event);
+  const suppliedUrl = input.sourceUrl ?? input.providerUrl;
+  if (suppliedUrl != null && suppliedUrl !== "" && !safeSourceUrl(suppliedUrl)) validation.errors.push("sourceUrl rejected: absolute HTTP(S) URL without credentials required");
+  validation.valid = validation.errors.length === 0;
   return { event, errors: validation.errors, valid: validation.valid };
 }
 

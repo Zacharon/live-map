@@ -1,3 +1,4 @@
+import { timestampMs } from "../events/event-values.js";
 import { CII_LEVELS, SEVERITIES } from "../config.js";
 import { COUNTRIES, countryForEvent } from "../data/countries.js";
 
@@ -61,7 +62,8 @@ function sourceTierWeight(event) {
 }
 
 function timeWeight(event, now) {
-  const timestamp = Number(event.occurredAt || event.startedAt || event.updatedAt || now);
+  const timestamp = timestampMs(event.occurredAt, event.startedAt, event.updatedAt);
+  if (timestamp === null) return 0;
   const ageDays = Math.max(0, (now - timestamp) / 86400000);
   const halfLife = HALF_LIFE_DAYS[event.category] || HALF_LIFE_DAYS[event.type] || HALF_LIFE_DAYS[event.domain] || HALF_LIFE_DAYS.other;
   return Math.pow(0.5, ageDays / halfLife);

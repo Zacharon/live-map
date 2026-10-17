@@ -112,9 +112,9 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 - Touch first: GitHub PR #32, `src/api/events-response.js`, `src/api/sources-response.js`, `src/api/provider-health-response.js`, frontend query parsing files.
 - Test: `npm run check:syntax`, `npm run test:platform`.
 
-### Add source URL scheme allowlist
+### Review source URL boundary repair candidate
 
-- Goal: prevent provider-controlled event links from rendering non-web schemes.
+- Candidate: `fix/audit-20261012-live-map` enforces absolute HTTP(S) and no embedded credentials at ingestion and every external source-link renderer. Review [candidate guide](AUDIT_REPAIR_2026-10-12.md); independent review, hosted CI and release are separate gates.
 - Touch first: `src/events/normalized-event.js`, `src/app-controller.js`, `src/ui/dialogs.js`, provider normalizers that set `sourceUrl`.
 - Test: add cases for `javascript:`, `data:`, `mailto:`, relative URLs, `http:`, and `https:`.
 

@@ -1,24 +1,28 @@
+import { confidenceText, timestampMs } from "../events/event-values.js";
+import { sourceLink } from "../sources/source-url.js";
 import { CATEGORIES, SEVERITIES, CII_WEIGHTS } from "../config.js";
 import { escapeHtml, exactTime } from "../events/event-normalizer.js";
 
 export function openEventDialog(event, dialog, content, map) {
+  const hasCoordinates = event.geographic !== false && Number.isFinite(event.lat) && Number.isFinite(event.lon);
+  const coordinatesLink = hasCoordinates ? sourceLink(`https://www.openstreetmap.org/?mlat=${event.lat}&mlon=${event.lon}#map=7/${event.lat}/${event.lon}`, "Open coordinates", "source-link secondary") : "<span>Coordinates unavailable</span>";
   const rows = {
     ...event.details,
     "Exact reported time": exactTime(event.occurredAt),
-    "UTC time": new Date(event.occurredAt).toISOString(),
-    Latitude: event.lat.toFixed(5),
-    Longitude: event.lon.toFixed(5),
+    "UTC time": timestampMs(event.occurredAt) === null ? "Unknown time" : new Date(timestampMs(event.occurredAt)).toISOString(),
+    Latitude: Number.isFinite(event.lat) ? event.lat.toFixed(5) : "Unknown",
+    Longitude: Number.isFinite(event.lon) ? event.lon.toFixed(5) : "Unknown",
     "Coordinate method": event.coordinateMethod,
     "Source type": event.sourceType,
     "Verification status": event.verificationStatus,
-    "Source confidence": `${event.confidence}%`,
+    "Source confidence": confidenceText(event.confidence),
     "Severity score": Number.isFinite(event.severityScore) ? `${event.severityScore}/100` : "Not reported",
     "Data freshness": event.updatedAt ? exactTime(event.updatedAt) : "Unknown",
     "Provider ID": event.providerId || event.id,
   };
-  content.innerHTML = `<div class="dialog-kicker">${CATEGORIES[event.category]?.label || "Event"} - ${SEVERITIES[event.severity]?.label || "Low"}</div><h2 class="dialog-title">${escapeHtml(event.title)}</h2><p class="dialog-summary">${escapeHtml(event.summary)}</p><p class="severity-reason">${escapeHtml(event.severityReason || "Severity is based on the provider category and available measurements.")}</p><div class="dialog-grid"><div><span>Location</span><strong>${escapeHtml(event.place)}</strong></div><div><span>Reported</span><strong>${escapeHtml(exactTime(event.occurredAt))}</strong></div><div><span>Provider</span><strong>${escapeHtml(event.sourceName)}</strong></div></div><p class="dialog-summary">This record is informational only. Timing, location and measurements depend on the original provider and may be corrected later.</p><table class="details-table"><tbody>${Object.entries(rows).map(([key, value]) => `<tr><td>${escapeHtml(key)}</td><td>${escapeHtml(value)}</td></tr>`).join("")}</tbody></table><div class="dialog-actions">${event.sourceUrl ? `<a class="source-link" href="${escapeHtml(event.sourceUrl)}" target="_blank" rel="noopener noreferrer">Open original source</a>` : ""}<a class="source-link secondary" href="https://www.openstreetmap.org/?mlat=${event.lat}&mlon=${event.lon}#map=7/${event.lat}/${event.lon}" target="_blank" rel="noopener noreferrer">Open coordinates</a>${event.providerUrl ? `<a class="source-link secondary" href="${escapeHtml(event.providerUrl)}" target="_blank" rel="noopener noreferrer">Provider info</a>` : ""}</div>`;
+  content.innerHTML = `<div class="dialog-kicker">${CATEGORIES[event.category]?.label || "Event"} - ${SEVERITIES[event.severity]?.label || "Low"}</div><h2 class="dialog-title">${escapeHtml(event.title)}</h2><p class="dialog-summary">${escapeHtml(event.summary)}</p><p class="severity-reason">${escapeHtml(event.severityReason || "Severity is based on the provider category and available measurements.")}</p><div class="dialog-grid"><div><span>Location</span><strong>${escapeHtml(event.place)}</strong></div><div><span>Reported</span><strong>${escapeHtml(exactTime(event.occurredAt))}</strong></div><div><span>Provider</span><strong>${escapeHtml(event.sourceName)}</strong></div></div><p class="dialog-summary">This record is informational only. Timing, location and measurements depend on the original provider and may be corrected later.</p><table class="details-table"><tbody>${Object.entries(rows).map(([key, value]) => `<tr><td>${escapeHtml(key)}</td><td>${escapeHtml(value)}</td></tr>`).join("")}</tbody></table><div class="dialog-actions">${sourceLink(event.sourceUrl, "Open original source", "source-link")}${coordinatesLink}${sourceLink(event.providerUrl, "Provider info", "source-link secondary")}</div>`;
   dialog.showModal();
-  map.flyTo([event.lat, event.lon], Math.max(map.getZoom(), 5));
+  if (hasCoordinates) map.flyTo([event.lat, event.lon], Math.max(map.getZoom(), 5));
 }
 
 export function openMethodologyDialog(dialog, content) {
