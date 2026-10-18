@@ -13,5 +13,6 @@ Synthetic and compact-field samples for local preview. They are not live intelli
 | `portwatch-chokepoint6-sample.json` | Dated activity *schema* sample. Not PortWatch measurements. |
 | `portwatch-hormuz-2025-01-extract.json` | Frozen public ArcGIS extract for Strait of Hormuz, 2025-01-01..07. Historical. Not live. |
 | `portwatch-hormuz-2025-01-provenance.json` | Capture provenance for that extract. |
+| `maritime-cargo-provenance-20261016.json` | Historical cargo-provenance eval. Reported, inferred, and assessment layers stay apart. Not live. No vessel polling. |
 
 Keep these caches separate from any future live/recorded provider cache.

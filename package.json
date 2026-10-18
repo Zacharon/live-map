@@ -16,6 +16,7 @@
     "test:platform": "node tests/run-tests.mjs",
     "test:ingestion": "node tests/usgs-ingestion-tests.mjs",
     "test:maritime": "node tests/maritime-signals-tests.mjs && node tests/operational-evidence-tests.mjs && node tests/investigation-workbench-tests.mjs && node tests/portwatch-hormuz-frozen-sample-tests.mjs && node tests/chokepoint-brief-tests.mjs",
+    "test:cargo-provenance": "node tests/maritime-cargo-provenance-tests.mjs",
     "check:maritime": "node --check src/intelligence/maritime-signals.js && node --check src/ui/maritime-signals.js && node --check src/data/fixtures/synthetic-maritime-signals.js && node --check tests/maritime-signals-tests.mjs",
     "test:recovery": "node tests/usgs-recovery-tests.mjs",
     "test:ingestion:native": "node scripts/test-usgs-native.mjs",

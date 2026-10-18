@@ -172,3 +172,11 @@ Before enabling any new social/video provider, document official access, terms, 
 1. Review the running actual-public-data Reports workflow and independent evidence in WORKING_WATCH_LOCAL.md; accept or adjust the exact cumulative candidate after fresh canonical hash reconciliation.
 2. Coordinate with the existing hosting/live-feed owner before canonical integration. Preserve inherited dirty work and immutable 16/41-path deliveries.
 3. After explicit approval, use WORKING_WATCH_HOSTED_PLAN.md for a draft on the existing site. Resolve actual hosted source coverage, Cesium policy and durable-ingestion/recovery gates before publication; keep paid source budget zero.
+
+## DEFERRED — maritime cargo provenance eval (2026-10-17)
+
+Do not schedule this above the engineering gates higher in this file.
+
+- The October 16 cargo-provenance case is a local fixture. Do not label it live, do not add provider polling, and do not promote the sanctions-evasion assessment to a confirmed fact.
+- Touch first: `data/development-fixtures/maritime-cargo-provenance-20261016.json`, `src/intelligence/maritime-cargo-provenance.js`.
+- Test: `node tests/maritime-cargo-provenance-tests.mjs`.

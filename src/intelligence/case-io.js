@@ -4,6 +4,7 @@
  */
 
 import {isAviationCase, validateAviationCase} from './aviation-incident.js';
+import {isCargoProvenanceCase, validateCargoProvenance} from './maritime-cargo-provenance.js';
 
 const MAX_BYTES = 512 * 1024;
 const MAX_RECORDS = 200;
@@ -102,6 +103,10 @@ export function parseCaseFile(text) {
   const root = checked.value.case || checked.value;
   if (isAviationCase(root) || root?.id === 'case:aviation-riyadh-2026-10' || (Array.isArray(root?.evidence) && root.evidence.some(r=>r?.extra?.aviation))) {
     const semantic = validateAviationCase(root);
+    if (!semantic.ok) return {ok:false, errors:semantic.errors, caseObject:null};
+  }
+  if (isCargoProvenanceCase(root)) {
+    const semantic = validateCargoProvenance(root);
     if (!semantic.ok) return {ok:false, errors:semantic.errors, caseObject:null};
   }
   return { ok: true, errors: [], caseObject: neutralizeImportedApprovals(root) };

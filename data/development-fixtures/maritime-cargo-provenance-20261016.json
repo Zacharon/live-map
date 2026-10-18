@@ -1,0 +1,2717 @@
+{
+  "kind": "live-map-investigation-case",
+  "schemaVersion": "workbench-v1",
+  "exportedAt": "2026-10-17T18:00:00.000Z",
+  "handling": "synthetic-or-public-safe-local-only",
+  "case": {
+    "id": "case:maritime-cargo-provenance-20261016",
+    "fixtureId": "maritime-cargo-provenance-20261016",
+    "fixtureType": "maritime-cargo-provenance-v1",
+    "acquisition": "historical-reporting",
+    "genuine": true,
+    "live": false,
+    "providerPolling": false,
+    "independentlyObserved": false,
+    "independentCorroboration": "unknown",
+    "provenanceLayers": [
+      "vessel-identity",
+      "physical-observation",
+      "reported-cargo-identity",
+      "inferred-cargo-origin",
+      "observed-transfer",
+      "reported-transfer",
+      "reported-destination",
+      "sanctions-status",
+      "authorization-claim",
+      "enforcement-action",
+      "analytical-conclusion",
+      "identity-caveat",
+      "market-context"
+    ],
+    "requirement": {
+      "id": "requirement-cargo-provenance",
+      "title": "MARITIME CARGO PROVENANCE",
+      "summary": "Keep identity, observation, reported cargo, inferred origin, transfers, destination, sanctions, permission, enforcement, and the evasion assessment apart.",
+      "question": "What is reported, what is inferred, and what is only an assessment?",
+      "status": "historical-fixture"
+    },
+    "sources": [
+      {
+        "id": "reuters-lpg",
+        "organization": "Reuters",
+        "url": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "availability": "read-public-report",
+        "publicationDate": "2026-10-16",
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "directPrimaryStatus": "reuters.com returned a script wall on retrieval. Wording checked against syndicated copies of the same article.",
+        "independentOrigin": "Reuters report quoting UANI analyst Jemima Shelley, SynMax, a US military official, and a Treasury spokesperson"
+      },
+      {
+        "id": "uani-20261016",
+        "organization": "United Against Nuclear Iran",
+        "url": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-16-2026",
+        "availability": "read-public-report",
+        "publicationDate": "2026-10-16",
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "directPrimaryStatus": "Page text read. It does not state eight LPG tankers or 4.1 million barrels.",
+        "independentOrigin": "UANI October 16 shipping update"
+      },
+      {
+        "id": "uani-20261013",
+        "organization": "United Against Nuclear Iran",
+        "url": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "availability": "read-public-report",
+        "publicationDate": "2026-10-13",
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "directPrimaryStatus": "Page text read. One sentence spells TAWAWA; the same paragraph uses TARAWA and one IMO.",
+        "independentOrigin": "UANI October 13 shipping update"
+      },
+      {
+        "id": "ofac-fr-20260522",
+        "organization": "US Treasury OFAC via Federal Register notice",
+        "url": "https://thefederalregister.org/documents/2026-10259/notice-of-ofac-sanctions-action",
+        "availability": "read-official-notice",
+        "publicationDate": "2026-05-22",
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "directPrimaryStatus": "Notice text read from the Federal Register mirror. Action date printed as May 19, 2026. Not a live SDN query.",
+        "independentOrigin": "Federal Register Doc. 2026-10259, 91 FR 30388"
+      },
+      {
+        "id": "reuters-spr",
+        "organization": "Reuters",
+        "url": "https://www.reuters.com/business/energy/us-solicits-exchange-up-17-million-barrels-oil-strategic-reserve-2026-10-16/",
+        "availability": "read-public-report",
+        "publicationDate": "2026-10-16",
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "directPrimaryStatus": "reuters.com was not rendered. The solicitation wording was read from indexed copies.",
+        "independentOrigin": "Reuters report that DOE issued an exchange RFP"
+      },
+      {
+        "id": "doe-spr-20260929",
+        "organization": "US Department of Energy",
+        "url": "https://www.energy.gov/articles/united-states-energy-department-continues-execution-strategic-reserve-release-commitments",
+        "availability": "read-official-notice",
+        "publicationDate": "2026-09-29",
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "directPrimaryStatus": "Page text read. This notice is an up-to-40-million-barrel RFP, not the October 16 17-million figure.",
+        "independentOrigin": "DOE press release"
+      },
+      {
+        "id": "doe-spr-news-index",
+        "organization": "US Department of Energy",
+        "url": "https://www.energy.gov/hgeo/opr/listings/petroleum-reserves-news",
+        "availability": "read-official-notice",
+        "publicationDate": "2026-10-10",
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "directPrimaryStatus": "News index read on 2026-10-17. No October 16 SPR item was listed.",
+        "independentOrigin": "DOE petroleum reserves news index"
+      },
+      {
+        "id": "xinhua-settles",
+        "organization": "Xinhua",
+        "url": "https://english.news.cn/20261017/3993e1c02ca44eb79ddb03f0b80ce64d/c.html",
+        "availability": "read-public-report",
+        "publicationDate": "2026-10-17",
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "directPrimaryStatus": "Short settlement item indexed. Exchange feed was not read.",
+        "independentOrigin": "Xinhua settlement report"
+      },
+      {
+        "id": "tokenpost-settles",
+        "organization": "TokenPost relaying the session",
+        "url": "https://www.tokenpost.com/news/investing/33503",
+        "availability": "read-public-report",
+        "publicationDate": "2026-10-16",
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "directPrimaryStatus": "Indexed article states the same settles as the Reuters market wrap. Not an exchange file.",
+        "independentOrigin": "TokenPost market recap"
+      }
+    ],
+    "sourceEvaluations": [
+      {
+        "code": "F",
+        "rationale": "Underlying imagery, AIS, sanctions matching, and official notices were not independently re-judged. F means cannot judge."
+      }
+    ],
+    "evidence": [
+      {
+        "id": "vessel-lpg-cohort",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported LPG tanker cohort, identities unknown",
+        "summary": "Reuters says UANI analyst Jemima Shelley reported at least eight gas tankers carrying Iranian LPG left the Gulf of Oman since mid-July.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "extent": "analyst count since mid-July 2026",
+          "completeness": "unknown",
+          "temporalPrecision": "mid-month wording"
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Count and volume are an analyst estimate relayed by Reuters, not an app measurement.",
+          "UANI October 16 page says about nine LPG and naphtha tankers, not eight LPG-only.",
+          "The eight hulls are not named."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "vessel-identity",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "Jemima Shelley, UANI, as quoted by Reuters",
+          "fields": [
+            {
+              "name": "reportedCount",
+              "value": "at least 8",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "cargoDescribedAs",
+              "value": "Iranian LPG",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "reportedIdentity",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "imo",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "mmsi",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "position",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "vessel": {
+            "reportedIdentity": "UNKNOWN",
+            "reportedClass": "gas tankers",
+            "imo": null,
+            "mmsi": null
+          },
+          "occurrencePeriod": "since mid-July 2026; exact days unknown"
+        }
+      },
+      {
+        "id": "vessel-apollo-ocean",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported identity: APOLLO OCEAN",
+        "summary": "UANI says APOLLO OCEAN, IMO 9423322, departed the Gulf of Oman on October 12 laden with Iranian LPG.",
+        "sourceId": "uani-20261013",
+        "sourceUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "canonicalUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "upstreamOrganization": "United Against Nuclear Iran",
+        "sourceOrganizationId": "uani",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "This departure is a UANI example. It is not published as a member of the Reuters count of eight.",
+          "Imagery credited by UANI was not inspected.",
+          "No position was copied."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "vessel-identity",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "UANI shipping update, October 13, 2026",
+          "fields": [
+            {
+              "name": "reportedIdentity",
+              "value": "APOLLO OCEAN",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "imo",
+              "value": "9423322",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "departureArea",
+              "value": "Gulf of Oman",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "mmsi",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "position",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "membershipInReutersCountOfEight",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "vessel": {
+            "reportedIdentity": "APOLLO OCEAN",
+            "reportedClass": "small tanker; LPG described by UANI",
+            "imo": "9423322",
+            "mmsi": null
+          },
+          "occurrencePeriod": "2026-10-12; time unknown"
+        }
+      },
+      {
+        "id": "vessel-tarawa",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported identity: TARAWA",
+        "summary": "UANI says TARAWA, IMO 9225342, loaded LPG at Bandar-e Mahshahr on August 24 and transferred it to APOLLO OCEAN on September 4. The page once spells TAWAWA.",
+        "sourceId": "uani-20261013",
+        "sourceUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "canonicalUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "upstreamOrganization": "United Against Nuclear Iran",
+        "sourceOrganizationId": "uani",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "This departure is a UANI example. It is not published as a member of the Reuters count of eight.",
+          "Imagery credited by UANI was not inspected.",
+          "No position was copied."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "vessel-identity",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "UANI shipping update, October 13, 2026",
+          "fields": [
+            {
+              "name": "reportedIdentity",
+              "value": "TARAWA",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "imo",
+              "value": "9225342",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "pageSpellingVariant",
+              "value": "TAWAWA once in the same paragraph",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "mmsi",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "position",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "departedGulfOfOmanWithThisCargo",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "vessel": {
+            "reportedIdentity": "TARAWA",
+            "reportedClass": "LPG tanker, as described by UANI",
+            "imo": "9225342",
+            "mmsi": null
+          },
+          "occurrencePeriod": "loading 2026-08-24; transfer 2026-09-04; times unknown"
+        }
+      },
+      {
+        "id": "vessel-jet-fuel",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported jet-fuel tanker, identity unknown",
+        "summary": "Reuters says SynMax imagery and analysis show another tanker carrying Iranian jet fuel reached Myanmar in September.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "September 2026 tanker name, IMO, and port are not in the sources read.",
+          "Do not reuse tankers named in older jet-fuel reporting."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "vessel-identity",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "SynMax, as described by Reuters",
+          "fields": [
+            {
+              "name": "reached",
+              "value": "Myanmar",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "month",
+              "value": "2026-09",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "reportedIdentity",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "imo",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "mmsi",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "position",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "port",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "vessel": {
+            "reportedIdentity": "UNKNOWN",
+            "reportedClass": "tanker; jet fuel described by SynMax via Reuters",
+            "imo": null,
+            "mmsi": null
+          },
+          "occurrencePeriod": "September 2026; day unknown"
+        }
+      },
+      {
+        "id": "cargo-lpg-cohort",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported cargo identity: LPG cohort",
+        "summary": "Shelley estimated the LPG cargoes at 4.1 million barrels. That figure is not restated on the UANI October 16 page.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Count and volume are an analyst estimate relayed by Reuters, not an app measurement.",
+          "UANI October 16 page says about nine LPG and naphtha tankers, not eight LPG-only.",
+          "The eight hulls are not named."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "reported-cargo-identity",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "Jemima Shelley, UANI, as quoted by Reuters",
+          "fields": [
+            {
+              "name": "reportedCommodity",
+              "value": "LPG",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "reportedEstimate",
+              "value": "4.1 million barrels",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "uaniPageSameDay",
+              "value": "about nine small tankers of LPG and naphtha; no 4.1 million barrel figure",
+              "status": "reported",
+              "sourceId": "uani-20261016"
+            },
+            {
+              "name": "measuredQuantity",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "occurrencePeriod": "since mid-July 2026"
+        }
+      },
+      {
+        "id": "cargo-apollo-sts-quantity",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported cargo quantity for one named transfer",
+        "summary": "UANI says the September 4 transfer was 490,000 barrels of Iranian LPG.",
+        "sourceId": "uani-20261013",
+        "sourceUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "canonicalUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "upstreamOrganization": "United Against Nuclear Iran",
+        "sourceOrganizationId": "uani",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Quantity is UANI reporting. This app did not measure it.",
+          "Iranian origin in this sentence is UANI attribution, kept on the origin inference."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "reported-cargo-identity",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "UANI shipping update, October 13, 2026",
+          "fields": [
+            {
+              "name": "reportedCommodity",
+              "value": "LPG",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "reportedQuantity",
+              "value": "490,000 barrels",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "measuredQuantity",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "occurrencePeriod": "2026-09-04; time unknown"
+        }
+      },
+      {
+        "id": "cargo-jet-fuel",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported cargo identity: jet fuel",
+        "summary": "Reuters describes the Myanmar arrival as Iranian jet fuel. Quantity is not stated in the passages read.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "September 2026 tanker name, IMO, and port are not in the sources read.",
+          "Do not reuse tankers named in older jet-fuel reporting."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "reported-cargo-identity",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "SynMax, as described by Reuters",
+          "fields": [
+            {
+              "name": "reportedCommodity",
+              "value": "jet fuel",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "reportedQuantity",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "measuredQuantity",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "occurrencePeriod": "September 2026"
+        }
+      },
+      {
+        "id": "loading-bandar-mahshahr",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported loading place for the TARAWA cargo",
+        "summary": "UANI says TARAWA loaded the cargo from Bandar-e Mahshahr, Iran, on August 24. No coordinates are published here.",
+        "sourceId": "uani-20261013",
+        "sourceUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "canonicalUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "upstreamOrganization": "United Against Nuclear Iran",
+        "sourceOrganizationId": "uani",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Place name only.",
+          "A reported loading supports an origin inference and does not establish the whole cohort."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "inferred-cargo-origin",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "UANI shipping update, October 13, 2026",
+          "fields": [
+            {
+              "name": "reportedLoadingPlace",
+              "value": "Bandar-e Mahshahr, Iran",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "cohortOrigin",
+              "value": "Iranian, as attributed for the wider LPG and jet-fuel reporting",
+              "status": "inferred",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "position",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "occurrencePeriod": "2026-08-24; time unknown"
+        }
+      },
+      {
+        "id": "transfer-shinas-sohar-reported",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported transfers near Shinas and Sohar",
+        "summary": "Shelley said some Iranian LPG tankers transferred cargoes near the Omani towns of Shinas and Sohar. Hulls, dates, and coordinates are not given.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Place names are not coordinates.",
+          "The named September 4 transfer is not located at Shinas or Sohar by these sources."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "reported-transfer",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "Jemima Shelley, UANI, as quoted by Reuters",
+          "fields": [
+            {
+              "name": "reportedPlaceNames",
+              "value": "near Shinas and Sohar, Oman",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "vesselNames",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "eventTime",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "position",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "occurrencePeriod": "recent weeks, as described on 2026-10-16; exact days unknown"
+        }
+      },
+      {
+        "id": "transfer-tarawa-apollo-reported",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported transfer: TARAWA to APOLLO OCEAN",
+        "summary": "UANI reports a ship-to-ship transfer of 490,000 barrels on September 4. The transfer location is not stated.",
+        "sourceId": "uani-20261013",
+        "sourceUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "canonicalUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "upstreamOrganization": "United Against Nuclear Iran",
+        "sourceOrganizationId": "uani",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Place names are not coordinates.",
+          "The named September 4 transfer is not located at Shinas or Sohar by these sources."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "reported-transfer",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "UANI shipping update, October 13, 2026",
+          "fields": [
+            {
+              "name": "reportedParties",
+              "value": "TARAWA to APOLLO OCEAN",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "reportedDay",
+              "value": "2026-09-04",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "position",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "observedByThisApp",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "occurrencePeriod": "2026-09-04; time and place unknown"
+        }
+      },
+      {
+        "id": "destination-malaysia-eopl",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported destination: Malaysia Eastern Outer Port Limits",
+        "summary": "Shelley said most of the cargoes sailed there for further transfers, with likely destinations in China. Likely China is not an established discharge.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "EOPL is a reported area name, not a point.",
+          "China is qualified as likely."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "reported-destination",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "Jemima Shelley, UANI analysis, as quoted by Reuters",
+          "fields": [
+            {
+              "name": "reportedDestination",
+              "value": "Malaysia Eastern Outer Port Limits",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "furtherTransfer",
+              "value": "further STS transfers",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "china",
+              "value": "likely destinations in China",
+              "status": "inferred",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "position",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "dischargeConfirmation",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "occurrencePeriod": "after departure; dates unknown"
+        }
+      },
+      {
+        "id": "destination-myanmar",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported destination: Myanmar",
+        "summary": "Reuters says the jet-fuel tanker reached Myanmar in September. Port and receipt by Myanmar authorities are not established in the passages read.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Reuters says Myanmar's military-backed government did not respond on whether it received the cargo."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "reported-destination",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "SynMax, as described by Reuters",
+          "fields": [
+            {
+              "name": "reportedDestination",
+              "value": "Myanmar",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "port",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "receiptConfirmed",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "position",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "occurrencePeriod": "September 2026"
+        }
+      },
+      {
+        "id": "sanctions-reuters-count",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported sanctions count, hulls unnamed",
+        "summary": "Reuters says its comparison with Treasury sanctions found six of the eight gas tankers and the jet-fuel tanker are under US sanctions. The hulls are not named. A separate sentence says fresh sanctions on 17 vessels were imposed last week.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Reuters did not name the six sanctioned LPG hulls.",
+          "A Ghost Armada listing is not an OFAC designation.",
+          "The May 2026 designation uses the name QUANTUM STAR for this IMO, not TARAWA."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "sanctions-status",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "Reuters analysis of vessels and US Treasury sanctions",
+          "fields": [
+            {
+              "name": "reportedCount",
+              "value": "six of eight LPG tankers, plus the jet-fuel tanker",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "separateRecentPackage",
+              "value": "fresh sanctions on 17 vessels last week; overlap with the six is unstated",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "namedHulls",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "alreadyVersusNewlyDesignated",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ]
+        }
+      },
+      {
+        "id": "sanctions-ghost-armada-named",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported UANI Ghost Armada listing for two named tankers",
+        "summary": "UANI says APOLLO OCEAN and TARAWA are on its Ghost Armada for involvement in Iran's oil trade. That is UANI's list, not an OFAC designation.",
+        "sourceId": "uani-20261013",
+        "sourceUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "canonicalUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "upstreamOrganization": "United Against Nuclear Iran",
+        "sourceOrganizationId": "uani",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Reuters did not name the six sanctioned LPG hulls.",
+          "A Ghost Armada listing is not an OFAC designation.",
+          "The May 2026 designation uses the name QUANTUM STAR for this IMO, not TARAWA."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "sanctions-status",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "UANI shipping update, October 13, 2026",
+          "fields": [
+            {
+              "name": "ghostArmadaListed",
+              "value": "APOLLO OCEAN and TARAWA",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "ofacDesignationOfApolloOcean",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "theseHullsAreTheReutersSix",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ]
+        }
+      },
+      {
+        "id": "sanctions-ofac-quantum-star",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported OFAC identification of IMO 9225342 as QUANTUM STAR",
+        "summary": "The May 19, 2026 OFAC notice identifies QUANTUM STAR, IMO 9225342, as blocked property linked to Taurus Gas Company Limited under E.O. 13902. It does not use the name TARAWA. The notice MMSI is designation text, not a current AIS identity.",
+        "sourceId": "ofac-fr-20260522",
+        "sourceUrl": "https://thefederalregister.org/documents/2026-10259/notice-of-ofac-sanctions-action",
+        "canonicalUrl": "https://thefederalregister.org/documents/2026-10259/notice-of-ofac-sanctions-action",
+        "upstreamOrganization": "US Treasury OFAC",
+        "sourceOrganizationId": "ofac",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Reuters did not name the six sanctioned LPG hulls.",
+          "A Ghost Armada listing is not an OFAC designation.",
+          "The May 2026 designation uses the name QUANTUM STAR for this IMO, not TARAWA."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "sanctions-status",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "OFAC notice, Federal Register Doc. 2026-10259",
+          "fields": [
+            {
+              "name": "ofacListedName",
+              "value": "QUANTUM STAR",
+              "status": "reported",
+              "sourceId": "ofac-fr-20260522"
+            },
+            {
+              "name": "ofacListedImo",
+              "value": "9225342",
+              "status": "reported",
+              "sourceId": "ofac-fr-20260522"
+            },
+            {
+              "name": "program",
+              "value": "IRAN-EO13902",
+              "status": "reported",
+              "sourceId": "ofac-fr-20260522"
+            },
+            {
+              "name": "actionDate",
+              "value": "2026-05-19",
+              "status": "reported",
+              "sourceId": "ofac-fr-20260522"
+            },
+            {
+              "name": "currentMmsi",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "nameOnNoticeIsTarawa",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "enforcementOfThisVoyage",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ]
+        }
+      },
+      {
+        "id": "authorization-individual-review",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported authorization caveat",
+        "summary": "A US military official told Reuters that passage does not necessarily mean a vessel evaded the blockade. Ships are assessed individually, including their papers, and some may be allowed through for humanitarian reasons.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "A possible humanitarian permission is not a finding that these voyages were permitted."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "authorization-claim",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "US military official, as quoted by Reuters",
+          "fields": [
+            {
+              "name": "passageEqualsEvasion",
+              "value": "not necessarily",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "possibleHumanitarianPermission",
+              "value": "some vessels could be allowed through",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "theseVoyagesWerePermitted",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "permitDocument",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ]
+        }
+      },
+      {
+        "id": "enforcement-blockade-totals",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported blockade totals, not linked to these cargoes",
+        "summary": "UANI says that as of October 11, US forces had redirected 135 commercial vessels, disabled four, boarded two, and destroyed 10 IRGC-linked tankers. None of those actions is identified as one of these LPG or jet-fuel voyages.",
+        "sourceId": "uani-20261016",
+        "sourceUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-16-2026",
+        "canonicalUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-16-2026",
+        "upstreamOrganization": "United Against Nuclear Iran",
+        "sourceOrganizationId": "uani",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Published blockade totals are not linked to these LPG or jet-fuel voyages."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "enforcement-action",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "UANI, attributing US force totals, October 16, 2026 update",
+          "fields": [
+            {
+              "name": "reportedTotalsAsOf",
+              "value": "2026-10-11",
+              "status": "reported",
+              "sourceId": "uani-20261016"
+            },
+            {
+              "name": "redirected",
+              "value": "135",
+              "status": "reported",
+              "sourceId": "uani-20261016"
+            },
+            {
+              "name": "disabled",
+              "value": "4",
+              "status": "reported",
+              "sourceId": "uani-20261016"
+            },
+            {
+              "name": "boarded",
+              "value": "2",
+              "status": "reported",
+              "sourceId": "uani-20261016"
+            },
+            {
+              "name": "destroyedTankers",
+              "value": "10",
+              "status": "reported",
+              "sourceId": "uani-20261016"
+            },
+            {
+              "name": "actionAgainstTheseCargoes",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ]
+        }
+      },
+      {
+        "id": "caveat-ais-false-identity",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported AIS spoofing and false-identity caveat",
+        "summary": "A US Treasury spokesperson questioned shipping data that suggested evasion. Ships could spoof locations or use false identities when loading, and such data should be taken with a grain of salt.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "The warning is general. It does not establish that any named voyage spoofed AIS or used a false identity."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "identity-caveat",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "US Treasury spokesperson, as quoted by Reuters",
+          "fields": [
+            {
+              "name": "spoofingOrFalseIdentityPossible",
+              "value": "ships could spoof locations or use false identities when loading",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "spokespersonWeight",
+              "value": "take shipping data with a grain of salt",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "thisVoyageSpoofed",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "thisVoyageUsedAFalseIdentity",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ]
+        }
+      },
+      {
+        "id": "market-brent-wti",
+        "recordKind": "evidence",
+        "evidenceKind": "energy-economic-observation",
+        "subjectDomain": "finance-markets",
+        "nodeType": "energy-economic-observation",
+        "title": "Reported October 16 crude settlements",
+        "summary": "Xinhua and a TokenPost recap of the session report Brent December settled at 109.86 and WTI November at 101.41. Brent touching 110 is in the Reuters market wrap carried by other outlets. An exchange file was not read. A conflicting social post was not used.",
+        "sourceId": "xinhua-settles",
+        "sourceUrl": "https://english.news.cn/20261017/3993e1c02ca44eb79ddb03f0b80ce64d/c.html",
+        "canonicalUrl": "https://english.news.cn/20261017/3993e1c02ca44eb79ddb03f0b80ce64d/c.html",
+        "upstreamOrganization": "Xinhua",
+        "sourceOrganizationId": "xinhua",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Settlement figures are reported, not read from an exchange file.",
+          "Price and reserve context do not identify cargo, origin, or evasion."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "market-context",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "Xinhua; TokenPost; Reuters market wrap as indexed",
+          "fields": [
+            {
+              "name": "brentTouched110",
+              "value": "reported for the Friday session",
+              "status": "reported",
+              "sourceId": "tokenpost-settles"
+            },
+            {
+              "name": "brentSettle",
+              "value": "109.86",
+              "status": "reported",
+              "sourceId": "xinhua-settles"
+            },
+            {
+              "name": "wtiSettle",
+              "value": "101.41",
+              "status": "reported",
+              "sourceId": "xinhua-settles"
+            },
+            {
+              "name": "exchangeFile",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "provesCargo": false
+        }
+      },
+      {
+        "id": "market-spr-rfp",
+        "recordKind": "evidence",
+        "evidenceKind": "energy-economic-observation",
+        "subjectDomain": "finance-markets",
+        "nodeType": "energy-economic-observation",
+        "title": "Reported SPR exchange solicitation, primary notice not found",
+        "summary": "Reuters says DOE on October 16 issued an RFP to exchange up to 17 million SPR barrels as part of the March 172 million commitment. DOE's news index, read the next day, lists an October 10 hurricane exchange and a September 29 RFP for up to 40 million barrels, not this 17 million figure.",
+        "sourceId": "reuters-spr",
+        "sourceUrl": "https://www.reuters.com/business/energy/us-solicits-exchange-up-17-million-barrels-oil-strategic-reserve-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/us-solicits-exchange-up-17-million-barrels-oil-strategic-reserve-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "No DOE page for a 17-million-barrel October 16 RFP was found.",
+          "The October 10 hurricane exchange is a different action.",
+          "Not-yet-contracted is an inference from an announced RFP, not a DOE sentence."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "market-context",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "Reuters, citing DOE; DOE pages read separately",
+          "fields": [
+            {
+              "name": "reportedSolicitation",
+              "value": "up to 17 million barrels, exchange RFP",
+              "status": "reported",
+              "sourceId": "reuters-spr"
+            },
+            {
+              "name": "marchCommitment",
+              "value": "172 million barrels, DOE announcement",
+              "status": "reported",
+              "sourceId": "doe-spr-20260929"
+            },
+            {
+              "name": "doeIndexHasThisRfp",
+              "value": "not found",
+              "status": "reported",
+              "sourceId": "doe-spr-news-index"
+            },
+            {
+              "name": "contracted",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "awardNotice",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "provesCargo": false,
+          "relatedOfficialUrls": [
+            "https://www.energy.gov/articles/united-states-release-172-million-barrels-oil-strategic-petroleum-reserve",
+            "https://www.energy.gov/articles/energy-department-authorizes-strategic-petroleum-reserve-exchange-address-supply",
+            "https://www.energy.gov/articles/united-states-energy-department-continues-execution-strategic-reserve-release-commitments"
+          ]
+        }
+      }
+    ],
+    "claims": [
+      {
+        "id": "conclusion-vessel-identity",
+        "recordKind": "claim",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Vessel identity remains reported",
+        "summary": "Two IMOs are sourced. The cohort and the jet-fuel tanker stay UNKNOWN. No identity is confirmed.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "AIS spoofing or a false identity would leave even a sourced name unresolved."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [
+          "vessel-lpg-cohort",
+          "vessel-apollo-ocean",
+          "vessel-tarawa",
+          "vessel-jet-fuel",
+          "caveat-ais-false-identity"
+        ],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "analytical-conclusion",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "Reuters and UANI, kept as reporting",
+          "fields": [
+            {
+              "name": "identityStatus",
+              "value": "reported only",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "confirmedIdentity",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "conclusionType": "VESSEL IDENTITY REPORTED",
+          "assertionClass": "reported",
+          "credibility": {
+            "code": "6",
+            "label": "Cannot judge credibility",
+            "unknown": true,
+            "rationale": "Not evaluated. 6 means cannot judge, not zero credibility.",
+            "evaluator": null
+          }
+        }
+      },
+      {
+        "id": "conclusion-cargo-identity",
+        "recordKind": "claim",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Cargo identity remains reported",
+        "summary": "LPG and jet fuel are reported descriptions. Estimates are not measurements.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "No sample or bill of lading was read."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [
+          "cargo-lpg-cohort",
+          "cargo-apollo-sts-quantity",
+          "cargo-jet-fuel"
+        ],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "analytical-conclusion",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "Reuters quoting Shelley and describing SynMax; UANI for the named quantity",
+          "fields": [
+            {
+              "name": "lpg",
+              "value": "reported",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "jetFuel",
+              "value": "reported",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "measuredQuantity",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "conclusionType": "CARGO IDENTITY REPORTED",
+          "assertionClass": "reported",
+          "credibility": {
+            "code": "6",
+            "label": "Cannot judge credibility",
+            "unknown": true,
+            "rationale": "Not evaluated. 6 means cannot judge, not zero credibility.",
+            "evaluator": null
+          }
+        }
+      },
+      {
+        "id": "conclusion-cargo-origin",
+        "recordKind": "claim",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Iranian cargo origin is an inference",
+        "summary": "Iranian origin is attributed by UANI and SynMax. One named loading place is reported. The cohort origin is not established by this app.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Do not treat a reported loading, or a position, as confirmed origin for every cargo."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [
+          "loading-bandar-mahshahr",
+          "cargo-lpg-cohort",
+          "cargo-jet-fuel"
+        ],
+        "valueOrigin": "inferred",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "analytical-conclusion",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "inferred",
+          "attributedTo": "UANI and SynMax, via Reuters and the UANI update",
+          "fields": [
+            {
+              "name": "namedLoadingPlace",
+              "value": "Bandar-e Mahshahr for the TARAWA cargo",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "cohortOrigin",
+              "value": "attributed Iranian",
+              "status": "inferred",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "establishedOrigin",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "conclusionType": "CARGO ORIGIN INFERRED",
+          "assertionClass": "inferred",
+          "credibility": {
+            "code": "6",
+            "label": "Cannot judge credibility",
+            "unknown": true,
+            "rationale": "Not evaluated. 6 means cannot judge, not zero credibility.",
+            "evaluator": null
+          }
+        }
+      },
+      {
+        "id": "conclusion-transfer",
+        "recordKind": "claim",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Transfers are reported, not observed",
+        "summary": "Shinas, Sohar, and the September 4 named transfer are reports. This app observed no transfer.",
+        "sourceId": "uani-20261013",
+        "sourceUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "canonicalUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "upstreamOrganization": "United Against Nuclear Iran",
+        "sourceOrganizationId": "uani",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "An empty observed-transfer layer is intentional."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [
+          "transfer-shinas-sohar-reported",
+          "transfer-tarawa-apollo-reported"
+        ],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "analytical-conclusion",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "Reuters quoting Shelley; UANI October 13 update",
+          "fields": [
+            {
+              "name": "observedTransferCount",
+              "value": "0",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            },
+            {
+              "name": "position",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "conclusionType": "TRANSFER NOT OBSERVED",
+          "assertionClass": "reported",
+          "credibility": {
+            "code": "6",
+            "label": "Cannot judge credibility",
+            "unknown": true,
+            "rationale": "Not evaluated. 6 means cannot judge, not zero credibility.",
+            "evaluator": null
+          }
+        }
+      },
+      {
+        "id": "conclusion-destination",
+        "recordKind": "claim",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Destinations stay at the reported precision",
+        "summary": "Malaysia EOPL and Myanmar are reported. China is only likely. No point is known.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Likely China is not a confirmed discharge."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [
+          "destination-malaysia-eopl",
+          "destination-myanmar"
+        ],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "analytical-conclusion",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "Jemima Shelley and SynMax, as described by Reuters",
+          "fields": [
+            {
+              "name": "malaysiaEopl",
+              "value": "reported",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "myanmar",
+              "value": "reported",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "chinaDischarge",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "position",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "conclusionType": "DESTINATION REPORTED",
+          "assertionClass": "reported",
+          "credibility": {
+            "code": "6",
+            "label": "Cannot judge credibility",
+            "unknown": true,
+            "rationale": "Not evaluated. 6 means cannot judge, not zero credibility.",
+            "evaluator": null
+          }
+        }
+      },
+      {
+        "id": "conclusion-sanctions",
+        "recordKind": "claim",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Sanctions status is mixed and incomplete",
+        "summary": "A Reuters count, a UANI list, and one OFAC name for IMO 9225342 are different records. They do not identify the six hulls or prove evasion.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Designation is not an enforcement action against the 2026 voyage."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [
+          "sanctions-reuters-count",
+          "sanctions-ghost-armada-named",
+          "sanctions-ofac-quantum-star"
+        ],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "analytical-conclusion",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "Reuters, UANI, and the OFAC notice",
+          "fields": [
+            {
+              "name": "reutersCount",
+              "value": "reported, hulls unnamed",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "imo9225342NoticeName",
+              "value": "QUANTUM STAR",
+              "status": "reported",
+              "sourceId": "ofac-fr-20260522"
+            },
+            {
+              "name": "apolloOceanOfac",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "sixNamedHulls",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "conclusionType": "SANCTIONS STATUS REPORTED",
+          "assertionClass": "reported",
+          "credibility": {
+            "code": "6",
+            "label": "Cannot judge credibility",
+            "unknown": true,
+            "rationale": "Not evaluated. 6 means cannot judge, not zero credibility.",
+            "evaluator": null
+          }
+        }
+      },
+      {
+        "id": "conclusion-authorization",
+        "recordKind": "claim",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "No permit is established for these voyages",
+        "summary": "Officials described a process that can allow some ships through. That is not a permit for these cargoes.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "A possible humanitarian permission is not a finding that these voyages were permitted."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [
+          "authorization-individual-review"
+        ],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "analytical-conclusion",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "US military official, as quoted by Reuters",
+          "fields": [
+            {
+              "name": "permissionProcessDescribed",
+              "value": "individual review, including papers",
+              "status": "reported",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "permitForTheseVoyages",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "conclusionType": "AUTHORIZATION NOT ESTABLISHED",
+          "assertionClass": "reported",
+          "credibility": {
+            "code": "6",
+            "label": "Cannot judge credibility",
+            "unknown": true,
+            "rationale": "Not evaluated. 6 means cannot judge, not zero credibility.",
+            "evaluator": null
+          }
+        }
+      },
+      {
+        "id": "conclusion-enforcement",
+        "recordKind": "claim",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "No enforcement action is established against these cargoes",
+        "summary": "Blockade totals are reported. They are not matched to these voyages.",
+        "sourceId": "uani-20261016",
+        "sourceUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-16-2026",
+        "canonicalUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-16-2026",
+        "upstreamOrganization": "United Against Nuclear Iran",
+        "sourceOrganizationId": "uani",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Published blockade totals are not linked to these LPG or jet-fuel voyages."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [
+          "enforcement-blockade-totals"
+        ],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "analytical-conclusion",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "UANI October 16 update",
+          "fields": [
+            {
+              "name": "totalsReported",
+              "value": "yes",
+              "status": "reported",
+              "sourceId": "uani-20261016"
+            },
+            {
+              "name": "actionAgainstTheseCargoes",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "conclusionType": "ENFORCEMENT NOT ESTABLISHED",
+          "assertionClass": "reported",
+          "credibility": {
+            "code": "6",
+            "label": "Cannot judge credibility",
+            "unknown": true,
+            "rationale": "Not evaluated. 6 means cannot judge, not zero credibility.",
+            "evaluator": null
+          }
+        }
+      },
+      {
+        "id": "conclusion-evasion",
+        "recordKind": "claim",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Suspected sanctions evasion is an assessment",
+        "summary": "Passage, a reported Iranian cargo, or a sanctions listing does not establish evasion. Permission remains possible, AIS and identity can be false, and no enforcement action is matched.",
+        "sourceId": "reuters-lpg",
+        "sourceUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "canonicalUrl": "https://www.reuters.com/business/energy/iran-ships-some-lpg-jet-fuel-despite-us-blockade-data-shows-2026-10-16/",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Must not be promoted to a confirmed fact, an observation, or an approved product."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [
+          "caveat-ais-false-identity",
+          "sanctions-reuters-count",
+          "authorization-individual-review",
+          "enforcement-blockade-totals"
+        ],
+        "valueOrigin": "inferred",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "analytical-conclusion",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "assessment",
+          "attributedTo": "This fixture. It does not adopt the Reuters headline as a finding.",
+          "fields": [
+            {
+              "name": "suspectedEvasion",
+              "value": "not established",
+              "status": "assessment",
+              "sourceId": "reuters-lpg"
+            },
+            {
+              "name": "specificVoyagePermitted",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            },
+            {
+              "name": "specificVoyageSpoofed",
+              "value": null,
+              "status": "unknown",
+              "sourceId": null
+            }
+          ],
+          "conclusionType": "SANCTIONS EVASION ASSESSMENT",
+          "assertionClass": "assessment",
+          "credibility": {
+            "code": "6",
+            "label": "Cannot judge credibility",
+            "unknown": true,
+            "rationale": "Not evaluated. 6 means cannot judge, not zero credibility.",
+            "evaluator": null
+          }
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-reported-sts-pair",
+        "recordKind": "relationship",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported association: TARAWA and APOLLO OCEAN",
+        "summary": "UANI reports one transfer between these names. The link is not an observed transfer and not a coordination finding.",
+        "sourceId": "uani-20261013",
+        "sourceUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "canonicalUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "upstreamOrganization": "United Against Nuclear Iran",
+        "sourceOrganizationId": "uani",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "possible_association stays reported."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "reported-transfer",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "reported",
+          "attributedTo": "UANI shipping update, October 13, 2026",
+          "fields": [
+            {
+              "name": "association",
+              "value": "reported STS pair",
+              "status": "reported",
+              "sourceId": "uani-20261013"
+            }
+          ],
+          "edgeType": "possible_association",
+          "fromId": "vessel-apollo-ocean",
+          "toId": "vessel-tarawa",
+          "assertionClass": "reported"
+        }
+      },
+      {
+        "id": "rel-origin-derived-from-loading",
+        "recordKind": "relationship",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Origin inference points at one reported loading",
+        "summary": "The cohort origin inference is not the same fact as the named Bandar-e Mahshahr loading.",
+        "sourceId": "uani-20261013",
+        "sourceUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "canonicalUrl": "https://www.unitedagainstnucleariran.com/analysis/iran-shipping-update-october-13-2026",
+        "upstreamOrganization": "United Against Nuclear Iran",
+        "sourceOrganizationId": "uani",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-17T18:00:00.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "derived_from does not confirm origin."
+        ],
+        "rightsAttribution": "Short factual metadata only. No article text, imagery, or track copied.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "inferred",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "provenanceLayer": "inferred-cargo-origin",
+          "historicalReporting": true,
+          "established": false,
+          "independentCorroboration": "unknown",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Not independently judged. F and 6 mean cannot judge."
+          },
+          "epistemicStatus": "inferred",
+          "attributedTo": "UANI loading report, used only as a cited input",
+          "fields": [
+            {
+              "name": "link",
+              "value": "inference derived from a reported loading",
+              "status": "inferred",
+              "sourceId": "uani-20261013"
+            }
+          ],
+          "edgeType": "derived_from",
+          "fromId": "conclusion-cargo-origin",
+          "toId": "loading-bandar-mahshahr",
+          "assertionClass": "hypothesized"
+        }
+      }
+    ],
+    "assessments": [],
+    "products": [],
+    "collections": [],
+    "feedback": [],
+    "history": [],
+    "parked": [
+      {
+        "reason": "Older jet-fuel reporting names different voyages. Those names are out of scope for the September 2026 tanker, whose identity remains UNKNOWN.",
+        "record": {
+          "id": "parked-earlier-jet-fuel-voyages",
+          "reportedIdentity": "UNKNOWN",
+          "imo": null,
+          "lat": null,
+          "lon": null,
+          "geometry": null
+        }
+      }
+    ],
+    "factChecks": [
+      {
+        "briefClaim": "At least eight LPG tankers left the Gulf of Oman since mid-July.",
+        "verdict": "reported",
+        "sourceId": "reuters-lpg",
+        "note": "Reuters quoting Shelley. UANI October 16 instead says about nine LPG and naphtha tankers. Hulls are not listed."
+      },
+      {
+        "briefClaim": "Those LPG cargoes were about 4.1 million barrels.",
+        "verdict": "reported",
+        "sourceId": "reuters-lpg",
+        "note": "Shelley estimate via Reuters. Absent from the UANI October 16 page. Not a measurement."
+      },
+      {
+        "briefClaim": "A jet-fuel tanker reached Myanmar in September.",
+        "verdict": "reported",
+        "sourceId": "reuters-lpg",
+        "note": "SynMax via Reuters. Name, IMO, and port are UNKNOWN."
+      },
+      {
+        "briefClaim": "Ship-to-ship transfers occurred near Oman, including Shinas and Sohar.",
+        "verdict": "reported",
+        "sourceId": "reuters-lpg",
+        "note": "Some tankers, unnamed. No coordinates. Not tied to the September 4 named transfer."
+      },
+      {
+        "briefClaim": "Cargoes were transshipped near Malaysia.",
+        "verdict": "reported",
+        "sourceId": "reuters-lpg",
+        "note": "Most cargoes to Malaysia EOPL for further STS, per Shelley. China is likely, not established."
+      },
+      {
+        "briefClaim": "Six of the LPG tankers and the jet-fuel tanker were already sanctioned.",
+        "verdict": "narrower-than-brief",
+        "sourceId": "reuters-lpg",
+        "note": "Reuters says they are under US sanctions and, separately, that 17 vessels were sanctioned last week. Already, and which hulls, are not stated."
+      },
+      {
+        "briefClaim": "Transiting the area does not prove blockade evasion, because vessels can be permitted through and AIS can be spoofed.",
+        "verdict": "reported",
+        "sourceId": "reuters-lpg",
+        "note": "Military official: individual review and possible humanitarian permission. Treasury spokesperson: spoofing or false identity when loading. Not a finding about these hulls."
+      },
+      {
+        "briefClaim": "Brent touched 110 and settled at 109.86. WTI settled at 101.41.",
+        "verdict": "reported",
+        "sourceId": "xinhua-settles",
+        "note": "Same figures in Xinhua and TokenPost. Exchange file not read. A social post with different closes was ignored."
+      },
+      {
+        "briefClaim": "DOE issued an RFP to exchange up to 17 million SPR barrels.",
+        "verdict": "reported",
+        "sourceId": "reuters-spr",
+        "note": "Reuters citing DOE. No matching item on the DOE news index retrieved 2026-10-17. SPR exchange index did not render a document list."
+      },
+      {
+        "briefClaim": "That RFP is part of the existing 172 million barrel commitment, not an addition.",
+        "verdict": "narrower-than-brief",
+        "sourceId": "reuters-spr",
+        "note": "DOE documents establish the 172 million commitment and a September 29 RFP for up to 40 million. Reuters places the 17 million inside that deal. DOE text for this 17 million notice was not found."
+      },
+      {
+        "briefClaim": "The 17 million barrel RFP is not yet contracted.",
+        "verdict": "unverified",
+        "sourceId": "reuters-spr",
+        "note": "Inferred from an RFP with no award in the article. Not a DOE sentence. The October 10 hurricane exchange, up to 4 million for named companies, is a different action."
+      }
+    ]
+  }
+}

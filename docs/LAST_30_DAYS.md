@@ -1,3 +1,7 @@
+## 2026-10-17 - Maritime cargo provenance eval fixture
+
+Deferred local eval for the October 16 Reuters / UANI LPG and jet-fuel reporting, plus the same day's crude settlements and the reported SPR exchange solicitation. Fixture and read-only inspector only: `data/development-fixtures/maritime-cargo-provenance-20261016.json`. Suspected sanctions evasion stays an assessment. The fixture is not live, and it does not poll vessels or fill unknown hulls, IMOs, or positions. No provider, deployment, or priority change.
+
 ## 2026-10-17 - Candidate committed, main merged, globe visual pass
 
 The 53-path candidate and inherited foundation are committed on `feature/evidence-semantic-globe` (draft PR #75 to `main`). Current `main` (33d426f) is merged in. Main's audit-repair suite is reconciled with candidate semantics: undated records stay visible as "Time unknown", unknown exact clocks read "Not supplied", the browser direct-USGS fallback stays removed, and source URLs use the shared `safeSourceUrl` helper. The inherited registry cache-policy assertion is fixed. The validator now skips gitignored root evidence folders. The 3D globe gained a night-atlas restyle, atmosphere/terminator, stars, graticule, optional local borders, severity-styled clustered markers and smooth fly-to ([record and CSP implications](GLOBE_VISUAL_2026-10-17.md)). The repository ruleset requires PRs for updates to every branch, so follow-ups go out as a new stacked branch and PR. No deployment.
@@ -24,7 +28,7 @@ Reproduced canonical Watch cards selecting directly; added omitted Evidence ledg
 
 # Last 30 Days
 
-Last updated: 2026-10-17 (branch merged with main; draft PR #75).
+Last updated: 2026-10-17 (deferred cargo-provenance fixture on this branch; earlier note: main merge and draft PR #75).
 
 ## Independent maritime signals — isolated local candidate
 
