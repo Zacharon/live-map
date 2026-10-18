@@ -1,6 +1,15 @@
 # Last 30 Days
 
-Last updated: 2026-07-15.
+Last updated: 2026-10-18.
+
+## 2026-10-18 - Frozen multi-site incident evaluation
+
+- Added one offline St. Petersburg four-site case and negative mutation tests in
+  `tests/multi-site-incident-evaluation-tests.mjs`, wired into the platform suite.
+- AP/Reuters/RFE-RL search excerpts only; full-page retrieval failed. All claims
+  retain attribution and uncertainty; ceasefire terms remain brief-only.
+- No runtime/API/provider changes. Operational-evidence/workbench and PortWatch
+  sample files are absent on this base. See `MULTI_SITE_INCIDENT_EVALUATION.md`.
 
 ## Merged Recently
 
