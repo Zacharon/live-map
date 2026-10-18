@@ -41,7 +41,22 @@ export function globeCreateCount() {
   return createCount;
 }
 
-function showFallback(globe, mapEl, message, events) {
+// The 3D globe has its own page (globe.html) whose CSP allows the eval that
+// Cesium's bundled Knockout needs; every other page keeps the strict policy.
+export const GLOBE_PAGE_PATH = "/globe.html";
+
+export function isGlobePage(doc = typeof document !== "undefined" ? document : null) {
+  return doc?.querySelector?.('meta[name="live-map-page"]')?.getAttribute("content") === "globe";
+}
+
+export function globePageHref(loc = typeof window !== "undefined" ? window.location : null) {
+  let params;
+  try { params = new URLSearchParams(loc?.search || ""); } catch { params = new URLSearchParams(); }
+  params.set("mapMode", "3d");
+  return `${GLOBE_PAGE_PATH}?${params.toString()}${loc?.hash || ""}`;
+}
+
+function showFallback(globe, mapEl, message, events, { offerGlobePage = false } = {}) {
   mapEl.hidden = false;
   globe.hidden = false;
   globe.classList.add("globe-fallback");
@@ -56,6 +71,13 @@ function showFallback(globe, mapEl, message, events) {
   const keep = document.createElement("p");
   keep.textContent = `${events.length} filtered events, filters and time are preserved on the 2D map.`;
   card.append(title, reason, keep);
+  if (offerGlobePage) {
+    const link = document.createElement("a");
+    link.className = "text-button globe-page-link";
+    link.href = globePageHref();
+    link.textContent = "Open the 3D globe page";
+    card.append(link);
+  }
   globe.append(card);
 }
 
@@ -72,6 +94,21 @@ function attachGlobeChrome(globe, handle) {
       if (event.target.closest("[data-globe-focus]")) handle.focusSelection?.();
     });
   }
+}
+
+let startFailure = null;
+
+function showStartFailure(serial, globe, mapEl, events, mode, band, webgl) {
+  lastRenderer = "leaflet";
+  const evalBlocked = /unsafe-eval|EvalError|WebAssembly/i.test(startFailure);
+  const onGlobePage = isGlobePage();
+  const reason = !evalBlocked
+    ? startFailure
+    : onGlobePage
+      ? "Cesium needs eval, and this page's security policy still blocks it. The 2D map keeps your selection, filters, and time."
+      : "Cesium needs eval, which this page's strict security policy blocks by design. The 3D globe runs on its own page. The 2D map keeps your selection, filters, and time.";
+  showFallback(globe, mapEl, reason, events, { offerGlobePage: evalBlocked && !onGlobePage });
+  return { ...publishRenderer(serial, "leaflet-fallback", reason, mode), band, webgl, reason };
 }
 
 export async function setGlobeMode(mode, events, sharedView = {}, options = {}) {
@@ -106,6 +143,8 @@ export async function setGlobeMode(mode, events, sharedView = {}, options = {}) 
     pending?.then((created) => { try { created?.destroy?.(); } catch { /* already torn down */ } });
     return { ...published, band, webgl, cesiumLoaded: Boolean(globalThis.Cesium) };
   }
+
+  if (useGlobe && startFailure) return showStartFailure(serial, globe, mapEl, events, mode, band, webgl);
 
   if (!useGlobe) {
     lastRenderer = "leaflet";
@@ -162,13 +201,11 @@ export async function setGlobeMode(mode, events, sharedView = {}, options = {}) 
     globeHandle = created;
     inflight = null;
     if (!globeHandle?.ok) {
-      lastRenderer = "leaflet";
-      const raw = globeHandle.reason || "Globe could not start.";
-      const reason = /unsafe-eval|EvalError|WebAssembly/i.test(raw)
-        ? "Cesium compiles shaders with eval. Local CSP blocks eval by design, so the globe stays unavailable. The 2D map keeps your selection, filters, and time."
-        : raw;
-      showFallback(globe, mapEl, reason, events);
-      return { ...publishRenderer(serial, "leaflet-fallback", reason, mode), band, webgl, reason };
+      // A failed start stays failed for this page load: retrying re-imports a
+      // script that already threw and would leave the map hidden behind a blank globe.
+      startFailure = globeHandle.reason || "Globe could not start.";
+      globeHandle = null;
+      return showStartFailure(serial, globe, mapEl, events, mode, band, webgl);
     }
     attachGlobeChrome(globe, globeHandle);
     globeHandle.viewer?.resize?.();
