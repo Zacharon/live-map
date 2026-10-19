@@ -13,7 +13,7 @@ assert.equal(workspaceWindowEnd({events,sourceStatus:{},mapView:{}}),end+1);
 assert.notEqual(workspaceWindowEnd({events,sourceStatus:{x:{ok:true}},mapView:{}}),end);
 assert.equal(workspaceCoverage({dataMode:'public',apiFailure:{kind:'offline-preview'}}).status,'historical');
 assert.equal(workspaceCoverage({dataMode:'public',apiFailure:{kind:'timeout'}}).status,'unavailable');
-assert.equal(readMapView(new URLSearchParams()).mapMode,'3d');
+assert.equal(readMapView(new URLSearchParams()).mapMode,'2d');
 assert.equal(readMapView(new URLSearchParams('mapState=1')).mapMode,'2d');
 for (const mode of ['2d','3d','auto']) {
   const p=new URLSearchParams();writeMapView(p,{mapMode:mode,asOf:new Date(end).toISOString(),lat:0,lon:0});

@@ -2142,3 +2142,5 @@ import './usability-dark-globe-tests.mjs';
 import './semantic-globe-weather-tests.mjs';
 import './runtime-acceptance-labels-tests.mjs';
 import './globe-style-tests.mjs';
+
+import './page-mode-tests.mjs';
