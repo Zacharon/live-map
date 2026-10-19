@@ -29,7 +29,7 @@ import { loadAlertRules, saveAlertRules, createLocalRule, validateAlertRule, pre
 import { createMapController } from "./map/map-controller.js";
 import { renderMarkers } from "./map/marker-renderer.js";
 import { renderClusterHighlight, fitClusterOnMap } from "./map/cluster-highlight.js";
-import { setGlobeMode, getGlobeHandle } from "./map/globe-controller.js";
+import { setGlobeMode, getGlobeHandle, isGlobePage, globePageHref } from "./map/globe-controller.js";
 import { bandFromZoom } from "./map/semantic-bands.js";
 import { graphNodeFromRecord, graphEdgeFromRelationship, neighborhood } from "./intelligence/knowledge-graph.js";
 import { syntheticChokepointRecords, syntheticScenarioEvents, SYNTHETIC_CHOKEPOINT_ID, SCENARIO_STAGES } from "./data/fixtures/synthetic-chokepoint-scenario.js";
@@ -701,6 +701,16 @@ export function bootLiveMap() {
   }
 
   function render() {
+    // Covers explicit URL modes and restored saved views as well as the selector.
+    if (state.mapMode === "3d" && !isGlobePage()) {
+      syncUrlState();
+      const destination = globePageHref();
+      // Back must return to a usable homepage rather than redirecting again.
+      state.mapMode = state.mapView.mapMode = "2d";
+      syncUrlState();
+      window.location.assign(destination);
+      return;
+    }
     const renderStarted=performance.now();
     try {
     const intelligence = buildChokepointIntelligence();
@@ -782,7 +792,7 @@ export function bootLiveMap() {
       overlay.textContent = notes.join(" · ") || "Pins stay independent of Auto. Spatial clusters are not corroborated incidents.";
     }
     state._graphView = graphView;
-    setGlobeMode(state.mapMode, events, sharedView, {
+    setGlobeMode(!isGlobePage() && state.mapMode === "auto" ? "2d" : state.mapMode, events, sharedView, {
       onContextLoss() { state.mapMode = "2d"; state.mapView.mapMode = "2d"; syncUrlState(); render(); },
       onViewChange(view) {
         if (state.mapMode === "2d" || !Number.isFinite(view.lat) || !Number.isFinite(view.lon) || !Number.isFinite(view.zoom)) return;

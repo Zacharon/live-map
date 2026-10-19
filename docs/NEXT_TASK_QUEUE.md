@@ -1,3 +1,11 @@
+## 2026-10-19 — Homepage 2D / dedicated globe routing correction
+
+Homepage HTML and URL-state defaults now select 2D; /globe and /globe.html default to 3D. Explicit 3D choices, legacy map=3d links and restored 3D saved views serialize current workspace state before navigating to /globe.html. The origin history entry is normalized to 2D so Back stays usable. Auto remains 2D under the homepage's strict CSP; Auto on the globe page retains adaptive rendering. Saved preferences do not silently choose a renderer on a fresh homepage; saved views remain explicit user actions. Globe-page generation independently selects 3D. netlify.toml is unchanged.
+
+Local syntax, platform suite (including page-mode regression tests), generated-page consistency and browser-secret checks pass. Local controller/state execution checks cover defaults, serialization and navigation; no local interactive browser result is claimed because the connected browser is on a separate machine from this checkout. Regression payload is synthetic.
+
+Read-only hosted checks at https://liveworldmap.netlify.app on October 19 UTC: / returns HTTP 200 with strict script-src 'self'; /globe.html returns HTTP 404 with the same strict policy, independently confirmed in the browser as Netlify's Page not found screen. This does not establish which commit is deployed. Hosted globe startup and candidate behavior remain unverified. No deployment or merge performed.
+
 ## 2026-10-17 - Globe visual pass awaiting owner review
 
 - Owner visual acceptance of the globe pass (`docs/GLOBE_VISUAL_2026-10-17.md`, screenshots in `artifacts/globe-visual-2026-10-17/`).
