@@ -1,6 +1,18 @@
+## 2026-10-19 - PR #80 conflict reconciliation
+
+Merged current main into the follow-up candidate, preserving its homepage routing, saved-view serialization and Back behavior alongside local borders, Cloudflare page headers and Netlify environment forwarding. Removed the duplicate globe-generation transform. CSP parity readers now normalize Windows line endings without changing policy assertions. Local syntax/Cloudflare exports, offline platform suite, offline validator, generated-page consistency and both secret scans pass. Production smoke and hosted acceptance remain separate evidence; no deployment.
+
 ## 2026-10-19 - Main page opens in 2D, borders vendored, Cloudflare CSP
 
-The main page now opens in 2D; choosing 3D or Auto opens `/globe.html`, and shared links asking for 3D redirect there. Natural Earth 1:110m boundary lines are vendored (owner approved the download). The Cloudflare Worker now sends the same page CSPs as `netlify.toml` from `src/security-headers.js`. Netlify `/api/events` now passes `process.env`, so `LIVE_MAP_STORED_USGS` can take effect there as it already did for `/api/changes`. A read-only review found hosted durable ingestion is not wired on either host (see the task queue). No deployment.
+The main page now opens in 2D; choosing 3D opens `/globe.html`, while Auto stays in 2D on the main page, and shared links asking for 3D redirect there. Natural Earth 1:110m boundary lines are vendored (owner approved the download). The Cloudflare Worker now sends the same page CSPs as `netlify.toml` from `src/security-headers.js`. Netlify `/api/events` now passes `process.env`, so `LIVE_MAP_STORED_USGS` can take effect there as it already did for `/api/changes`. A read-only review found hosted durable ingestion is not wired on either host (see the task queue). No deployment.
+
+## 2026-10-19 — Homepage 2D / dedicated globe routing correction
+
+Homepage HTML and URL-state defaults now select 2D; /globe and /globe.html default to 3D. Explicit 3D choices, legacy map=3d links and restored 3D saved views serialize current workspace state before navigating to /globe.html. The origin history entry is normalized to 2D so Back stays usable. Auto remains 2D under the homepage's strict CSP; Auto on the globe page retains adaptive rendering. Saved preferences do not silently choose a renderer on a fresh homepage; saved views remain explicit user actions. Globe-page generation independently selects 3D. netlify.toml is unchanged.
+
+Local syntax, platform suite (including page-mode regression tests), generated-page consistency and browser-secret checks pass. Local controller/state execution checks cover defaults, serialization and navigation; no local interactive browser result is claimed because the connected browser is on a separate machine from this checkout. Regression payload is synthetic.
+
+Read-only hosted checks at https://liveworldmap.netlify.app on October 19 UTC: / returns HTTP 200 with strict script-src 'self'; /globe.html returns HTTP 404 with the same strict policy, independently confirmed in the browser as Netlify's Page not found screen. This does not establish which commit is deployed. Hosted globe startup and candidate behavior remain unverified. No deployment or merge performed.
 
 ## 2026-10-17 - 3D globe gets its own page
 

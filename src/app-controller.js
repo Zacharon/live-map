@@ -29,7 +29,7 @@ import { loadAlertRules, saveAlertRules, createLocalRule, validateAlertRule, pre
 import { createMapController } from "./map/map-controller.js";
 import { renderMarkers } from "./map/marker-renderer.js";
 import { renderClusterHighlight, fitClusterOnMap } from "./map/cluster-highlight.js";
-import { setGlobeMode, getGlobeHandle, globePageHref, needsGlobePage } from "./map/globe-controller.js";
+import { setGlobeMode, getGlobeHandle, isGlobePage, globePageHref } from "./map/globe-controller.js";
 import { bandFromZoom } from "./map/semantic-bands.js";
 import { graphNodeFromRecord, graphEdgeFromRelationship, neighborhood } from "./intelligence/knowledge-graph.js";
 import { syntheticChokepointRecords, syntheticScenarioEvents, SYNTHETIC_CHOKEPOINT_ID, SCENARIO_STAGES } from "./data/fixtures/synthetic-chokepoint-scenario.js";
@@ -511,16 +511,6 @@ function renderAlerts(events) {
 }
 
 export function bootLiveMap() {
-  if (needsGlobePage(state.mapMode)) {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has("mapMode") || params.has("map")) {
-      // A shared link that asks for 3D keeps working by opening the globe page.
-      window.location.replace(globePageHref(window.location, state.mapMode));
-      return;
-    }
-    state.mapMode = "2d";
-    state.mapView.mapMode = "2d";
-  }
   document.body.dataset.liveMapBoot = "started";
   const els = ids(["dashboardNav", "domainFilters", "layerFilters", "severityFilters", "eventList", "visibleCount", "highCount", "countryCount", "updatedAt", "search", "globalSearch", "globalSearchResults", "clearDomains", "clearFilters", "timeWindow", "sortOrder", "groupBy", "cardMode", "savedViews", "saveView", "fitWorld", "fitEvents", "themeToggle", "eventDialog", "dialogContent", "closeDialog", "methodologyDialog", "methodologyContent", "closeMethodology", "onboardingDialog", "mapLegend", "systemStatus", "feedAge", "baseMap", "refreshNow", "sourceHealth", "publicDataStatus", "countrySummaryPanel", "sourcesStatusPanel", "dashboardPanel", "dashboardEyebrow", "dashboardTitle", "mapMode", "mapHealth", "feedError", "ciiToggle", "sourcesLink", "filterDrawer", "eventDrawer", "presetList", "advancedMode", "aircraftToggle", "vesselToggle", "airportsToggle", "portsToggle", "trackingStatus", "mapListToggle", "locateMap", "resetWorkspace", "osintDashboardV2", "eventDetailDrawer", "chokepointDetailDrawer", "dataMode", "chokepointControls", "chokepointSearch", "chokepointRegion", "chokepointType", "chokepointStatus", "chokepointDomain", "chokepointSort", "resetChokepointFilters"]);
   const startupQuery = new URLSearchParams(window.location.search);
@@ -711,6 +701,16 @@ export function bootLiveMap() {
   }
 
   function render() {
+    // Covers explicit URL modes and restored saved views as well as the selector.
+    if (state.mapMode === "3d" && !isGlobePage()) {
+      syncUrlState();
+      const destination = globePageHref();
+      // Back must return to a usable homepage rather than redirecting again.
+      state.mapMode = state.mapView.mapMode = "2d";
+      syncUrlState();
+      window.location.assign(destination);
+      return;
+    }
     const renderStarted=performance.now();
     try {
     const intelligence = buildChokepointIntelligence();
@@ -792,7 +792,7 @@ export function bootLiveMap() {
       overlay.textContent = notes.join(" · ") || "Pins stay independent of Auto. Spatial clusters are not corroborated incidents.";
     }
     state._graphView = graphView;
-    setGlobeMode(state.mapMode, events, sharedView, {
+    setGlobeMode(!isGlobePage() && state.mapMode === "auto" ? "2d" : state.mapMode, events, sharedView, {
       onContextLoss() { state.mapMode = "2d"; state.mapView.mapMode = "2d"; syncUrlState(); render(); },
       onViewChange(view) {
         if (state.mapMode === "2d" || !Number.isFinite(view.lat) || !Number.isFinite(view.lon) || !Number.isFinite(view.zoom)) return;
@@ -1911,11 +1911,6 @@ export function bootLiveMap() {
     window.location.assign(url.href);
   });
   els.mapMode.addEventListener("change", (event) => {
-    if (needsGlobePage(event.target.value)) {
-      syncUrlState();
-      window.location.assign(globePageHref(window.location, event.target.value));
-      return;
-    }
     const view = { ...state.mapView };
     state.mapMode = event.target.value;
     state.mapView.mapMode = event.target.value;

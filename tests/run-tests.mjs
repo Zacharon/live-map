@@ -777,7 +777,7 @@ test("Events API output survives default Explore frontend filters", async () => 
 test("Source Explorer markup supports routing, fallback state, and escaping-safe controls", () => {
   const html = fs.readFileSync(new URL("../source-explorer.html", import.meta.url), "utf8");
   const app = fs.readFileSync(new URL("../src/source-explorer-app.js", import.meta.url), "utf8");
-  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8");
+  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8").replace(/\r\n/g, "\n");
   assert.match(netlifyConfig, /from = "\/api\/sources"[\s\S]*to = "\/\.netlify\/functions\/sources"/);
   assert.match(netlifyConfig, /from = "\/sources"[\s\S]*to = "\/source-explorer\.html"/);
   assert.match(html, /role="listbox"/);
@@ -854,7 +854,7 @@ test("Saved view serialization captures shareable feed state", () => {
 });
 
 function netlifyCspRules() {
-  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8");
+  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8").replace(/\r\n/g, "\n");
   return [...netlifyConfig.matchAll(/\[\[headers\]\]\n\s*for = "([^"]+)"\n\s*\[headers\.values\]\n((?:\s*[A-Za-z-]+ = "[^"]*"\n?)+)/g)]
     .map(([, path, body]) => ({ path, csp: body.match(/Content-Security-Policy = "([^"]+)"/)?.[1] || null }));
 }
@@ -907,12 +907,12 @@ test("Globe page link keeps the current view state", async () => {
   assert.equal(globePageHref({ search: "?mapMode=2d", hash: "" }, "auto"), "/globe.html?mapMode=auto");
 });
 
-test("Main page opens in 2D and sends 3D and Auto to the globe page", async () => {
+test("Main page opens in 2D and reserves globe routing for explicit 3D", async () => {
   const { needsGlobePage } = await import("../src/map/globe-controller.js");
   const globeDoc = { querySelector: () => ({ getAttribute: () => "globe" }) };
   const mainDoc = { querySelector: () => null };
   assert.equal(needsGlobePage("3d", mainDoc), true);
-  assert.equal(needsGlobePage("auto", mainDoc), true);
+  assert.equal(needsGlobePage("auto", mainDoc), false);
   assert.equal(needsGlobePage("2d", mainDoc), false);
   assert.equal(needsGlobePage("3d", globeDoc), false);
   const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
@@ -2175,3 +2175,5 @@ import './usability-dark-globe-tests.mjs';
 import './semantic-globe-weather-tests.mjs';
 import './runtime-acceptance-labels-tests.mjs';
 import './globe-style-tests.mjs';
+
+import './page-mode-tests.mjs';
