@@ -6,12 +6,13 @@ Local syntax, platform suite (including page-mode regression tests), generated-p
 
 Read-only hosted checks at https://liveworldmap.netlify.app on October 19 UTC: / returns HTTP 200 with strict script-src 'self'; /globe.html returns HTTP 404 with the same strict policy, independently confirmed in the browser as Netlify's Page not found screen. This does not establish which commit is deployed. Hosted globe startup and candidate behavior remain unverified. No deployment or merge performed.
 
-## 2026-10-17 - Globe visual pass awaiting owner review
+## 2026-10-19 - Globe follow-ups and hosted ingestion gaps
 
-- Owner visual acceptance of the globe pass (`docs/GLOBE_VISUAL_2026-10-17.md`, screenshots in `artifacts/globe-visual-2026-10-17/`).
-- Production Cesium CSP: owner chose a separate globe page (`/globe.html` adds `'unsafe-eval'`; other pages stay strict). Confirm the per-path headers on a deploy preview before merge.
-- Vendor the Natural Earth 1:110m boundary lines (public domain) if borders are approved; the loader is already in place.
-- Merge order: draft PR #75 first, then the stacked follow-up PR.
+- PR #80 conflict reconciliation preserves main's state-safe routing; confirm strict homepage and globe-specific CSP headers on a deploy preview after owner authorization. Local offline checks do not close hosted acceptance.
+- Owner visual acceptance (#61) of `/globe.html` and the 2D main page on a deploy preview, including real basemap tiles (the cloud container cannot load them).
+- Hosted durable ingestion is not wired: `wrangler.toml` declares no cron trigger, queue or Hyperdrive binding, so the Worker's `scheduled()`/`queue()` handlers never run, and Netlify has no scheduled function. Needs owner approval (Cloudflare Queues may need a paid plan), then the bindings, `LIVE_MAP_INGEST_USGS`/`LIVE_MAP_STORED_USGS`, and `collection_enabled` in `lm_source_policies`.
+- `src/ingestion/worker-handlers.js` retries messages when the database or policy is off, which only burns retries; ack with a logged reason instead, and add a unit test for the handlers.
+- Current-feed activation (NHC, Digitraffic, ADSB.lol) stays off pending owner approval and the licence reviews below; confirm a real dated `/api/events` response on the host.
 
 ## 2026-10-12 - Aviation installation decision pending
 
@@ -134,12 +135,6 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 - Test: add cases for `javascript:`, `data:`, `mailto:`, relative URLs, `http:`, and `https:`.
 
 ## P1
-
-### Add Cloudflare asset security headers
-
-- Goal: match Netlify CSP/security headers for Cloudflare static asset responses.
-- Touch first: `src/worker.js`, `netlify.toml`, `tests/run-tests.mjs`.
-- Test: Worker responses for `/`, `/app.js`, `/sources` include CSP, `X-Content-Type-Options`, and `Referrer-Policy`.
 
 ### Add bounded provider JSON helper
 

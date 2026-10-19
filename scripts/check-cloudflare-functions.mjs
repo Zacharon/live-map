@@ -107,6 +107,25 @@ try {
   const sourcesPageResponse = await worker.default.fetch(new Request("https://worker.test/sources"), cloudflareEnv());
   assert.equal(sourcesPageResponse.status, 200, "Cloudflare Worker /sources should serve Source Explorer");
   assert.match(await sourcesPageResponse.text(), /Source Explorer - Live Map/, "Cloudflare Worker /sources should map to source-explorer.html");
+
+  // Pages get the same CSP as netlify.toml; only the globe page adds 'unsafe-eval'.
+  const { STRICT_CSP, GLOBE_CSP } = await import("../src/security-headers.js");
+  const netlifyConfig = (await readFile(new URL("../netlify.toml", import.meta.url), "utf8")).replace(/\r\n/g, "\n");
+  assert.ok(netlifyConfig.includes(`for = "/"\n  [headers.values]\n    Content-Security-Policy = "${STRICT_CSP}"`), "src/security-headers.js STRICT_CSP must match netlify.toml");
+  assert.ok(netlifyConfig.includes(`for = "/globe.html"\n  [headers.values]\n    Content-Security-Policy = "${GLOBE_CSP}"`), "src/security-headers.js GLOBE_CSP must match netlify.toml");
+  assert.equal(sourcesPageResponse.headers.get("content-security-policy"), STRICT_CSP, "Cloudflare Worker /sources should send the strict CSP");
+  for (const page of ["/", "/index.html", "/about", "/countries.html"]) {
+    const pageResponse = await worker.default.fetch(new Request(`https://worker.test${page}`), cloudflareEnv());
+    assert.equal(pageResponse.headers.get("content-security-policy"), STRICT_CSP, `Cloudflare Worker ${page} should send the strict CSP`);
+    assert.equal(pageResponse.headers.get("x-content-type-options"), "nosniff");
+  }
+  for (const page of ["/globe", "/globe.html"]) {
+    const pageResponse = await worker.default.fetch(new Request(`https://worker.test${page}`), cloudflareEnv());
+    assert.equal(pageResponse.headers.get("content-security-policy"), GLOBE_CSP, `Cloudflare Worker ${page} should send the globe CSP`);
+  }
+  for (const page of ["/", "/globe.html", "/about.html", "/countries.html", "/diagnostics.html", "/source-explorer.html", "/404.html"]) {
+    assert.ok(wranglerConfig.includes(`"${page}"`), `wrangler.toml run_worker_first must include ${page} so it gets security headers`);
+  }
 } finally {
   globalThis.fetch = originalFetch;
 }

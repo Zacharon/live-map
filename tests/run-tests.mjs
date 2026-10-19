@@ -777,7 +777,7 @@ test("Events API output survives default Explore frontend filters", async () => 
 test("Source Explorer markup supports routing, fallback state, and escaping-safe controls", () => {
   const html = fs.readFileSync(new URL("../source-explorer.html", import.meta.url), "utf8");
   const app = fs.readFileSync(new URL("../src/source-explorer-app.js", import.meta.url), "utf8");
-  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8");
+  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8").replace(/\r\n/g, "\n");
   assert.match(netlifyConfig, /from = "\/api\/sources"[\s\S]*to = "\/\.netlify\/functions\/sources"/);
   assert.match(netlifyConfig, /from = "\/sources"[\s\S]*to = "\/source-explorer\.html"/);
   assert.match(html, /role="listbox"/);
@@ -854,7 +854,7 @@ test("Saved view serialization captures shareable feed state", () => {
 });
 
 function netlifyCspRules() {
-  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8");
+  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8").replace(/\r\n/g, "\n");
   return [...netlifyConfig.matchAll(/\[\[headers\]\]\n\s*for = "([^"]+)"\n\s*\[headers\.values\]\n((?:\s*[A-Za-z-]+ = "[^"]*"\n?)+)/g)]
     .map(([, path, body]) => ({ path, csp: body.match(/Content-Security-Policy = "([^"]+)"/)?.[1] || null }));
 }
@@ -904,6 +904,39 @@ test("Globe page link keeps the current view state", async () => {
   assert.equal(globePageHref({ search: "?lat=10&mapMode=2d", hash: "#e1" }), "/globe.html?lat=10&mapMode=3d#e1");
   assert.equal(globePageHref({ search: "", hash: "" }), "/globe.html?mapMode=3d");
   assert.equal(isGlobePage(null), false);
+  assert.equal(globePageHref({ search: "?mapMode=2d", hash: "" }, "auto"), "/globe.html?mapMode=auto");
+});
+
+test("Main page opens in 2D and reserves globe routing for explicit 3D", async () => {
+  const { needsGlobePage } = await import("../src/map/globe-controller.js");
+  const globeDoc = { querySelector: () => ({ getAttribute: () => "globe" }) };
+  const mainDoc = { querySelector: () => null };
+  assert.equal(needsGlobePage("3d", mainDoc), true);
+  assert.equal(needsGlobePage("auto", mainDoc), false);
+  assert.equal(needsGlobePage("2d", mainDoc), false);
+  assert.equal(needsGlobePage("3d", globeDoc), false);
+  const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const globe = fs.readFileSync(new URL("../globe.html", import.meta.url), "utf8");
+  assert.match(index, /<option value="2d" selected>2D map<\/option>/);
+  assert.match(globe, /<option value="3d" selected>3D globe<\/option>/);
+});
+
+test("Netlify events and changes functions both pass the environment", () => {
+  // Without env, LIVE_MAP_STORED_USGS is never read on Netlify and /api/events
+  // ignores stored observations while /api/changes uses them.
+  for (const name of ["events", "changes"]) {
+    const source = fs.readFileSync(new URL(`../netlify/functions/${name}.mjs`, import.meta.url), "utf8");
+    assert.match(source, /\{ env: process\.env \}/, `${name}.mjs passes process.env`);
+  }
+});
+
+test("Vendored Natural Earth borders parse and stay small", async () => {
+  const { borderLines, NATURAL_EARTH_BORDERS_URL } = await import("../src/map/globe-style.js");
+  const file = new URL(`../${NATURAL_EARTH_BORDERS_URL.replace(/^\.\//, "")}`, import.meta.url);
+  assert.ok(fs.statSync(file).size < 80_000);
+  const data = JSON.parse(fs.readFileSync(file, "utf8"));
+  assert.match(data.license, /Public domain/);
+  assert.ok(borderLines(data).length > 300);
 });
 
 test("Repository browser code does not use eval-like patterns", () => {
