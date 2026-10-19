@@ -1,3 +1,7 @@
+## 2026-10-19 - Main page opens in 2D, borders vendored, Cloudflare CSP
+
+The main page now opens in 2D; choosing 3D or Auto opens `/globe.html`, and shared links asking for 3D redirect there. Natural Earth 1:110m boundary lines are vendored (owner approved the download). The Cloudflare Worker now sends the same page CSPs as `netlify.toml` from `src/security-headers.js`. Netlify `/api/events` now passes `process.env`, so `LIVE_MAP_STORED_USGS` can take effect there as it already did for `/api/changes`. A read-only review found hosted durable ingestion is not wired on either host (see the task queue). No deployment.
+
 ## 2026-10-17 - 3D globe gets its own page
 
 Owner chose a separate globe page for the production Cesium CSP. `netlify.toml` now sets the CSP per path: `/globe` and `/globe.html` add `'unsafe-eval'` for Cesium's bundled Knockout, and every other page keeps the strict policy. `globe.html` is generated from `index.html` by `scripts/build-globe-page.mjs`. The fallback card on other pages links to the globe page. Header behaviour must still be confirmed on a deploy preview. No deployment.

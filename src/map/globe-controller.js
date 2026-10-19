@@ -49,11 +49,17 @@ export function isGlobePage(doc = typeof document !== "undefined" ? document : n
   return doc?.querySelector?.('meta[name="live-map-page"]')?.getAttribute("content") === "globe";
 }
 
-export function globePageHref(loc = typeof window !== "undefined" ? window.location : null) {
+export function globePageHref(loc = typeof window !== "undefined" ? window.location : null, mode = "3d") {
   let params;
   try { params = new URLSearchParams(loc?.search || ""); } catch { params = new URLSearchParams(); }
-  params.set("mapMode", "3d");
+  params.set("mapMode", mode === "auto" ? "auto" : "3d");
   return `${GLOBE_PAGE_PATH}?${params.toString()}${loc?.hash || ""}`;
+}
+
+// 3D and Auto both start Cesium, which only runs on the globe page. Other pages
+// open in 2D and send those modes to the globe page instead.
+export function needsGlobePage(mode, doc = typeof document !== "undefined" ? document : null) {
+  return (mode === "3d" || mode === "auto") && !isGlobePage(doc);
 }
 
 function showFallback(globe, mapEl, message, events, { offerGlobePage = false } = {}) {

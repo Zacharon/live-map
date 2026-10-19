@@ -1,3 +1,4 @@
+import { withSecurityHeaders } from "./security-headers.js";
 import { apiBodyLimitBytes, apiContentLength, checkApiRateLimit, jsonPayloadTooLargeResponse, jsonRateLimitResponse } from "./api/rate-limit.js";
 
 function installCloudflareEnv(env) {
@@ -101,9 +102,9 @@ export default {
     }
 
     if (url.pathname === "/sources") {
-      return env.ASSETS.fetch(assetAliasRequest(request, "/source-explorer.html"));
+      return withSecurityHeaders(await env.ASSETS.fetch(assetAliasRequest(request, "/source-explorer.html")), url.pathname);
     }
 
-    return env.ASSETS.fetch(request);
+    return withSecurityHeaders(await env.ASSETS.fetch(request), url.pathname);
   },
 };

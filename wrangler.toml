@@ -10,4 +10,6 @@ compatibility_flags = ["nodejs_compat"]
 directory = "."
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-run_worker_first = ["/api/*", "/sources"]
+# Pages go through the Worker so it can add the same security headers as
+# netlify.toml (src/security-headers.js). Other static assets are served directly.
+run_worker_first = ["/api/*", "/sources", "/", "/index.html", "/globe", "/globe.html", "/about", "/about.html", "/countries", "/countries.html", "/diagnostics", "/diagnostics.html", "/source-explorer", "/source-explorer.html", "/404.html"]

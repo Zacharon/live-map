@@ -15,6 +15,7 @@ export function buildGlobePage(html) {
   const swaps = [
     [/<title>[^<]*<\/title>/, "<title>Live Map — 3D globe</title>"],
     [/<link rel="canonical" href="\/" \/>/, '<link rel="canonical" href="/globe.html" />\n  <meta name="live-map-page" content="globe" />'],
+    [/<option value="2d" selected>2D map<\/option><option value="3d">3D globe<\/option>/, '<option value="2d">2D map</option><option value="3d" selected>3D globe</option>'],
     [/<!doctype html>/i, "<!doctype html>\n<!-- Generated from index.html by scripts/build-globe-page.mjs. Do not edit by hand. -->"],
   ];
   let out = html;
