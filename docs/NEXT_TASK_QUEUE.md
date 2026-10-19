@@ -1,5 +1,14 @@
+## 2026-10-19 — Homepage 2D / dedicated globe routing correction
+
+Homepage HTML and URL-state defaults now select 2D; /globe and /globe.html default to 3D. Explicit 3D choices, legacy map=3d links and restored 3D saved views serialize current workspace state before navigating to /globe.html. The origin history entry is normalized to 2D so Back stays usable. Auto remains 2D under the homepage's strict CSP; Auto on the globe page retains adaptive rendering. Saved preferences do not silently choose a renderer on a fresh homepage; saved views remain explicit user actions. Globe-page generation independently selects 3D. netlify.toml is unchanged.
+
+Local syntax, platform suite (including page-mode regression tests), generated-page consistency and browser-secret checks pass. Local controller/state execution checks cover defaults, serialization and navigation; no local interactive browser result is claimed because the connected browser is on a separate machine from this checkout. Regression payload is synthetic.
+
+Read-only hosted checks at https://liveworldmap.netlify.app on October 19 UTC: / returns HTTP 200 with strict script-src 'self'; /globe.html returns HTTP 404 with the same strict policy, independently confirmed in the browser as Netlify's Page not found screen. This does not establish which commit is deployed. Hosted globe startup and candidate behavior remain unverified. No deployment or merge performed.
+
 ## 2026-10-19 - Globe follow-ups and hosted ingestion gaps
 
+- PR #80 conflict reconciliation preserves main's state-safe routing; confirm strict homepage and globe-specific CSP headers on a deploy preview after owner authorization. Local offline checks do not close hosted acceptance.
 - Owner visual acceptance (#61) of `/globe.html` and the 2D main page on a deploy preview, including real basemap tiles (the cloud container cannot load them).
 - Hosted durable ingestion is not wired: `wrangler.toml` declares no cron trigger, queue or Hyperdrive binding, so the Worker's `scheduled()`/`queue()` handlers never run, and Netlify has no scheduled function. Needs owner approval (Cloudflare Queues may need a paid plan), then the bindings, `LIVE_MAP_INGEST_USGS`/`LIVE_MAP_STORED_USGS`, and `collection_enabled` in `lm_source_policies`.
 - `src/ingestion/worker-handlers.js` retries messages when the database or policy is off, which only burns retries; ack with a logged reason instead, and add a unit test for the handlers.

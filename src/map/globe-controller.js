@@ -56,10 +56,10 @@ export function globePageHref(loc = typeof window !== "undefined" ? window.locat
   return `${GLOBE_PAGE_PATH}?${params.toString()}${loc?.hash || ""}`;
 }
 
-// 3D and Auto both start Cesium, which only runs on the globe page. Other pages
-// open in 2D and send those modes to the globe page instead.
+// Explicit 3D runs on the globe page. Homepage Auto stays in 2D under its
+// strict CSP; the globe page retains adaptive Auto rendering.
 export function needsGlobePage(mode, doc = typeof document !== "undefined" ? document : null) {
-  return (mode === "3d" || mode === "auto") && !isGlobePage(doc);
+  return mode === "3d" && !isGlobePage(doc);
 }
 
 function showFallback(globe, mapEl, message, events, { offerGlobePage = false } = {}) {
