@@ -8,6 +8,12 @@ updates:
       time: "09:00"
       timezone: America/New_York
     open-pull-requests-limit: 5
+    groups:
+      # pglite-postgis pins an exact pglite peer version, so bumping either
+      # package alone breaks npm ci on Netlify and Cloudflare Workers Builds.
+      electric-sql:
+        patterns:
+          - "@electric-sql/*"
 
   - package-ecosystem: github-actions
     directory: /
