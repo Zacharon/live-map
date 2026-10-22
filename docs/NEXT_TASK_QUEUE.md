@@ -1,3 +1,8 @@
+## 2026-10-21 - Review Dependabot install-check follow-up
+
+- Review the follow-up stacked on PR #86: keep the Electric SQL group and add the clean-install compatibility gate to Validate. Merge through the existing PR process after checks pass.
+- For future Electric SQL PRs, require successful locked installation. Do not require both manifest entries to change or matching package version numbers; inspect the resolved PostGIS peer requirement. If no compatible peer release exists, leave the update unmerged until it can resolve. Deployment previews remain separate evidence.
+
 ## 2026-10-19 — Homepage 2D / dedicated globe routing correction
 
 Homepage HTML and URL-state defaults now select 2D; /globe and /globe.html default to 3D. Explicit 3D choices, legacy map=3d links and restored 3D saved views serialize current workspace state before navigating to /globe.html. The origin history entry is normalized to 2D so Back stays usable. Auto remains 2D under the homepage's strict CSP; Auto on the globe page retains adaptive rendering. Saved preferences do not silently choose a renderer on a fresh homepage; saved views remain explicit user actions. Globe-page generation independently selects 3D. netlify.toml is unchanged.

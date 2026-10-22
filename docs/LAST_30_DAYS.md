@@ -1,3 +1,11 @@
+## 2026-10-21 - Dependabot peer compatibility review candidate
+
+PR #86 groups available `@electric-sql/*` version updates, but grouping permits a single changed member. PR #83's actual manifest/lockfile reproduces `npm ci` failure: PGlite 0.5.10 conflicts with PostGIS 0.2.8's exact 0.5.8 peer. After #82, the lock resolves PGlite 0.5.10 and PostGIS 0.2.10 (exact peer 0.5.10); the manifest's PGlite `^0.5.8` range accepts that resolution.
+
+This follow-up adds `npm ci --ignore-scripts --no-audit --no-fund` to Validate, which previously ran checks without installing dependencies, and corrects the grouping comment. It reuses npm's compatibility checks rather than adding a custom version rule. Deployment configuration, manifests and lockfile are unchanged. GitHub review/merge remains pending; successful configuration-only previews do not demonstrate future Dependabot update behavior.
+
+Local Node 20.20.2/npm 10.9.9 installation accepts the current pair and rejects #83 with `ERESOLVE`. Syntax, offline platform tests, 49 audit-repair tests and the offline validator pass. The online validator fails only its external USGS event-URL reachability row in this environment; that is not dependency-install evidence. Dependabot grouping was checked against official documentation and updater source, not a hosted future-update run.
+
 ## 2026-10-19 - PR #80 conflict reconciliation
 
 Merged current main into the follow-up candidate, preserving its homepage routing, saved-view serialization and Back behavior alongside local borders, Cloudflare page headers and Netlify environment forwarding. Removed the duplicate globe-generation transform. CSP parity readers now normalize Windows line endings without changing policy assertions. Local syntax/Cloudflare exports, offline platform suite, offline validator, generated-page consistency and both secret scans pass. Production smoke and hosted acceptance remain separate evidence; no deployment.
