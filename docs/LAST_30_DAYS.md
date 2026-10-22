@@ -1,3 +1,7 @@
+## 2026-10-21 — Forge USGS staging harness
+
+Added fixture-only Forge SQLite → real loopback HTTP → existing Live Map API/filter integration, pinned to Forge PR #4 merge. Exact USGS identity mapping retains Forge aliases; native duplicates win intact. Unrelated providers stay present; failures are sanitized. Stored-cursor mode is shadow-only because Forge has no compatible change feed. No production route/provider/source authorization or hosting changes. See [scope, evidence and remaining gates](FORGE_STAGING_INTEGRATION_2026-10-21.md).
+
 ## 2026-10-19 - PR #80 conflict reconciliation
 
 Merged current main into the follow-up candidate, preserving its homepage routing, saved-view serialization and Back behavior alongside local borders, Cloudflare page headers and Netlify environment forwarding. Removed the duplicate globe-generation transform. CSP parity readers now normalize Windows line endings without changing policy assertions. Local syntax/Cloudflare exports, offline platform suite, offline validator, generated-page consistency and both secret scans pass. Production smoke and hosted acceptance remain separate evidence; no deployment.
