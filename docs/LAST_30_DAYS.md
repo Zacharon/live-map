@@ -1,3 +1,7 @@
+## 2026-10-27 - Globe tile placeholders
+
+Panning or zooming the 3D globe flashed black rectangles because unloaded terrain used a near-black base color (`#050b16`), fog was forced off, and the only imagery layer was the level 0-2 Natural Earth pyramid with nothing underneath it. The night-atlas grade is unchanged. Missing tiles now fall through to a level-0 sheet of that same local pyramid, and the placeholder color is the graded ocean (`#123044`). Fog is enabled again; Cesium still applies it only below about 800 km, so the global view stays sharp. Tile cache, ancestor and sibling preload, and a redraw on `tileLoadProgressEvent` keep `requestRenderMode` from holding a frame of holes. No new hosts, keys, or deploy.
+
 ## 2026-10-17 - Candidate committed, main merged, globe visual pass
 
 The 53-path candidate and inherited foundation are committed on `feature/evidence-semantic-globe` (draft PR #75 to `main`). Current `main` (33d426f) is merged in. Main's audit-repair suite is reconciled with candidate semantics: undated records stay visible as "Time unknown", unknown exact clocks read "Not supplied", the browser direct-USGS fallback stays removed, and source URLs use the shared `safeSourceUrl` helper. The inherited registry cache-policy assertion is fixed. The validator now skips gitignored root evidence folders. The 3D globe gained a night-atlas restyle, atmosphere/terminator, stars, graticule, optional local borders, severity-styled clustered markers and smooth fly-to ([record and CSP implications](GLOBE_VISUAL_2026-10-17.md)). The repository ruleset requires PRs for updates to every branch, so follow-ups go out as a new stacked branch and PR. No deployment.
@@ -24,7 +28,7 @@ Reproduced canonical Watch cards selecting directly; added omitted Evidence ledg
 
 # Last 30 Days
 
-Last updated: 2026-10-17 (branch merged with main; draft PR #75).
+Last updated: 2026-10-27 (globe tile placeholders; draft PR #75 still the prior globe visual record).
 
 ## Independent maritime signals — isolated local candidate
 

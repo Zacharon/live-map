@@ -1,3 +1,7 @@
+## 2026-10-27 - Globe tile loading
+
+- Owner visual acceptance still open for the night atlas (`docs/GLOBE_VISUAL_2026-10-17.md`). A follow-up keeps the same local imagery and stops unloaded terrain from drawing black. It does not close that acceptance.
+
 ## 2026-10-17 - Globe visual pass awaiting owner review
 
 - Owner visual acceptance of the globe pass (`docs/GLOBE_VISUAL_2026-10-17.md`, screenshots in `artifacts/globe-visual-2026-10-17/`).

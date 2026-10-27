@@ -5,7 +5,7 @@
  * same-origin assets, so it needs no CSP origin beyond 'self', data: and blob:.
  */
 
-import { BORDER_CREDIT, GLOBE_STYLES, NATURAL_EARTH_BORDERS_URL, borderLines, clusterSpec, flightDuration, globeStyleFor, graticuleLines, markerSpec } from "./globe-style.js";
+import { BORDER_CREDIT, GLOBE_STYLES, GLOBE_TILE_LOADING, NATURAL_EARTH_BORDERS_URL, borderLines, clusterSpec, flightDuration, globeStyleFor, graticuleLines, markerSpec } from "./globe-style.js";
 
 export const CESIUM_VERSION = "1.145.0";
 export const CESIUM_BASE = "./vendor/cesium/";
@@ -174,16 +174,33 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
     return { ok: false, reason: error.message, fallback: "leaflet" };
   }
   if (Cesium.Ion) Cesium.Ion.defaultAccessToken = "";
-  if (options.failAssets) return { ok: false, reason: "cesium-assets-missing", fallback: "leaflet" };
-  const imagery = [];
-  const imageryUrl = new URL("Assets/Textures/NaturalEarthII", cesiumBaseHref()).href;
-  try {
-    imagery.push(await Cesium.TileMapServiceImageryProvider.fromUrl(imageryUrl, {
-      credit: new Cesium.Credit("Natural Earth / CesiumJS Apache-2.0 — low-resolution local basemap, not live imagery"),
-    }));
-  } catch {
-    imagery.push(null);
+  if (Cesium.RequestScheduler) {
+    Cesium.RequestScheduler.maximumRequestsPerServer = Math.max(
+      Cesium.RequestScheduler.maximumRequestsPerServer || 0,
+      GLOBE_TILE_LOADING.maximumRequestsPerServer,
+    );
   }
+  if (options.failAssets) return { ok: false, reason: "cesium-assets-missing", fallback: "leaflet" };
+  // One local pyramid: a level-0 sheet stays underneath, and the full pyramid
+  // (still only levels 0-2) refines on top. Missing detail tiles show the sheet.
+  const imageryUrl = new URL("Assets/Textures/NaturalEarthII", cesiumBaseHref()).href;
+  const imageryCredit = new Cesium.Credit("Natural Earth / CesiumJS Apache-2.0 — low-resolution local basemap, not live imagery");
+  let underlayProvider = null;
+  let detailProvider = null;
+  try {
+    underlayProvider = await Cesium.TileMapServiceImageryProvider.fromUrl(imageryUrl, {
+      maximumLevel: GLOBE_TILE_LOADING.underlayMaximumLevel,
+      credit: imageryCredit,
+    });
+  } catch {
+    underlayProvider = null;
+  }
+  try {
+    detailProvider = await Cesium.TileMapServiceImageryProvider.fromUrl(imageryUrl);
+  } catch {
+    detailProvider = null;
+  }
+  const baseProvider = underlayProvider || detailProvider;
   let viewer;
   try {
   viewer = new Cesium.Viewer(container, {
@@ -199,7 +216,7 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
     selectionIndicator: false,
     shouldAnimate: false,
     terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-    baseLayer: imagery[0] ? new Cesium.ImageryLayer(imagery[0]) : false,
+    baseLayer: baseProvider ? new Cesium.ImageryLayer(baseProvider) : false,
     requestRenderMode: true,
     maximumRenderTimeChange: Infinity,
     contextOptions: { webgl: { preserveDrawingBuffer: true } },
@@ -212,11 +229,21 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
   const style = GLOBE_STYLES[styleName];
   const { scene } = viewer;
   container.dataset.globeStyle = styleName;
-  scene.fog.enabled = false;
+  // Fog only fades tiles once the camera is under Cesium's 800 km cutoff, so the
+  // global night view stays sharp and a close horizon does not draw hard holes.
+  scene.fog.enabled = true;
   scene.globe.depthTestAgainstTerrain = false;
   scene.globe.baseColor = Cesium.Color.fromCssColorString(style.baseColor);
   scene.backgroundColor = Cesium.Color.fromCssColorString(style.background);
-  if (style.imagery && imagery[0] && viewer.imageryLayers.length) Object.assign(viewer.imageryLayers.get(0), style.imagery);
+  scene.globe.maximumScreenSpaceError = GLOBE_TILE_LOADING.maximumScreenSpaceError;
+  scene.globe.tileCacheSize = GLOBE_TILE_LOADING.tileCacheSize;
+  scene.globe.loadingDescendantLimit = GLOBE_TILE_LOADING.loadingDescendantLimit;
+  scene.globe.preloadAncestors = GLOBE_TILE_LOADING.preloadAncestors;
+  scene.globe.preloadSiblings = GLOBE_TILE_LOADING.preloadSiblings;
+  if (underlayProvider && detailProvider) viewer.imageryLayers.addImageryProvider(detailProvider);
+  if (style.imagery) {
+    for (let i = 0; i < viewer.imageryLayers.length; i += 1) Object.assign(viewer.imageryLayers.get(i), style.imagery);
+  }
   // Sun-lit day/night terminator at global scale; Cesium fades lighting out as the camera closes in.
   viewer.clock.currentTime = Cesium.JulianDate.now();
   scene.globe.enableLighting = true;
@@ -586,8 +613,25 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
     updateChokepointLabels();
     options.onViewChange?.(view);
   };
+  // Labels follow the camera, but not on every frame. postRender here was
+  // doing DOM and pick work for each draw and could request another draw.
+  let labelTimer = null;
+  const scheduleLabels = () => {
+    if (labelTimer != null) return;
+    labelTimer = setTimeout(() => {
+      labelTimer = null;
+      if (alive) updateChokepointLabels();
+    }, 120);
+  };
+  // requestRenderMode does not redraw when a mesh is refined after its image
+  // request has already completed. Ask for that frame as the queue changes.
+  const onTileProgress = (remaining) => {
+    container.dataset.globeTilesLoading = String(remaining);
+    if (alive) viewer.scene.requestRender();
+  };
   viewer.camera.moveEnd.addEventListener(onCameraMoveEnd);
-  viewer.scene.postRender.addEventListener(updateChokepointLabels);
+  viewer.camera.changed.addEventListener(scheduleLabels);
+  viewer.scene.globe.tileLoadProgressEvent.addEventListener(onTileProgress);
   const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => {
     if (!alive) return;
     const width = container.clientWidth;
@@ -636,10 +680,12 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
     destroy() {
       alive = false;
       for (const timer of settleTimers) clearTimeout(timer);
+      if (labelTimer != null) clearTimeout(labelTimer);
       resizeObserver?.disconnect();
       if (resizeFrameId != null) cancelAnimationFrame(resizeFrameId);
       viewer.camera.moveEnd.removeEventListener(onCameraMoveEnd);
-      viewer.scene.postRender.removeEventListener(updateChokepointLabels);
+      viewer.camera.changed.removeEventListener(scheduleLabels);
+      viewer.scene.globe.tileLoadProgressEvent.removeEventListener(onTileProgress);
       handler.destroy();
       clearList(graphEntities);
       clearList(chokepointEntities);
@@ -652,6 +698,7 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
       delete container.dataset.globeLastPick;
       delete container.dataset.globeCameraHeight;
       delete container.dataset.globeAppliedWidth;
+      delete container.dataset.globeTilesLoading;
       viewer.destroy();
     },
   };

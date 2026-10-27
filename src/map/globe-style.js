@@ -8,10 +8,26 @@ import { SEVERITIES } from "../config.js";
 export const NATURAL_EARTH_BORDERS_URL = "./vendor/natural-earth/ne_110m_admin_0_boundary_lines_land.json";
 export const BORDER_CREDIT = "Borders: Natural Earth 1:110m (public domain), simplified, not legal boundaries";
 
+/**
+ * Local Natural Earth II stops at level 2. A lower screen-space error only
+ * splits the ellipsoid into more meshes, which flash the placeholder color
+ * without sharper imagery. The underlay is that same pyramid clamped to level 0.
+ */
+export const GLOBE_TILE_LOADING = {
+  maximumScreenSpaceError: 2,
+  tileCacheSize: 512,
+  loadingDescendantLimit: 8,
+  preloadAncestors: true,
+  preloadSiblings: true,
+  maximumRequestsPerServer: 24,
+  underlayMaximumLevel: 0,
+};
+
 /** Globe looks. "night" darkens the bundled Natural Earth II raster; "natural" keeps it as shipped. */
 export const GLOBE_STYLES = {
   night: {
-    baseColor: "#050b16",
+    // Graded ocean. Terrain with no texture yet draws this instead of black.
+    baseColor: "#123044",
     background: "#02050b",
     imagery: { brightness: 0.36, contrast: 1.6, saturation: 0.6, gamma: 0.92, hue: 0 },
     graticule: "rgba(140, 180, 230, 0.14)",

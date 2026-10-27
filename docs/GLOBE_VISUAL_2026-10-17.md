@@ -18,6 +18,10 @@ Code: `src/map/globe-style.js` holds the pure rules (style choice, marker and cl
 
 The 2D Leaflet map, the WebGL/Cesium fallback card (`?failWebgl=1`, `?failCesium=1`), all `/api/*` routes, picking ids (`event:<id>`), and the runtime `data-globe-*` attributes are unchanged. New attributes: `data-globe-style`, `data-globe-graticule`, `data-globe-border-lines`, `data-globe-last-flight`, and `data-globe-last-pick="cluster:<n>"`.
 
+## Tile placeholders (2026-10-27)
+
+The night grade itself is unchanged. Unloaded terrain was drawing `#050b16`, which read as black cubes and bars against the graded ocean, especially while `requestRenderMode` held a frame after the camera stopped. The placeholder is now `#123044`. A level-0 sheet of the same local Natural Earth pyramid sits under the level 0-2 layer. Fog is on again and still only affects cameras below Cesium's 800 km cutoff. `data-globe-tiles-loading` is the terrain/imagery queue length.
+
 ## CSP implications
 
 - **No new origins.** The imagery, sky box, star textures, border file and marker canvases are all same-origin, or canvas objects passed directly to Cesium. The existing `img-src 'self' data: blob:` and `connect-src 'self'` cover them.
