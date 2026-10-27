@@ -1,3 +1,7 @@
+## 2026-10-27 - Globe tile placeholders
+
+Panning or zooming the 3D globe flashed black rectangles because unloaded terrain used a near-black base color (`#050b16`), fog was forced off, and the only imagery layer was the level 0-2 Natural Earth pyramid with nothing underneath it. The night-atlas grade is unchanged. Missing tiles now fall through to a level-0 sheet of that same local pyramid, and the placeholder color is the graded ocean (`#123044`). Fog is enabled again; Cesium still applies it only below about 800 km, so the global view stays sharp. Tile cache, ancestor and sibling preload, and a redraw on `tileLoadProgressEvent` keep `requestRenderMode` from holding a frame of holes. No new hosts, keys, or deploy.
+
 ## 2026-10-21 — Forge USGS staging harness
 
 Added fixture-only Forge SQLite → real loopback HTTP → existing Live Map API/filter integration, pinned to Forge PR #4 merge. Exact USGS identity mapping retains Forge aliases; native duplicates win intact. Unrelated providers stay present; failures are sanitized. Stored-cursor mode is shadow-only because Forge has no compatible change feed. No production route/provider/source authorization or hosting changes. See [scope, evidence and remaining gates](FORGE_STAGING_INTEGRATION_2026-10-21.md).
@@ -48,7 +52,7 @@ Reproduced canonical Watch cards selecting directly; added omitted Evidence ledg
 
 # Last 30 Days
 
-Last updated: 2026-10-17 (branch merged with main; draft PR #75).
+Last updated: 2026-10-27 (globe tile placeholders; draft PR #75 still the prior globe visual record).
 
 ## Independent maritime signals — isolated local candidate
 
