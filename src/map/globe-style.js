@@ -9,19 +9,46 @@ export const NATURAL_EARTH_BORDERS_URL = "./vendor/natural-earth/ne_110m_admin_0
 export const BORDER_CREDIT = "Borders: Natural Earth 1:110m (public domain), simplified, not legal boundaries";
 
 /**
- * Local Natural Earth II stops at level 2. A lower screen-space error only
- * splits the ellipsoid into more meshes, which flash the placeholder color
- * without sharper imagery. The underlay is that same pyramid clamped to level 0.
+ * Local Natural Earth II stops at level 2 (2 + 8 + 32 images). A lower
+ * screen-space error only splits the ellipsoid into more meshes. Measured
+ * cold loads still spent about 6.7s in that queue after the JPEGs had
+ * arrived, at the default error of 2. Error 4 cut that queue; error 8
+ * lowered the peak again but did not make the queue shorter.
+ * Imagery is still the level-2 pyramid, with the same night grade.
+ * A second imagery layer of the same pyramid raised the measured tile queue,
+ * so the globe keeps one layer and serves those images from memory.
+ * Sibling preload is off: on a measured pan it increased the in-flight queue.
  */
 export const GLOBE_TILE_LOADING = {
-  maximumScreenSpaceError: 2,
+  maximumScreenSpaceError: 4,
   tileCacheSize: 512,
-  loadingDescendantLimit: 8,
+  loadingDescendantLimit: 20,
   preloadAncestors: true,
-  preloadSiblings: true,
+  preloadSiblings: false,
   maximumRequestsPerServer: 24,
-  underlayMaximumLevel: 0,
+  pyramidMaximumLevel: 2,
 };
+
+/** TMS paths relative to the Natural Earth II directory, south-origin y. */
+export function naturalEarthIiTilePaths(maximumLevel = GLOBE_TILE_LOADING.pyramidMaximumLevel) {
+  const paths = [];
+  for (let level = 0; level <= maximumLevel; level += 1) {
+    const nx = 2 ** (level + 1);
+    const ny = 2 ** level;
+    for (let x = 0; x < nx; x += 1) {
+      for (let y = 0; y < ny; y += 1) paths.push(`${level}/${x}/${y}.jpg`);
+    }
+  }
+  return paths;
+}
+
+/**
+ * Cesium geographic tiles count y from the north. The vendored pyramid counts
+ * y from the south (`{z}/{x}/{reverseY}.jpg`).
+ */
+export function naturalEarthTileKey(level, x, y, yTiles) {
+  return `${level}/${x}/${yTiles - y - 1}`;
+}
 
 /** Globe looks. "night" darkens the bundled Natural Earth II raster; "natural" keeps it as shipped. */
 export const GLOBE_STYLES = {

@@ -1,6 +1,10 @@
-## 2026-10-27 - Globe tile placeholders
+## 2026-10-27 - Globe tile load
 
-Panning or zooming the 3D globe flashed black rectangles because unloaded terrain used a near-black base color (`#050b16`), fog was forced off, and the only imagery layer was the level 0-2 Natural Earth pyramid with nothing underneath it. The night-atlas grade is unchanged. Missing tiles now fall through to a level-0 sheet of that same local pyramid, and the placeholder color is the graded ocean (`#123044`). Fog is enabled again; Cesium still applies it only below about 800 km, so the global view stays sharp. Tile cache, ancestor and sibling preload, and a redraw on `tileLoadProgressEvent` keep `requestRenderMode` from holding a frame of holes. No new hosts, keys, or deploy.
+Unloaded terrain was drawing `#050b16`. The placeholder is now the graded ocean `#123044`, and fog is on again (Cesium still applies it only below about 800 km). The night-atlas grade is unchanged. A second copy of the Natural Earth pyramid, measured on this machine, raised the tile-queue peak from 25 to 63 and did not shorten time to an empty queue, so the globe keeps one imagery layer.
+
+The 42 local JPEGs (487,779 bytes in this run) are decoded while Cesium loads and then served from memory (`data-globe-tiles-cached`). `netlify.toml` adds `Cache-Control: public, max-age=31536000, immutable` for `/vendor/cesium/*` only, leaving the existing CSP on `/vendor/*`. A second visit in headless Edge transferred 0 bytes of `index.js` and 0 bytes of those JPEGs when that header was present, and transferred 4,754,611 plus 487,779 bytes again under `no-store`.
+
+Local headless Edge, three cold loads of `globe.html?demo=foundation&mapMode=3d`, canvas 872×538, cache disabled. Medians: current main first frame 2310 ms, tile queue empty at 6937 ms, peak 25, five-jump sum 1559 ms, pan 165 fps (frame p50 about 6 ms). After the memory cache and screen-space error 4: first frame 1855 ms, queue empty at 6065 ms, peak 17, jump sum 1450 ms, pan still 165 fps. Screen-space error 8 (one run) lowered the peak to 12 and did not shorten the queue (6248 ms). A globe-only modulepreload moved Cesium's response end from about 0.9 s to about 0.3 s and did not make the first frame earlier, so it is not in the page. These are local timings, not a hosted result. No new hosts, keys, or deploy.
 
 ## 2026-10-21 — Forge USGS staging harness
 

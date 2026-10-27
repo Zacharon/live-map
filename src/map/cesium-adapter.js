@@ -5,7 +5,7 @@
  * same-origin assets, so it needs no CSP origin beyond 'self', data: and blob:.
  */
 
-import { BORDER_CREDIT, GLOBE_STYLES, GLOBE_TILE_LOADING, NATURAL_EARTH_BORDERS_URL, borderLines, clusterSpec, flightDuration, globeStyleFor, graticuleLines, markerSpec } from "./globe-style.js";
+import { BORDER_CREDIT, GLOBE_STYLES, GLOBE_TILE_LOADING, NATURAL_EARTH_BORDERS_URL, borderLines, clusterSpec, flightDuration, globeStyleFor, graticuleLines, markerSpec, naturalEarthIiTilePaths, naturalEarthTileKey } from "./globe-style.js";
 
 export const CESIUM_VERSION = "1.145.0";
 export const CESIUM_BASE = "./vendor/cesium/";
@@ -115,6 +115,48 @@ function cesiumBaseHref() {
   }
 }
 
+function loadDecodedTile(url) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = () => {
+      const decoded = image.decode?.();
+      if (decoded && typeof decoded.then === "function") decoded.then(() => resolve(image), () => resolve(image));
+      else resolve(image);
+    };
+    image.onerror = () => reject(new Error("Natural Earth tile failed"));
+    image.src = url;
+  });
+}
+
+/** Decode the whole local pyramid. Keys are `level/x/tmsY`. Failed tiles stay uncached. */
+export function warmNaturalEarthPyramid(imageryUrl) {
+  const base = imageryUrl.endsWith("/") ? imageryUrl : `${imageryUrl}/`;
+  const cache = new Map();
+  const ready = Promise.all(naturalEarthIiTilePaths().map(async (relative) => {
+    try {
+      cache.set(relative.slice(0, -4), await loadDecodedTile(new URL(relative, base).href));
+    } catch {
+      /* requestImage falls back to the provider for this tile. */
+    }
+  })).then(() => cache);
+  return { cache, ready };
+}
+
+function serveCachedTiles(provider, cache) {
+  if (!provider?.requestImage || !cache) return provider;
+  const original = provider.requestImage.bind(provider);
+  provider.requestImage = function requestCachedTile(x, y, level, request) {
+    const yTiles = provider.tilingScheme?.getNumberOfYTilesAtLevel?.(level);
+    if (Number.isFinite(yTiles)) {
+      const image = cache.get(naturalEarthTileKey(level, x, y, yTiles));
+      if (image) return Promise.resolve(image);
+    }
+    return original(x, y, level, request);
+  };
+  return provider;
+}
+
 export async function loadCesiumScript() {
   if (globalThis.Cesium?.Viewer) return globalThis.Cesium;
   const baseHref = cesiumBaseHref();
@@ -167,6 +209,11 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
   if (!webglAvailable()) {
     return { ok: false, reason: "webgl-unavailable", fallback: "leaflet" };
   }
+  // Decode the 42 local tiles while Cesium's bundle evaluates. One imagery
+  // layer then reads those images from memory. A second copy of the pyramid
+  // made the measured tile queue longer, so it is not added.
+  const imageryUrl = new URL("Assets/Textures/NaturalEarthII", cesiumBaseHref()).href;
+  const pyramid = options.failAssets ? null : warmNaturalEarthPyramid(imageryUrl);
   let Cesium;
   try {
     Cesium = await loadCesiumScript();
@@ -181,26 +228,18 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
     );
   }
   if (options.failAssets) return { ok: false, reason: "cesium-assets-missing", fallback: "leaflet" };
-  // One local pyramid: a level-0 sheet stays underneath, and the full pyramid
-  // (still only levels 0-2) refines on top. Missing detail tiles show the sheet.
-  const imageryUrl = new URL("Assets/Textures/NaturalEarthII", cesiumBaseHref()).href;
   const imageryCredit = new Cesium.Credit("Natural Earth / CesiumJS Apache-2.0 — low-resolution local basemap, not live imagery");
-  let underlayProvider = null;
+  const warmed = await pyramid.ready;
   let detailProvider = null;
   try {
-    underlayProvider = await Cesium.TileMapServiceImageryProvider.fromUrl(imageryUrl, {
-      maximumLevel: GLOBE_TILE_LOADING.underlayMaximumLevel,
-      credit: imageryCredit,
-    });
-  } catch {
-    underlayProvider = null;
-  }
-  try {
-    detailProvider = await Cesium.TileMapServiceImageryProvider.fromUrl(imageryUrl);
+    detailProvider = serveCachedTiles(
+      await Cesium.TileMapServiceImageryProvider.fromUrl(imageryUrl, { credit: imageryCredit }),
+      warmed,
+    );
   } catch {
     detailProvider = null;
   }
-  const baseProvider = underlayProvider || detailProvider;
+  const baseProvider = detailProvider;
   let viewer;
   try {
   viewer = new Cesium.Viewer(container, {
@@ -240,7 +279,7 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
   scene.globe.loadingDescendantLimit = GLOBE_TILE_LOADING.loadingDescendantLimit;
   scene.globe.preloadAncestors = GLOBE_TILE_LOADING.preloadAncestors;
   scene.globe.preloadSiblings = GLOBE_TILE_LOADING.preloadSiblings;
-  if (underlayProvider && detailProvider) viewer.imageryLayers.addImageryProvider(detailProvider);
+  container.dataset.globeTilesCached = String(warmed.size);
   if (style.imagery) {
     for (let i = 0; i < viewer.imageryLayers.length; i += 1) Object.assign(viewer.imageryLayers.get(i), style.imagery);
   }
@@ -699,6 +738,7 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
       delete container.dataset.globeCameraHeight;
       delete container.dataset.globeAppliedWidth;
       delete container.dataset.globeTilesLoading;
+      delete container.dataset.globeTilesCached;
       viewer.destroy();
     },
   };

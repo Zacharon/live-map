@@ -2,6 +2,10 @@
 
 Review the [fixture-only integration harness](FORGE_STAGING_INTEGRATION_2026-10-21.md) and pinned cross-repository CI job. Keep hosted connectivity and source/hosting/deployment authorization separate. Before additive Forge events enter stored mode, decide a compatible cursor/change model or explicitly approved full-snapshot polling; the current test deliberately keeps stored mode shadow-only. Existing hosted ingestion and owner acceptance gates remain open.
 
+## 2026-10-27 — Globe load, measured locally
+
+The in-memory Natural Earth pyramid and screen-space error 4 are on the globe-loading branch. Local headless Edge still takes about 6.1 s for the tile queue to reach 0 (6.9 s on current main). Error 8 and a Cesium modulepreload did not shorten that wait. Hosted timing and owner visual acceptance stay separate. No deploy.
+
 ## 2026-10-19 — Homepage 2D / dedicated globe routing correction
 
 Homepage HTML and URL-state defaults now select 2D; /globe and /globe.html default to 3D. Explicit 3D choices, legacy map=3d links and restored 3D saved views serialize current workspace state before navigating to /globe.html. The origin history entry is normalized to 2D so Back stays usable. Auto remains 2D under the homepage's strict CSP; Auto on the globe page retains adaptive rendering. Saved preferences do not silently choose a renderer on a fresh homepage; saved views remain explicit user actions. Globe-page generation independently selects 3D. netlify.toml is unchanged.
