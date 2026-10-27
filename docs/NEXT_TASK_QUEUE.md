@@ -1,3 +1,11 @@
+## 2026-10-27 - Install-check follow-up includes current main
+
+- PR #87 now contains main, including the Forge staging job and the locked PGlite 0.5.11 / PostGIS 0.2.11 pair. Keep the Validate `npm ci` gate and the Electric SQL grouping comment. Require a successful locked install before merge. No deployment.
+
+## 2026-10-21 — Review Forge staging integration
+
+Review the [fixture-only integration harness](FORGE_STAGING_INTEGRATION_2026-10-21.md) and pinned cross-repository CI job. Keep hosted connectivity and source/hosting/deployment authorization separate. Before additive Forge events enter stored mode, decide a compatible cursor/change model or explicitly approved full-snapshot polling; the current test deliberately keeps stored mode shadow-only. Existing hosted ingestion and owner acceptance gates remain open.
+
 ## 2026-10-21 - Review Dependabot install-check follow-up
 
 - Review the follow-up stacked on PR #86: keep the Electric SQL group and add the clean-install compatibility gate to Validate. Merge through the existing PR process after checks pass.
