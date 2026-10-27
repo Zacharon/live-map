@@ -30,13 +30,14 @@
     "check:selection-sources": "node --check src/ui/evidence-detail.js && node --check src/data/providers/provider-activation.js && node --check src/data/providers/public-tracking-fetch.js && node --check src/data/providers/digitraffic.js && node --check src/data/providers/adsb-lol.js && node --check src/data/providers/nhc.js && node --check scripts/runtime-direct-selection.mjs && node --check tests/direct-selection-tests.mjs && node --check tests/public-provider-tests.mjs",
     "preview:public": "node scripts/preview-public-local.mjs",
     "test:working-watch": "node tests/working-watch-tests.mjs",
-    "test:browser:working-watch": "node scripts/runtime-working-watch.mjs"
+    "test:browser:working-watch": "node scripts/runtime-working-watch.mjs",
+    "test:forge-staging": "node tests/forge-staging-tests.mjs"
   },
   "dependencies": {
     "pg": "^8.23.1"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
-    "@electric-sql/pglite-postgis": "^0.2.10"
+    "@electric-sql/pglite-postgis": "^0.2.11"
   }
 }
