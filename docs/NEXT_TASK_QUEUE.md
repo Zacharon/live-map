@@ -1,3 +1,9 @@
+## 2026-10-27 - Events API timeout fix is ready for review
+
+- Review and merge the events deadline pull request, then deploy it separately. Production keeps the current hang until that deploy. Do not deploy from an agent session.
+- No new Netlify environment variable. Existing `LIVE_MAP_STORED_USGS` reads now fail visibly after 2 seconds instead of waiting on a database connect. `RELIEFWEB_APPNAME` remains optional and, when set, can no longer hang the function.
+- Confirm `GET /api/events` returns JSON with `sourceStatus` in under 10 seconds after deploy. A provider timeout should be `degraded` or `unavailable`, and other providers should still be present.
+
 ## 2026-10-21 — Review Forge staging integration
 
 Review the [fixture-only integration harness](FORGE_STAGING_INTEGRATION_2026-10-21.md) and pinned cross-repository CI job. Keep hosted connectivity and source/hosting/deployment authorization separate. Before additive Forge events enter stored mode, decide a compatible cursor/change model or explicitly approved full-snapshot polling; the current test deliberately keeps stored mode shadow-only. Existing hosted ingestion and owner acceptance gates remain open.

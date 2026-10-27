@@ -1,3 +1,7 @@
+## 2026-10-27 - Events API deadline
+
+`/api/events` and `/.netlify/functions/events` could run past the synchronous function limit because `official-rss` fetched up to seven allowlisted feeds one after another, and ReliefWeb's configured fetch had no abort. The dashboard then showed "Event data temporarily unavailable" when the browser's 15 second request timed out. Providers now share an 8 second deadline, in-flight fetches abort, official feeds and status pages run concurrently, and a timed-out provider stays `degraded` with stale cache or `unavailable` in `sourceStatus`. No new environment variable. Not deployed.
+
 ## 2026-10-21 — Forge USGS staging harness
 
 Added fixture-only Forge SQLite → real loopback HTTP → existing Live Map API/filter integration, pinned to Forge PR #4 merge. Exact USGS identity mapping retains Forge aliases; native duplicates win intact. Unrelated providers stay present; failures are sanitized. Stored-cursor mode is shadow-only because Forge has no compatible change feed. No production route/provider/source authorization or hosting changes. See [scope, evidence and remaining gates](FORGE_STAGING_INTEGRATION_2026-10-21.md).
