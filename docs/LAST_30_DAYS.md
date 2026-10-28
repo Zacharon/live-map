@@ -6,9 +6,21 @@ The 42 local JPEGs (487,779 bytes in this run) are decoded while Cesium loads an
 
 Local headless Edge, three cold loads of `globe.html?demo=foundation&mapMode=3d`, canvas 872×538, cache disabled. Medians: current main first frame 2310 ms, tile queue empty at 6937 ms, peak 25, five-jump sum 1559 ms, pan 165 fps (frame p50 about 6 ms). After the memory cache and screen-space error 4: first frame 1855 ms, queue empty at 6065 ms, peak 17, jump sum 1450 ms, pan still 165 fps. Screen-space error 8 (one run) lowered the peak to 12 and did not shorten the queue (6248 ms). A globe-only modulepreload moved Cesium's response end from about 0.9 s to about 0.3 s and did not make the first frame earlier, so it is not in the page. These are local timings, not a hosted result. No new hosts, keys, or deploy.
 
+## 2026-10-27 - Main merged into the install-check follow-up
+
+Merged current main into the locked-install follow-up. Validate still runs `npm ci --ignore-scripts --no-audit --no-fund` before the existing checks, and the Electric SQL Dependabot comment still says grouping combines available updates. Main's fixture-only Forge staging job, security workflow updates, and the locked PGlite 0.5.11 / PostGIS 0.2.11 pair (exact peer 0.5.11, from #89) are kept. The lockfile matches main and was not hand-edited. No deployment.
+
 ## 2026-10-21 — Forge USGS staging harness
 
 Added fixture-only Forge SQLite → real loopback HTTP → existing Live Map API/filter integration, pinned to Forge PR #4 merge. Exact USGS identity mapping retains Forge aliases; native duplicates win intact. Unrelated providers stay present; failures are sanitized. Stored-cursor mode is shadow-only because Forge has no compatible change feed. No production route/provider/source authorization or hosting changes. See [scope, evidence and remaining gates](FORGE_STAGING_INTEGRATION_2026-10-21.md).
+
+## 2026-10-21 - Dependabot peer compatibility review candidate
+
+PR #86 groups available `@electric-sql/*` version updates, but grouping permits a single changed member. PR #83's actual manifest/lockfile reproduces `npm ci` failure: PGlite 0.5.10 conflicts with PostGIS 0.2.8's exact 0.5.8 peer. After #82, the lock resolves PGlite 0.5.10 and PostGIS 0.2.10 (exact peer 0.5.10); the manifest's PGlite `^0.5.8` range accepts that resolution.
+
+This follow-up adds `npm ci --ignore-scripts --no-audit --no-fund` to Validate, which previously ran checks without installing dependencies, and corrects the grouping comment. It reuses npm's compatibility checks rather than adding a custom version rule. Deployment configuration, manifests and lockfile are unchanged by that follow-up commit. GitHub review/merge remains pending; successful configuration-only previews do not demonstrate future Dependabot update behavior.
+
+Local Node 20.20.2/npm 10.9.9 installation accepts the current pair and rejects #83 with `ERESOLVE`. Syntax, offline platform tests, 49 audit-repair tests and the offline validator pass. The online validator fails only its external USGS event-URL reachability row in this environment; that is not dependency-install evidence. Dependabot grouping was checked against official documentation and updater source, not a hosted future-update run.
 
 ## 2026-10-19 - PR #80 conflict reconciliation
 

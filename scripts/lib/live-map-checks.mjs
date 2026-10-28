@@ -261,26 +261,35 @@ export function collectSourceUrls(payload, limit = 20) {
   return [...urls].slice(0, limit);
 }
 
-export async function checkUrls(urls, reporter, label = "source URLs") {
+export async function checkUrls(urls, reporter, label = "source URLs", { retryDelayMs = 2000 } = {}) {
   const failures = [];
   for (const url of urls) {
-    try {
-      const response = await fetchWithTimeout(url, { method: "HEAD", redirect: "follow" }, 10000);
-      if (response.status === 405 || response.status === 403) {
-        const getResponse = await fetchWithTimeout(url, { method: "GET", redirect: "follow" }, 10000);
-        if (!getResponse.ok) failures.push(`${url} -> ${getResponse.status}`);
-      } else if (!response.ok) {
-        failures.push(`${url} -> ${response.status}`);
-      }
-    } catch (error) {
-      failures.push(`${url} -> ${error.message}`);
+    let result = await checkUrlOnce(url);
+    // A timeout, network error or 5xx/429 from an outside site is often transient; retry once before failing.
+    if (result.retryable) {
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+      result = await checkUrlOnce(url);
     }
+    if (result.failure) failures.push(`${url} -> ${result.failure}`);
   }
 
   if (failures.length) {
     reporter.fail(label, failures.join("; "));
   } else {
     reporter.pass(label, `${urls.length} URLs reachable`);
+  }
+}
+
+async function checkUrlOnce(url) {
+  try {
+    let response = await fetchWithTimeout(url, { method: "HEAD", redirect: "follow" }, 10000);
+    if (response.status === 405 || response.status === 403) {
+      response = await fetchWithTimeout(url, { method: "GET", redirect: "follow" }, 10000);
+    }
+    if (response.ok) return { failure: null, retryable: false };
+    return { failure: String(response.status), retryable: response.status >= 500 || response.status === 429 };
+  } catch (error) {
+    return { failure: error.message, retryable: true };
   }
 }
 

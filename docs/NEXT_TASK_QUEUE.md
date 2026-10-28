@@ -1,3 +1,7 @@
+## 2026-10-27 - Install-check follow-up includes current main
+
+- PR #87 now contains main, including the Forge staging job and the locked PGlite 0.5.11 / PostGIS 0.2.11 pair. Keep the Validate `npm ci` gate and the Electric SQL grouping comment. Require a successful locked install before merge. No deployment.
+
 ## 2026-10-21 — Review Forge staging integration
 
 Review the [fixture-only integration harness](FORGE_STAGING_INTEGRATION_2026-10-21.md) and pinned cross-repository CI job. Keep hosted connectivity and source/hosting/deployment authorization separate. Before additive Forge events enter stored mode, decide a compatible cursor/change model or explicitly approved full-snapshot polling; the current test deliberately keeps stored mode shadow-only. Existing hosted ingestion and owner acceptance gates remain open.
@@ -5,6 +9,11 @@ Review the [fixture-only integration harness](FORGE_STAGING_INTEGRATION_2026-10-
 ## 2026-10-27 — Globe load, measured locally
 
 The in-memory Natural Earth pyramid and screen-space error 4 are on the globe-loading branch. Local headless Edge still takes about 6.1 s for the tile queue to reach 0 (6.9 s on current main). Error 8 and a Cesium modulepreload did not shorten that wait. Hosted timing and owner visual acceptance stay separate. No deploy.
+
+## 2026-10-21 - Review Dependabot install-check follow-up
+
+- Review the follow-up stacked on PR #86: keep the Electric SQL group and add the clean-install compatibility gate to Validate. Merge through the existing PR process after checks pass.
+- For future Electric SQL PRs, require successful locked installation. Do not require both manifest entries to change or matching package version numbers; inspect the resolved PostGIS peer requirement. If no compatible peer release exists, leave the update unmerged until it can resolve. Deployment previews remain separate evidence.
 
 ## 2026-10-19 — Homepage 2D / dedicated globe routing correction
 
