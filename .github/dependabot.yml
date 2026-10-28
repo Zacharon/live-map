@@ -9,8 +9,8 @@ updates:
       timezone: America/New_York
     open-pull-requests-limit: 5
     groups:
-      # pglite-postgis pins an exact pglite peer version, so bumping either
-      # package alone breaks npm ci on Netlify and Cloudflare Workers Builds.
+      # Group available updates; this does not require both packages to change.
+      # Validate runs npm ci to reject incompatible exact pglite peer versions.
       electric-sql:
         patterns:
           - "@electric-sql/*"

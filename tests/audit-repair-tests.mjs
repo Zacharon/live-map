@@ -34,7 +34,7 @@ import { normalizeGdacsFeature } from "../src/data/providers/gdacs.js";
 import { normalizeRipestatObservation } from "../src/data/providers/ripestat.js";
 import { createSeriesObservation } from "../src/data/providers/finance-records.js";
 import { normalizeStatuspageIncident } from "../src/data/providers/statuspage.js";
-import { assertValidUrl } from "../scripts/lib/live-map-checks.mjs";
+import { assertValidUrl, checkUrls } from "../scripts/lib/live-map-checks.mjs";
 
 const now = new Date("2026-10-12T12:00:00Z");
 const input = { id: "synthetic", provider: "test", title: "Synthetic record", category: "other", geographic: false, sourceUrl: "https://example.com/event", ingestedAt: now };
@@ -251,4 +251,27 @@ test("Obsolete USGS docs references are removed while the functional feed is unc
 test("CI enforces focused regressions and CodeQL failure without activating smoke", () => {
   assert.doesNotMatch(fs.readFileSync(".github/workflows/security.yml", "utf8"), /continue-on-error:\s*true/);
   assert.match(fs.readFileSync(".github/workflows/validate.yml", "utf8"), /npm run test:platform && npm run test:audit-repair/);
+});
+
+test("Source URL check retries a transient failure once and keeps hard failures", async () => {
+  const realFetch = globalThis.fetch;
+  const calls = {};
+  const plan = {
+    "https://slow.example/": [() => { throw new Error("This operation was aborted"); }, () => new Response(null, { status: 200 })],
+    "https://busy.example/": [() => new Response(null, { status: 503 }), () => new Response(null, { status: 503 })],
+    "https://gone.example/": [() => new Response(null, { status: 404 })]
+  };
+  globalThis.fetch = async (url) => {
+    calls[url] = (calls[url] || 0) + 1;
+    return plan[url][calls[url] - 1]();
+  };
+  const results = [];
+  const reporter = { pass: (name, detail) => results.push(["pass", detail]), fail: (name, detail) => results.push(["fail", detail]) };
+  try {
+    await checkUrls(Object.keys(plan), reporter, "source URLs", { retryDelayMs: 0 });
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  assert.deepEqual(calls, { "https://slow.example/": 2, "https://busy.example/": 2, "https://gone.example/": 1 });
+  assert.deepEqual(results, [["fail", "https://busy.example/ -> 503; https://gone.example/ -> 404"]]);
 });
