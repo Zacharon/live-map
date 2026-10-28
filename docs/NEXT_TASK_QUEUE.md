@@ -6,6 +6,10 @@
 
 Review the [fixture-only integration harness](FORGE_STAGING_INTEGRATION_2026-10-21.md) and pinned cross-repository CI job. Keep hosted connectivity and source/hosting/deployment authorization separate. Before additive Forge events enter stored mode, decide a compatible cursor/change model or explicitly approved full-snapshot polling; the current test deliberately keeps stored mode shadow-only. Existing hosted ingestion and owner acceptance gates remain open.
 
+## 2026-10-27 — Globe load, measured locally
+
+The in-memory Natural Earth pyramid and screen-space error 4 are on the globe-loading branch. Local headless Edge still takes about 6.1 s for the tile queue to reach 0 (6.9 s on current main). Error 8 and a Cesium modulepreload did not shorten that wait. Hosted timing and owner visual acceptance stay separate. No deploy.
+
 ## 2026-10-21 - Review Dependabot install-check follow-up
 
 - Review the follow-up stacked on PR #86: keep the Electric SQL group and add the clean-install compatibility gate to Validate. Merge through the existing PR process after checks pass.
