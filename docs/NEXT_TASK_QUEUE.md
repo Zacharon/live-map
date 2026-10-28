@@ -4,9 +4,18 @@
 - No new Netlify environment variable. Existing `LIVE_MAP_STORED_USGS` reads now fail visibly after 2 seconds instead of waiting on a database connect. `RELIEFWEB_APPNAME` remains optional and, when set, can no longer hang the function.
 - Confirm `GET /api/events` returns JSON with `sourceStatus` in under 10 seconds after deploy. A provider timeout should be `degraded` or `unavailable`, and other providers should still be present.
 
+## 2026-10-27 - Install-check follow-up includes current main
+
+- PR #87 now contains main, including the Forge staging job and the locked PGlite 0.5.11 / PostGIS 0.2.11 pair. Keep the Validate `npm ci` gate and the Electric SQL grouping comment. Require a successful locked install before merge. No deployment.
+
 ## 2026-10-21 — Review Forge staging integration
 
 Review the [fixture-only integration harness](FORGE_STAGING_INTEGRATION_2026-10-21.md) and pinned cross-repository CI job. Keep hosted connectivity and source/hosting/deployment authorization separate. Before additive Forge events enter stored mode, decide a compatible cursor/change model or explicitly approved full-snapshot polling; the current test deliberately keeps stored mode shadow-only. Existing hosted ingestion and owner acceptance gates remain open.
+
+## 2026-10-21 - Review Dependabot install-check follow-up
+
+- Review the follow-up stacked on PR #86: keep the Electric SQL group and add the clean-install compatibility gate to Validate. Merge through the existing PR process after checks pass.
+- For future Electric SQL PRs, require successful locked installation. Do not require both manifest entries to change or matching package version numbers; inspect the resolved PostGIS peer requirement. If no compatible peer release exists, leave the update unmerged until it can resolve. Deployment previews remain separate evidence.
 
 ## 2026-10-19 — Homepage 2D / dedicated globe routing correction
 

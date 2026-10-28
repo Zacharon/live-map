@@ -22,6 +22,9 @@ jobs:
         with:
           node-version: 20
 
+      - name: Verify locked dependency installation and peer compatibility
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
       - name: Run syntax and route export checks
         run: npm run check
 

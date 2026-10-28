@@ -14,7 +14,15 @@ node --import ./tests/offline-network.mjs scripts/source-explorer-smoke-test.mjs
 
 The explicit test preload stubs USGS/EONET/NWS and returns unavailable for other upstreams. Offline validation skips source-URL reachability and reports that omission. It is not production smoke evidence.
 
-Live Map expects Node.js 20 or newer and npm. The repository has no required package lockfile or install step for the built-in validation commands; the checks run with standard Node/npm commands from `package.json`.
+Live Map expects Node.js 20 or newer and npm. The dependency-free syntax and platform checks can run without installation, but CI Validate also checks the committed manifest and lockfile with:
+
+```sh
+npm ci --ignore-scripts --no-audit --no-fund
+```
+
+Run this before the checks when reviewing dependency changes. It installs the locked production and development packages without running lifecycle scripts or changing the lockfile. Do not use `--force` or `--legacy-peer-deps` to bypass compatibility failures.
+
+The `electric-sql` Dependabot group combines available version updates matching `@electric-sql/*`; it does not wait for every member to have a release. A one-package update is acceptable when the resulting dependency tree is compatible. PostGIS currently declares an exact PGlite peer: the resolved lockfile versions, rather than matching version numbers or simultaneous manifest edits, determine compatibility. An incompatible one-package update must fail the install check and wait for a compatible resolution. Grouping defaults to version updates; the install check also covers security-update and manual PRs.
 
 ## Standard Commands
 
