@@ -1,3 +1,9 @@
+## 2026-10-27 - Events API timeout fix is ready for review
+
+- Review and merge the events deadline pull request, then deploy it separately. Production keeps the current hang until that deploy. Do not deploy from an agent session.
+- No new Netlify environment variable. Existing `LIVE_MAP_STORED_USGS` reads now fail visibly after 2 seconds instead of waiting on a database connect. `RELIEFWEB_APPNAME` remains optional and, when set, can no longer hang the function.
+- Confirm `GET /api/events` returns JSON with `sourceStatus` in under 10 seconds after deploy. A provider timeout should be `degraded` or `unavailable`, and other providers should still be present.
+
 ## 2026-10-27 - Install-check follow-up includes current main
 
 - PR #87 now contains main, including the Forge staging job and the locked PGlite 0.5.11 / PostGIS 0.2.11 pair. Keep the Validate `npm ci` gate and the Electric SQL grouping comment. Require a successful locked install before merge. No deployment.

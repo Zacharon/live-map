@@ -1,4 +1,5 @@
 import { createNormalizedEvent } from "../../events/normalized-event.js";
+import { abortError, createLinkedSignal } from "./fetch-timeout.js";
 
 /**
  * NASA FIRMS — fire / thermal anomaly detections.
@@ -182,12 +183,12 @@ export async function fetchFirmsEvents(context) {
   }
 
   const url = firmsAreaUrl(mapKey);
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), context.provider?.timeoutMs || 20000);
+  const timeoutMs = Math.min(context.provider?.timeoutMs || 20000, context.deadlineMs || context.provider?.timeoutMs || 20000);
+  const linked = createLinkedSignal(context.signal, timeoutMs);
   let text;
   try {
     const response = await fetch(url, {
-      signal: controller.signal,
+      signal: linked.signal,
       headers: {
         accept: "text/csv,text/plain,*/*",
         "user-agent": "LiveWorldMap/1.0 (+https://liveworldmap.netlify.app/; NASA FIRMS MAP_KEY configured server-side)",
@@ -205,8 +206,11 @@ export async function fetchFirmsEvents(context) {
     }
     if (!response.ok) throw new Error(`NASA FIRMS returned ${response.status}`);
     text = await response.text();
+  } catch (error) {
+    if (error?.name === "AbortError" || context.signal?.aborted) throw abortError("NASA FIRMS timed out.");
+    throw error;
   } finally {
-    clearTimeout(timeout);
+    linked.clear();
   }
 
   // Invalid keys often return HTML or short error text

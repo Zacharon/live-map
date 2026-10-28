@@ -50,6 +50,8 @@ Response fields:
 
 The optional stored-USGS path uses the same envelope and a PostgreSQL current-event read model. `sourceStatus.usgs` reports storage mode, last successful collection, staleness, and unavailable state. The browser never fetches USGS directly after an API error. See [durable ingestion](DURABLE_INGESTION_LOCAL.md).
 
+Provider calls for this route run concurrently and stop at an 8 second orchestration deadline (`EVENTS_ORCHESTRATION_DEADLINE_MS` in `src/data/providers/orchestrator.js`), inside the Netlify synchronous function limit. Each upstream fetch also has its own timeout. A provider that times out is `degraded` in `sourceStatus` when stale cache exists, and `unavailable` otherwise. Other providers' events are still returned. Stored USGS reads use a 2 second connection and query timeout and fall back to that same unavailable USGS status. No response field is removed.
+
 ## `/api/changes`
 
 - `GET` query params: opaque versioned `cursor` (omit to start from the earliest retained change) and `limit` (integer 1–200, default 50). Malformed values return JSON `400`.

@@ -17,7 +17,7 @@ export function normalizeNhcStorm(row,now=new Date()) {
 }
 export async function fetchNhcEvents(context={}) {
   const gate=providerActivation(NHC_POLICY,context.env);if(!gate.allowed)return {events:[],status:gate.status,statusMessage:gate.reason};
-  const now=Number(context.now ?? Date.now());const result=await fetchBoundedPublicJson(NHC_CURRENT_STORMS_URL,{providerId:NHC_POLICY.id,now,cacheMs:300000,fetchImpl:context.fetchImpl || fetch,maxBytes:1024*1024});
+  const now=Number(context.now ?? Date.now());const result=await fetchBoundedPublicJson(NHC_CURRENT_STORMS_URL,{providerId:NHC_POLICY.id,now,cacheMs:300000,fetchImpl:context.fetchImpl || fetch,maxBytes:1024*1024,signal:context.signal});
   if(!Array.isArray(result.data.activeStorms)||result.data.activeStorms.length>100)throw Error('Invalid or oversized active storm collection');
   const parsed=result.data.activeStorms.map(row=>normalizeNhcStorm(row,new Date(now))),events=parsed.map(r=>r.event).filter(Boolean),rejected=parsed.filter(r=>!r.event);
   return {events,rejected,status:rejected.length?'degraded':'healthy',cached:result.cached,statusMessage:events.length?'Issued regional cyclone advisories':'No active cyclones reported in this source coverage',warnings:['Advisory positions and forecast products have distinct times; this is not a global cyclone feed.']};

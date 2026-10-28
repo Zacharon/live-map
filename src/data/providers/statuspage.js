@@ -1,5 +1,6 @@
 import { createNormalizedEvent, stableStringHash } from "../../events/normalized-event.js";
 import { STATUSPAGE_REGISTRY } from "./statuspage-registry.js";
+import { abortError } from "./fetch-timeout.js";
 
 function impactSeverity(impact = "") {
   const value = String(impact).toLowerCase();
@@ -87,17 +88,28 @@ export async function fetchStatuspageEvents(context = {}) {
   const events = [];
   const rejected = [];
   let receivedCount = 0;
-  for (const page of (context.statuspageRegistry || STATUSPAGE_REGISTRY).slice(0, 5)) {
+  const pages = (context.statuspageRegistry || STATUSPAGE_REGISTRY).slice(0, 5);
+  const settled = await Promise.allSettled(pages.map(async (page) => {
     const payload = await context.fetchJson(page.apiUrl, page.name);
-    const results = page.adapter === "slack-current"
+    return page.adapter === "slack-current"
       ? normalizeSlackCurrent(payload, page, now)
       : (payload.incidents || []).map((incident) => normalizeStatuspageIncident(incident, page, now));
-    receivedCount += results.length;
-    for (const result of results) {
+  }));
+  let failures = 0;
+  let timedOut = Boolean(context.signal?.aborted);
+  for (const item of settled) {
+    if (item.status === "rejected") {
+      failures += 1;
+      timedOut = timedOut || item.reason?.name === "AbortError";
+      continue;
+    }
+    receivedCount += item.value.length;
+    for (const result of item.value) {
       if (result.event) events.push(result.event);
       else if (result.errors?.length) rejected.push({ errors: result.errors });
     }
   }
-  return { events, rejected, receivedCount, warnings: [] };
+  if (!events.length && failures) throw timedOut ? abortError("Status page fetch timed out.") : new Error("Status pages unavailable.");
+  return { events, rejected, receivedCount, status: failures ? "degraded" : undefined, warnings: failures ? ["One or more official status pages were unavailable."] : [] };
 }
 

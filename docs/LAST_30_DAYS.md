@@ -1,3 +1,7 @@
+## 2026-10-27 - Events API deadline
+
+`/api/events` and `/.netlify/functions/events` could run past the synchronous function limit because `official-rss` fetched up to seven allowlisted feeds one after another, and ReliefWeb's configured fetch had no abort. The dashboard then showed "Event data temporarily unavailable" when the browser's 15 second request timed out. Providers now share an 8 second deadline, in-flight fetches abort, official feeds and status pages run concurrently, and a timed-out provider stays `degraded` with stale cache or `unavailable` in `sourceStatus`. No new environment variable. Not deployed.
+
 ## 2026-10-27 - Globe tile load
 
 Unloaded terrain was drawing `#050b16`. The placeholder is now the graded ocean `#123044`, and fog is on again (Cesium still applies it only below about 800 km). The night-atlas grade is unchanged. A second copy of the Natural Earth pyramid, measured on this machine, raised the tile-queue peak from 25 to 63 and did not shorten time to an empty queue, so the globe keeps one imagery layer.
