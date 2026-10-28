@@ -16,7 +16,11 @@ The owner said the globe "is still just base Cesium". This pass gives it a style
 
 Code: `src/map/globe-style.js` holds the pure rules (style choice, marker and cluster specs, graticule, border parsing, flight timing). `src/map/cesium-adapter.js` handles rendering. Tests: `tests/globe-style-tests.mjs`, wired into `npm run test:platform`.
 
-The 2D Leaflet map, the WebGL/Cesium fallback card (`?failWebgl=1`, `?failCesium=1`), all `/api/*` routes, picking ids (`event:<id>`), and the runtime `data-globe-*` attributes are unchanged. New attributes: `data-globe-style`, `data-globe-graticule`, `data-globe-border-lines`, `data-globe-last-flight`, and `data-globe-last-pick="cluster:<n>"`.
+The 2D Leaflet map, the WebGL/Cesium fallback card (`?failWebgl=1`, `?failCesium=1`), all `/api/*` routes, and picking ids (`event:<id>`) are unchanged. Runtime attributes include `data-globe-style`, `data-globe-graticule`, `data-globe-border-lines`, `data-globe-last-flight`, `data-globe-last-pick="cluster:<n>"`, `data-globe-tiles-loading`, and `data-globe-tiles-cached`.
+
+## Tile placeholders (2026-10-27)
+
+The night grade itself is unchanged. Unloaded terrain was drawing `#050b16`, which read as black cubes and bars against the graded ocean, especially while `requestRenderMode` held a frame after the camera stopped. The placeholder is now `#123044`. Fog is on again and still only affects cameras below Cesium's 800 km cutoff. The globe keeps a single imagery layer. A second copy of the same pyramid raised the measured tile-queue peak from 25 to 63 and did not shorten time to an empty queue. The 42 local JPEG tiles are decoded while Cesium loads and then served from memory, so a later camera move does not wait on another fetch of those files. Screen-space error is 4: on the same local runs the queue peak fell from 25 to 17 and the empty-queue time from 6937 ms to 6065 ms. Error 8 lowered the peak again and did not shorten that wait. `data-globe-tiles-loading` is the terrain queue length. `data-globe-tiles-cached` is how many of those JPEGs were decoded.
 
 ## CSP implications
 
