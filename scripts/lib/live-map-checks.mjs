@@ -263,6 +263,7 @@ export function collectSourceUrls(payload, limit = 20) {
 
 export async function checkUrls(urls, reporter, label = "source URLs", { retryDelayMs = 2000 } = {}) {
   const failures = [];
+  const timeouts = [];
   for (const url of urls) {
     let result = await checkUrlOnce(url);
     // A timeout, network error or 5xx/429 from an outside site is often transient; retry once before failing.
@@ -270,13 +271,18 @@ export async function checkUrls(urls, reporter, label = "source URLs", { retryDe
       await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
       result = await checkUrlOnce(url);
     }
-    if (result.failure) failures.push(`${url} -> ${result.failure}`);
+    // An outside site that is only slow says nothing about Live Map, so a second timeout warns instead of failing.
+    if (result.timedOut) timeouts.push(url);
+    else if (result.failure) failures.push(`${url} -> ${result.failure}`);
   }
 
   if (failures.length) {
     reporter.fail(label, failures.join("; "));
-  } else {
+  } else if (!timeouts.length) {
     reporter.pass(label, `${urls.length} URLs reachable`);
+  }
+  if (timeouts.length) {
+    reporter.warn(`${label} timeouts`, `Timed out twice, not counted as a failure: ${timeouts.join("; ")}`);
   }
 }
 
@@ -286,11 +292,15 @@ async function checkUrlOnce(url) {
     if (response.status === 405 || response.status === 403) {
       response = await fetchWithTimeout(url, { method: "GET", redirect: "follow" }, 10000);
     }
-    if (response.ok) return { failure: null, retryable: false };
-    return { failure: String(response.status), retryable: response.status >= 500 || response.status === 429 };
+    if (response.ok) return { failure: null, retryable: false, timedOut: false };
+    return { failure: String(response.status), retryable: response.status >= 500 || response.status === 429, timedOut: false };
   } catch (error) {
-    return { failure: error.message, retryable: true };
+    return { failure: error.message, retryable: true, timedOut: isTimeout(error) };
   }
+}
+
+function isTimeout(error) {
+  return error?.name === "AbortError" || error?.name === "TimeoutError";
 }
 
 export async function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
