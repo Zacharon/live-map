@@ -275,3 +275,37 @@ test("Source URL check retries a transient failure once and keeps hard failures"
   assert.deepEqual(calls, { "https://slow.example/": 2, "https://busy.example/": 2, "https://gone.example/": 1 });
   assert.deepEqual(results, [["fail", "https://busy.example/ -> 503; https://gone.example/ -> 404"]]);
 });
+
+test("Source URL check warns instead of failing when an outside site times out twice", async () => {
+  const realFetch = globalThis.fetch;
+  const calls = {};
+  const timeout = () => { throw new DOMException("This operation was aborted", "AbortError"); };
+  const plan = {
+    "https://slow.example/": [timeout, timeout],
+    "https://down.example/": [() => { throw new TypeError("fetch failed"); }, () => { throw new TypeError("fetch failed"); }],
+    "https://ok.example/": [() => new Response(null, { status: 200 })]
+  };
+  globalThis.fetch = async (url) => {
+    calls[url] = (calls[url] || 0) + 1;
+    return plan[url][calls[url] - 1]();
+  };
+  const run = async (urls) => {
+    const results = [];
+    const reporter = {
+      pass: (name, detail) => results.push(["pass", name, detail]),
+      fail: (name, detail) => results.push(["fail", name, detail]),
+      warn: (name, detail) => results.push(["warn", name, detail])
+    };
+    await checkUrls(urls, reporter, "source URLs", { retryDelayMs: 0 });
+    return results;
+  };
+  try {
+    assert.deepEqual(await run(["https://slow.example/", "https://ok.example/"]), [
+      ["warn", "source URLs timeouts", "Timed out twice, not counted as a failure: https://slow.example/"]
+    ]);
+    assert.deepEqual(await run(["https://down.example/"]), [["fail", "source URLs", "https://down.example/ -> fetch failed"]]);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  assert.deepEqual(calls, { "https://slow.example/": 2, "https://ok.example/": 1, "https://down.example/": 2 });
+});
