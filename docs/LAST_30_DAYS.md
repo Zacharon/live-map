@@ -1,3 +1,7 @@
+## 2026-11-03 — Public Floorplan acceptance
+
+Reviewed PR #103 in the published gallery and Netlify preview. Verified the selected 124 files and 247 displayed imports against a0783fc5. Clarified unindexed endpoint counts, added pinned public source links, and documented standalone download behavior. See [acceptance evidence and remaining gates](FLOORPLAN_ACCEPTANCE_2026-11-03.md). Mobile/touch and local-file browser execution remain unrun. Separate gallery parity and owner-approved PR integration are required; no manual deployment.
+
 ## 2026-10-27 - Events API deadline
 
 `/api/events` and `/.netlify/functions/events` could run past the synchronous function limit because `official-rss` fetched up to seven allowlisted feeds one after another, and ReliefWeb's configured fetch had no abort. The dashboard then showed "Event data temporarily unavailable" when the browser's 15 second request timed out. Providers now share an 8 second deadline, in-flight fetches abort, official feeds and status pages run concurrently, and a timed-out provider stays `degraded` with stale cache or `unavailable` in `sourceStatus`. No new environment variable. Not deployed.

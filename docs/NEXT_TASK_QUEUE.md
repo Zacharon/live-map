@@ -1,3 +1,7 @@
+## 2026-11-03 — Integrate the reviewed public Floorplan
+
+Review the scoped correction into PR #103 and the matching profile-gallery PR. Require corrected-head checks and browser/source-link evidence, then owner approval before merging. Verify gallery HTML/checksum parity after integration. Mobile/touch, accessibility and downloaded standalone acceptance remain explicit follow-ups; do not call the map exhaustive or live.
+
 ## 2026-10-27 - Events API timeout fix is ready for review
 
 - Review and merge the events deadline pull request, then deploy it separately. Production keeps the current hang until that deploy. Do not deploy from an agent session.

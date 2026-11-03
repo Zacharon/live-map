@@ -3,9 +3,11 @@ Live Map — Intelligence Platform Foundation
 <!-- public-floorplan:start -->
 ## Explore the architecture
 
-[**Open the interactive Floorplan**](https://zacharon.github.io/Zacharon/floorplans/live-map.html) · [Standalone HTML file](docs/floorplan.html)
+[**Open the interactive Floorplan**](https://zacharon.github.io/Zacharon/floorplans/live-map.html) · [Standalone HTML file (download and open locally)](docs/floorplan.html)
 
-A map of this repository’s public source at `a0783fc5`. Selected-entry overview; shows representative public files and package boundaries, not an exhaustive dependency or route inventory.
+A map of this repository’s public source at `a0783fc5`. Selected-entry overview; shows representative public files and package boundaries, not an exhaustive dependency or route inventory. Routes are not indexed: the map’s zero indexed-endpoint counters do not mean the application has no APIs. File details link to the pinned public source revision.
+
+GitHub offers the standalone document as a download because it is too large for its source viewer. Download the raw HTML and open it in a browser; use the gallery link above to browse online.
 <!-- public-floorplan:end -->
 
 Local redesign (2026-09-09): zoom-aware map workspace with source details, composable controls and explicitly synthetic transport/wind demos. 2026-09-15 adds the operational evidence model, chokepoint inspector (L01–L11), 2D/3D/Auto globe boundary, and overlay pins. Run `node scripts/preview-foundation.mjs` and open `http://127.0.0.1:8766/?demo=foundation`. Chokepoint scenario: `http://127.0.0.1:8766/?demo=foundation&view=chokepoints&chokepoint=strait-of-hormuz`. This is local-only and does not run provider APIs. Read `docs/ZOOM_AWARE_MAP_FOUNDATION.md` and `docs/EVIDENCE_SEMANTIC_GLOBE.md`. Deployed behavior has not changed.
