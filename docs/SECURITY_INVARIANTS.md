@@ -41,7 +41,7 @@ These rules capture the current security baseline, including PR #36.
 - Provider URLs should be fixed, registry-controlled, or explicitly allowlisted.
 - USGS ingestion uses a fixed HTTPS feed URL with redirects rejected, timeout and byte cap. Imported USGS event links are restricted to `https://earthquake.usgs.gov/`.
 - Stored ingestion errors and `/api/changes` database failures return sanitized public status; database connection details remain server-side.
-- Server-side fetch helpers need timeouts, bounded retries, cache/backoff, and sanitized errors.
+- Server-side fetch helpers need timeouts, bounded retries, cache/backoff, and sanitized errors. Events orchestration aborts in-flight provider fetches at 8 seconds and keeps the failure visible in `sourceStatus`.
 - Provider errors must not expose stack traces, raw payloads, tokens, keys, or private contact emails.
 - RSS redirects and upstream response size caps are backlog hardening items.
 

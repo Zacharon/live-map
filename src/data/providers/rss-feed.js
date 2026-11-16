@@ -4,6 +4,7 @@ import { OFFICIAL_FEED_REGISTRY } from "./feed-registry.js";
 import { applyPublicationPolicy } from "./publication-policy.js";
 import { assertSafeFetchUrl, assertSafeRedirect } from "./ssrf-protection.js";
 import { createSourceObservation } from "../../intelligence/source-observations.js";
+import { abortError, createLinkedSignal } from "./fetch-timeout.js";
 
 const PROVIDER_ENABLE_FLAGS = {
   "security-rss": "SECURITY_RSS_ENABLED",
@@ -68,11 +69,11 @@ export function observationFromFeedItem(item, feed, now = new Date()) {
 async function fetchTextWithSafety(url, options = {}) {
   let current = assertSafeFetchUrl(url).href;
   for (let redirect = 0; redirect < 3; redirect += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), options.timeoutMs || 12000);
+    if (options.signal?.aborted) throw abortError("Feed fetch timed out.");
+    const linked = createLinkedSignal(options.signal, options.timeoutMs || 12000);
     try {
       const response = await fetch(current, {
-        signal: controller.signal,
+        signal: linked.signal,
         redirect: "manual",
         headers: {
           accept: "application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9",
@@ -87,8 +88,11 @@ async function fetchTextWithSafety(url, options = {}) {
       if (!response.ok) throw new Error(`Feed returned ${response.status}`);
       const text = await response.text();
       return text.slice(0, options.maxBytes || 1024 * 1024);
+    } catch (error) {
+      if (error?.name === "AbortError" || options.signal?.aborted) throw abortError("Feed fetch timed out.");
+      throw error;
     } finally {
-      clearTimeout(timeout);
+      linked.clear();
     }
   }
   throw new Error("Too many feed redirects");
@@ -162,21 +166,35 @@ export async function fetchOfficialFeedEvents(context = {}) {
   let receivedCount = 0;
   const registry = context.feedRegistry || OFFICIAL_FEED_REGISTRY;
   const providerId = context.provider?.id || "official-rss";
-  const selectedFeeds = registry.filter((feed) => feed.providerId === providerId);
-  for (const feed of selectedFeeds.slice(0, 8)) {
+  const selectedFeeds = registry.filter((feed) => feed.providerId === providerId).slice(0, 8);
+  const timeoutMs = Math.min(context.provider?.timeoutMs || context.schedule?.requestTimeoutMs || 12000, context.deadlineMs || context.provider?.timeoutMs || context.schedule?.requestTimeoutMs || 12000);
+  const feedResults = await Promise.allSettled(selectedFeeds.map(async (feed) => {
     const xml = await fetchTextWithSafety(feed.url, {
-      timeoutMs: context.provider?.timeoutMs || context.schedule?.requestTimeoutMs || 12000,
+      timeoutMs,
       userAgent: context.provider?.userAgent,
+      signal: context.signal,
     });
-    const items = parseFeedDocument(xml).slice(0, 8);
-    receivedCount += items.length;
-    for (const item of items) {
-      const result = normalizeFeedItem(item, feed, now);
+    return { feed, items: parseFeedDocument(xml).slice(0, 8) };
+  }));
+  const warnings = ["Official RSS, Atom, and JSON Feed records are metadata-only observations unless promoted by corroboration rules."];
+  let failures = 0;
+  let timedOut = false;
+  for (const item of feedResults) {
+    if (item.status === "rejected") {
+      failures += 1;
+      timedOut = timedOut || item.reason?.name === "AbortError";
+      warnings.push(item.reason?.name === "AbortError" ? "A feed was stopped at the request deadline." : "An official feed was unavailable.");
+      continue;
+    }
+    receivedCount += item.value.items.length;
+    for (const entry of item.value.items) {
+      const result = normalizeFeedItem(entry, item.value.feed, now);
       if (result.event) events.push(result.event);
-      else rejected.push({ id: item.guid || item.link || null, errors: result.errors });
+      else rejected.push({ id: entry.guid || entry.link || null, errors: result.errors });
     }
   }
+  if (!events.length && failures) throw timedOut || context.signal?.aborted ? abortError("Official feed fetch timed out.") : new Error("Official feeds unavailable.");
   const observations = events.map((event) => observationFromFeedItem({ title: event.title, link: event.sourceUrl, guid: event.providerEventId, publishedAt: event.sourcePublishedAt, updatedAt: event.updatedAt, summary: event.description }, registry.find((feed) => feed.id === event.metadata?.feedId) || { providerId, id: providerId, name: event.sourceName, sourceTier: event.sourceTier }, now));
-  return { events, observations, rejected, receivedCount, warnings: ["Official RSS, Atom, and JSON Feed records are metadata-only observations unless promoted by corroboration rules."] };
+  return { events, observations, rejected, receivedCount, status: failures ? "degraded" : undefined, warnings };
 }
 

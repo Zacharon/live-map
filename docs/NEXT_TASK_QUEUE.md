@@ -4,12 +4,44 @@ Shared response-clock scores and read-only evidence projection are under local
 validation. See [contract](USGS_SPINE_CONTRACT.md). Browser acceptance and independent
 review remain separate from owner acceptance, source activation and release.
 
-## 2026-10-17 - Globe visual pass awaiting owner review
+## 2026-10-27 - Events API timeout fix is ready for review
 
-- Owner visual acceptance of the globe pass (`docs/GLOBE_VISUAL_2026-10-17.md`, screenshots in `artifacts/globe-visual-2026-10-17/`).
-- Owner decision on the production CSP for Cesium (`'unsafe-eval'`, a separate globe route, or a build without Knockout). Until that is decided, the deployed site shows the 2D fallback.
-- Vendor the Natural Earth 1:110m boundary lines (public domain) if borders are approved; the loader is already in place.
-- Merge order: draft PR #75 first, then the stacked follow-up PR.
+- Review and merge the events deadline pull request, then deploy it separately. Production keeps the current hang until that deploy. Do not deploy from an agent session.
+- No new Netlify environment variable. Existing `LIVE_MAP_STORED_USGS` reads now fail visibly after 2 seconds instead of waiting on a database connect. `RELIEFWEB_APPNAME` remains optional and, when set, can no longer hang the function.
+- Confirm `GET /api/events` returns JSON with `sourceStatus` in under 10 seconds after deploy. A provider timeout should be `degraded` or `unavailable`, and other providers should still be present.
+
+## 2026-10-27 - Install-check follow-up includes current main
+
+- PR #87 now contains main, including the Forge staging job and the locked PGlite 0.5.11 / PostGIS 0.2.11 pair. Keep the Validate `npm ci` gate and the Electric SQL grouping comment. Require a successful locked install before merge. No deployment.
+
+## 2026-10-21 — Review Forge staging integration
+
+Review the [fixture-only integration harness](FORGE_STAGING_INTEGRATION_2026-10-21.md) and pinned cross-repository CI job. Keep hosted connectivity and source/hosting/deployment authorization separate. Before additive Forge events enter stored mode, decide a compatible cursor/change model or explicitly approved full-snapshot polling; the current test deliberately keeps stored mode shadow-only. Existing hosted ingestion and owner acceptance gates remain open.
+
+## 2026-10-27 — Globe load, measured locally
+
+The in-memory Natural Earth pyramid and screen-space error 4 are on the globe-loading branch. Local headless Edge still takes about 6.1 s for the tile queue to reach 0 (6.9 s on current main). Error 8 and a Cesium modulepreload did not shorten that wait. Hosted timing and owner visual acceptance stay separate. No deploy.
+
+## 2026-10-21 - Review Dependabot install-check follow-up
+
+- Review the follow-up stacked on PR #86: keep the Electric SQL group and add the clean-install compatibility gate to Validate. Merge through the existing PR process after checks pass.
+- For future Electric SQL PRs, require successful locked installation. Do not require both manifest entries to change or matching package version numbers; inspect the resolved PostGIS peer requirement. If no compatible peer release exists, leave the update unmerged until it can resolve. Deployment previews remain separate evidence.
+
+## 2026-10-19 — Homepage 2D / dedicated globe routing correction
+
+Homepage HTML and URL-state defaults now select 2D; /globe and /globe.html default to 3D. Explicit 3D choices, legacy map=3d links and restored 3D saved views serialize current workspace state before navigating to /globe.html. The origin history entry is normalized to 2D so Back stays usable. Auto remains 2D under the homepage's strict CSP; Auto on the globe page retains adaptive rendering. Saved preferences do not silently choose a renderer on a fresh homepage; saved views remain explicit user actions. Globe-page generation independently selects 3D. netlify.toml is unchanged.
+
+Local syntax, platform suite (including page-mode regression tests), generated-page consistency and browser-secret checks pass. Local controller/state execution checks cover defaults, serialization and navigation; no local interactive browser result is claimed because the connected browser is on a separate machine from this checkout. Regression payload is synthetic.
+
+Read-only hosted checks at https://liveworldmap.netlify.app on October 19 UTC: / returns HTTP 200 with strict script-src 'self'; /globe.html returns HTTP 404 with the same strict policy, independently confirmed in the browser as Netlify's Page not found screen. This does not establish which commit is deployed. Hosted globe startup and candidate behavior remain unverified. No deployment or merge performed.
+
+## 2026-10-19 - Globe follow-ups and hosted ingestion gaps
+
+- PR #80 conflict reconciliation preserves main's state-safe routing; confirm strict homepage and globe-specific CSP headers on a deploy preview after owner authorization. Local offline checks do not close hosted acceptance.
+- Owner visual acceptance (#61) of `/globe.html` and the 2D main page on a deploy preview, including real basemap tiles (the cloud container cannot load them).
+- Hosted durable ingestion is not wired: `wrangler.toml` declares no cron trigger, queue or Hyperdrive binding, so the Worker's `scheduled()`/`queue()` handlers never run, and Netlify has no scheduled function. Needs owner approval (Cloudflare Queues may need a paid plan), then the bindings, `LIVE_MAP_INGEST_USGS`/`LIVE_MAP_STORED_USGS`, and `collection_enabled` in `lm_source_policies`.
+- `src/ingestion/worker-handlers.js` retries messages when the database or policy is off, which only burns retries; ack with a logged reason instead, and add a unit test for the handlers.
+- Current-feed activation (NHC, Digitraffic, ADSB.lol) stays off pending owner approval and the licence reviews below; confirm a real dated `/api/events` response on the host.
 
 ## 2026-10-12 - Aviation installation decision pending
 
@@ -132,12 +164,6 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 - Test: add cases for `javascript:`, `data:`, `mailto:`, relative URLs, `http:`, and `https:`.
 
 ## P1
-
-### Add Cloudflare asset security headers
-
-- Goal: match Netlify CSP/security headers for Cloudflare static asset responses.
-- Touch first: `src/worker.js`, `netlify.toml`, `tests/run-tests.mjs`.
-- Test: Worker responses for `/`, `/app.js`, `/sources` include CSP, `X-Content-Type-Options`, and `Referrer-Policy`.
 
 ### Add bounded provider JSON helper
 

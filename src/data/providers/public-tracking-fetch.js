@@ -1,3 +1,5 @@
+import { createLinkedSignal } from "./fetch-timeout.js";
+
 // Fixed-host, bounded public read shared by the optional tracking/current-storm adapters.
 const hosts={'digitraffic-ais':'meri.digitraffic.fi','adsb-lol':'api.adsb.lol','nhc-current-storms':'www.nhc.noaa.gov'};
 const cache=new Map(),pending=new Map(),lastAttempt=new Map();
@@ -11,7 +13,7 @@ export function viewportCircle(bbox) {
   return {latitude,longitude,radiusKm};
 }
 export function withinBbox(object,bbox){return object.latitude>=bbox.south&&object.latitude<=bbox.north&&object.longitude>=bbox.west&&object.longitude<=bbox.east;}
-export async function fetchBoundedPublicJson(url,{providerId,fetchImpl=fetch,now=Date.now(),cacheMs=60000,maxBytes=2*1024*1024}={}) {
+export async function fetchBoundedPublicJson(url,{providerId,fetchImpl=fetch,now=Date.now(),cacheMs=60000,maxBytes=2*1024*1024,signal}={}) {
   const target=new URL(url);
   if(target.protocol!=='https:'||target.hostname!==hosts[providerId]||target.username||target.password)throw Error('Unsupported provider URL');
   const key=target.href,cached=cache.get(key);
@@ -20,7 +22,9 @@ export async function fetchBoundedPublicJson(url,{providerId,fetchImpl=fetch,now
   if(lastAttempt.has(providerId)&&now-lastAttempt.get(providerId)<60000)throw Error('Local provider request budget exhausted');
   lastAttempt.set(providerId,now);
   const work=(async()=>{
-    const response=await fetchImpl(target,{redirect:'error',signal:AbortSignal.timeout(12000),headers:{accept:'application/json','accept-encoding':'gzip','Digitraffic-User':'LiveMap/LocalReview','user-agent':'LiveMap/LocalReview'}});
+    const linked=createLinkedSignal(signal,12000);
+    try {
+    const response=await fetchImpl(target,{redirect:'error',signal:linked.signal,headers:{accept:'application/json','accept-encoding':'gzip','Digitraffic-User':'LiveMap/LocalReview','user-agent':'LiveMap/LocalReview'}});
     if(!response.ok)throw Error('Provider HTTP '+response.status);
     if(Number(response.headers.get('content-length'))>maxBytes)throw Error('Provider response exceeds byte limit');
     const reader=response.body.getReader();let size=0;const chunks=[];
@@ -28,5 +32,6 @@ export async function fetchBoundedPublicJson(url,{providerId,fetchImpl=fetch,now
     const bytes=new Uint8Array(size);let at=0;for(const c of chunks){bytes.set(c,at);at+=c.byteLength;}
     const result={data:JSON.parse(new TextDecoder().decode(bytes)),fetchedAt:now,cached:false};
     cache.set(key,result);while(cache.size>128)cache.delete(cache.keys().next().value);return result;
+    } finally { linked.clear(); }
   })().finally(()=>pending.delete(key));pending.set(key,work);return work;
 }
