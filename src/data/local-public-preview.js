@@ -5,6 +5,7 @@ import {normalizeUsgsFeature} from './providers/usgs.js';
 import {normalizeNhcStorm} from './providers/nhc.js';
 import {EVENT_PROVIDERS} from './providers/registry.js';
 import {createEventsResponse} from '../api/events-response.js';
+import {SOURCE_CLOCK_AHEAD_LIMITATION} from '../events/event-quality.js';
 
 export const LOCAL_PUBLIC_SOURCES=[
  {id:'usgs',name:'USGS earthquakes',url:'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson',coverage:'USGS reported magnitude 2.5+ earthquakes in the past day; worldwide reporting is incomplete',collection:'features',maxRecords:1000,normalize:normalizeUsgsFeature},
@@ -37,7 +38,7 @@ export function createLocalPublicPreview({cacheFile,fetchImpl=fetch,now=()=>Date
     const {data,httpDate,bytes}=await boundedRead(source.url,fetchImpl),rows=data[source.collection];if(!Array.isArray(rows)||rows.length>source.maxRecords)throw Error('Public source record cap/schema');
     const retrievedAt=now(),parsed=rows.map(row=>source.normalize(row,new Date(retrievedAt))),events=parsed.map(r=>r.event).filter(Boolean).map(event=>({...event,metadata:{...event.metadata,coverage:source.coverage,qualityLimitations:['One reporting organization; independent corroboration is not established.','Missing reports do not establish safety or absence.'],retrievedAt,sourceFeedUrl:source.url,publicDevelopmentRead:true}}));
     const sourceGeneratedAt=source.id==='usgs'?data.metadata?.generated??null:null,sourceClockAheadSeconds=typeof sourceGeneratedAt==='number'?Math.max(0,(sourceGeneratedAt-retrievedAt)/1000):null;
-    if(sourceClockAheadSeconds>60)for(const event of events)event.metadata.qualityLimitations.push('Source feed clock is ahead of local retrieval; freshness is uncertain.');
+    if(sourceClockAheadSeconds>60)for(const event of events)event.metadata.qualityLimitations.push(SOURCE_CLOCK_AHEAD_LIMITATION);
     const row={providerId:source.id,sourceUrl:source.url,coverage:source.coverage,retrievedAt,sourceGeneratedAt,sourceClockAheadSeconds,httpDate,bytes,events,rejectedCount:parsed.filter(r=>!r.event).length};cached.set(source.id,row);await persist();return {...row,status:row.rejectedCount||sourceClockAheadSeconds>60?'degraded':'healthy',cached:false,stale:false};
    }catch{const retained=cached.get(source.id);return {...retained,providerId:source.id,sourceUrl:source.url,coverage:source.coverage,events:retained?.events||[],status:retained?'degraded':'unavailable',cached:Boolean(retained),stale:Boolean(retained),errorMessage:'Public source read failed; retry after the five-minute cache window',errorCode:'public-source-unavailable'};}
    })().finally(()=>pending.delete(source.id));pending.set(source.id,work);return work;

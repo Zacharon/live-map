@@ -1,3 +1,12 @@
+## 2026-11-16 - USGS inspection and export candidate
+
+USGS evidence and response-clock scores now share the inspection/export path.
+Fixed Filters reopening after timeline selection/reload and globe Back losing its
+return target. The isolated synthetic Edge journey passed 21 checks including
+keyboard, downloads, 320px layout and camera continuity; no upstream reads.
+See [contract and reproduction](USGS_SPINE_CONTRACT.md). Draft review and owner
+acceptance remain separate from source activation, hosted verification and release.
+
 ## 2026-10-27 - Events API deadline
 
 `/api/events` and `/.netlify/functions/events` could run past the synchronous function limit because `official-rss` fetched up to seven allowlisted feeds one after another, and ReliefWeb's configured fetch had no abort. The dashboard then showed "Event data temporarily unavailable" when the browser's 15 second request timed out. Providers now share an 8 second deadline, in-flight fetches abort, official feeds and status pages run concurrently, and a timed-out provider stays `degraded` with stale cache or `unavailable` in `sourceStatus`. No new environment variable. Not deployed.

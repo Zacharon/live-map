@@ -7,6 +7,7 @@ import {
   ARTIFACT_SCHEMA_VERSION,
   ARTIFACT_CAVEATS_V1,
 } from "../../artifacts/event-artifacts.js";
+import { SOURCE_CLOCK_AHEAD_LIMITATION } from "../../events/event-quality.js";
 
 function isoOrDash(value) {
   if (value == null) return "—";
@@ -95,7 +96,11 @@ export function artifactToMarkdown(artifact) {
     ? (artifact.representativeEvents || artifact.relatedEvents || [])
     : (artifact.relatedEvents || []);
   const fields = artifact.normalizedFields || [];
-  const caveats = artifact.caveats || artifact.limitations || ARTIFACT_CAVEATS_V1;
+  const caveats = [...(artifact.caveats || artifact.limitations || ARTIFACT_CAVEATS_V1)];
+  const evidenceLimits = artifact.evidenceRecord?.qualityLimitations;
+  if (Array.isArray(evidenceLimits) && evidenceLimits.includes(SOURCE_CLOCK_AHEAD_LIMITATION) && !caveats.includes(SOURCE_CLOCK_AHEAD_LIMITATION)) {
+    caveats.push(SOURCE_CLOCK_AHEAD_LIMITATION);
+  }
   const confidence = artifact.confidence?.display ?? "Not scored in v1";
   const corroboration = artifact.corroboration?.display
     ?? (artifact.corroborationCount != null ? String(artifact.corroborationCount) : "—");
@@ -171,6 +176,9 @@ export function artifactToMarkdown(artifact) {
     : [
       line("Occurred", isoOrDash(artifact.occurredAt)),
       line("Updated", isoOrDash(artifact.updatedAt)),
+      line("Retrieved", artifact.evidenceRecord?.retrievedAt),
+      line("Freshness", artifact.evidenceRecord?.extra?.freshness),
+      line("Review", artifact.evidenceRecord?.extra?.reviewStatus),
     ];
 
   const relatedLines = related.length

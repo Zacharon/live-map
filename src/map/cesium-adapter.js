@@ -378,11 +378,17 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
 
   let lastTarget = { lat: sharedView.lat, lon: sharedView.lon, zoom: sharedView.zoom };
 
+  // WHY: docs/USGS_SPINE_CONTRACT.md#camera-continuity
+  let appliedPose = null;
+  let programmedFlight = false;
+  const pose = () => ({ position: Cesium.Cartesian3.clone(viewer.camera.positionWC), direction: Cesium.Cartesian3.clone(viewer.camera.directionWC) });
+  const closeVector = (a, b, epsilon) => Cesium.Cartesian3.distance(a, b) < epsilon;
   let initialized = false;
   function applyView(view, { animate = initialized } = {}) {
     const lat = Number(view.lat);
     const lon = Number(view.lon);
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+    viewer.camera.cancelFlight();
     const from = lastTarget;
     lastTarget = { lat, lon, zoom: view.zoom };
     const height = options.cameraHeightFromZoom?.(view.zoom, lat, viewer.canvas.clientWidth || container.clientWidth) || 8_000_000;
@@ -397,19 +403,33 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
     if (animate) {
       const duration = flightDuration(from, lastTarget);
       container.dataset.globeLastFlight = String(duration);
-      viewer.camera.flyTo({ destination, orientation, duration, easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT });
+      appliedPose = null;
+      const target = { ...lastTarget };
+      programmedFlight = true;
+      viewer.camera.flyTo({ destination, orientation, duration,
+        complete: () => {
+          programmedFlight = false;
+          lastTarget = target;
+          appliedPose = pose();
+          options.onViewChange?.({ ...target });
+        },
+        cancel: () => { programmedFlight = false; appliedPose = null; },
+        easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT });
     } else {
       viewer.camera.setView({ destination, orientation });
+      appliedPose = pose();
     }
     viewer.scene.requestRender();
   }
 
   function currentTarget() {
+    const currentPose = pose();
+    if (appliedPose && closeVector(appliedPose.position, currentPose.position, 0.001) && closeVector(appliedPose.direction, currentPose.direction, 1e-8)) return { ...lastTarget };
+    appliedPose = null;
     const width = viewer.canvas?.clientWidth || 0;
     const height = viewer.canvas?.clientHeight || 0;
     if (width > 0 && height > 0) {
-      const ray = viewer.camera.getPickRay(new Cesium.Cartesian2(width / 2, height / 2));
-      const hit = ray && viewer.scene.globe.pick(ray, viewer.scene);
+      const hit = viewer.camera.pickEllipsoid(new Cesium.Cartesian2(width / 2, height / 2), viewer.scene.globe.ellipsoid);
       if (hit) {
         const carto = Cesium.Cartographic.fromCartesian(hit);
         lastTarget = {
@@ -647,7 +667,7 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
   let preservedResizeView = null;
 
   const onCameraMoveEnd = () => {
-    if (resizing || viewer.canvas.clientWidth !== stableCanvasWidth) return;
+    if (programmedFlight || resizing || viewer.canvas.clientWidth !== stableCanvasWidth) return;
     const view = currentTarget();
     updateChokepointLabels();
     options.onViewChange?.(view);

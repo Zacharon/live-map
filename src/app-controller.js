@@ -766,7 +766,7 @@ export function bootLiveMap() {
     contactDetail.hidden = !selectedContact;
     contactDetail.innerHTML = renderContactDetail(selectedContact);
     mapController.renderReferencePoints({ airports: state.tracking.airports ? AIRPORTS : [], ports: state.tracking.ports ? PORTS : [] });
-    const sharedView = { ...state.mapView, lat: center.lat, lon: center.lng, zoom: mapController.map.getZoom() };
+    const sharedView = { ...state.mapView };
     const graphRecords = (intelligence.records || []).filter((record) => record.recordKind !== "relationship");
     const graphNodes = [
       ...graphRecords.map((record) => graphNodeFromRecord(record)),
@@ -796,8 +796,10 @@ export function bootLiveMap() {
       onContextLoss() { state.mapMode = "2d"; state.mapView.mapMode = "2d"; syncUrlState(); render(); },
       onViewChange(view) {
         if (state.mapMode === "2d" || !Number.isFinite(view.lat) || !Number.isFinite(view.lon) || !Number.isFinite(view.zoom)) return;
+        Object.assign(state.mapView, { lat: view.lat, lon: view.lon, zoom: view.zoom });
+        syncUrlState();
         // Leaflet remains the shared viewport for feed attention and the 2D return path.
-        mapController.map.setView([view.lat, view.lon], view.zoom, { animate: false });
+        mapController.map.setView([view.lat, view.lon], view.zoom, { animate: false, reset: true });
       },
       onViewportChange() { if (state.mapMode !== "2d") render(); },
       onSelectId(id) {
@@ -897,6 +899,7 @@ export function bootLiveMap() {
       els.eventDetailDrawer.innerHTML = "";
     } else {
       renderOsintEventDetailDrawer(els.eventDetailDrawer, {
+        sourceStatus: state.sourceStatus,
         event: selectedEvent,
         cluster: selectedCluster,
         changeStatus: selectedChangeStatus,
@@ -1066,6 +1069,8 @@ export function bootLiveMap() {
     state.selectedChokepointId = null;
     state.rightDrawerOpen = true;
     state.leftDrawerOpen = false;
+    // WHY: docs/USGS_SPINE_CONTRACT.md#drawer-recovery
+    workspaceStorage.setItem("live-map-left-drawer-v1", "closed");
     state.mobilePane = 'detail';
     workspaceStorage.setItem("live-map-right-drawer-v1", "open");
     if (els.eventDialog.open) els.eventDialog.close();
@@ -1647,6 +1652,7 @@ export function bootLiveMap() {
         if (selected) {
           const changeStatus = null;
           artifact = buildEventArtifact(selected, {
+            sourceStatus: state.sourceStatus,
             allEvents: visibleEvents,
             clusters: visibleClusters,
             changeStatus,
@@ -1918,7 +1924,7 @@ export function bootLiveMap() {
     render();
     if (state.mapMode === '2d') window.requestAnimationFrame(() => {
       mapController.map.invalidateSize({ pan: false });
-      mapController.map.setView([view.lat, view.lon], view.zoom, { animate: false });
+      mapController.map.setView([view.lat, view.lon], view.zoom, { animate: false, reset: true });
       render();
     });
     mapController.invalidateMapSize();
@@ -2015,6 +2021,7 @@ export function bootLiveMap() {
   });
   let viewportTimer;
   mapController.map.on('moveend',()=>{
+    if (document.getElementById('map').hidden) return;
     const center=mapController.map.getCenter(); Object.assign(state.mapView,{lat:center.lat,lon:center.lng,zoom:mapController.map.getZoom()}); syncUrlState();
     movingRequest++; movingAbort?.abort(); clearTimeout(viewportTimer);
     viewportTimer=setTimeout(()=>{render();loadMovingObjects();scheduleMovingRefresh();},200);

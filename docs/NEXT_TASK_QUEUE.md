@@ -1,3 +1,12 @@
+## 2026-11-16 - USGS inspection and export candidate
+
+USGS evidence and response-clock scores now share the inspection/export path.
+Fixed Filters reopening after timeline selection/reload and globe Back losing its
+return target. The isolated synthetic Edge journey passed 21 checks including
+keyboard, downloads, 320px layout and camera continuity; no upstream reads.
+See [contract and reproduction](USGS_SPINE_CONTRACT.md). Draft review and owner
+acceptance remain separate from source activation, hosted verification and release.
+
 ## 2026-10-27 - Events API timeout fix is ready for review
 
 - Review and merge the events deadline pull request, then deploy it separately. Production keeps the current hang until that deploy. Do not deploy from an agent session.
