@@ -1,3 +1,9 @@
+## 2026-11-16 - USGS inspection and export candidate
+
+Shared response-clock scores and read-only evidence projection are under local
+validation. See [contract](USGS_SPINE_CONTRACT.md). Browser acceptance and independent
+review remain separate from owner acceptance, source activation and release.
+
 ## 2026-10-17 - Candidate committed, main merged, globe visual pass
 
 The 53-path candidate and inherited foundation are committed on `feature/evidence-semantic-globe` (draft PR #75 to `main`). Current `main` (33d426f) is merged in. Main's audit-repair suite is reconciled with candidate semantics: undated records stay visible as "Time unknown", unknown exact clocks read "Not supplied", the browser direct-USGS fallback stays removed, and source URLs use the shared `safeSourceUrl` helper. The inherited registry cache-policy assertion is fixed. The validator now skips gitignored root evidence folders. The 3D globe gained a night-atlas restyle, atmosphere/terminator, stars, graticule, optional local borders, severity-styled clustered markers and smooth fly-to ([record and CSP implications](GLOBE_VISUAL_2026-10-17.md)). The repository ruleset requires PRs for updates to every branch, so follow-ups go out as a new stacked branch and PR. No deployment.

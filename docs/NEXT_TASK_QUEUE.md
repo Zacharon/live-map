@@ -1,3 +1,9 @@
+## 2026-11-16 - USGS inspection and export candidate
+
+Shared response-clock scores and read-only evidence projection are under local
+validation. See [contract](USGS_SPINE_CONTRACT.md). Browser acceptance and independent
+review remain separate from owner acceptance, source activation and release.
+
 ## 2026-10-17 - Globe visual pass awaiting owner review
 
 - Owner visual acceptance of the globe pass (`docs/GLOBE_VISUAL_2026-10-17.md`, screenshots in `artifacts/globe-visual-2026-10-17/`).

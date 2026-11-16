@@ -1,4 +1,5 @@
 import { mergeDuplicateEvents } from "../../events/event-deduplication.js";
+import { withReadTimeQuality } from "../../events/event-quality.js";
 import { toLegacyEvent } from "../../events/normalized-event.js";
 import { timestampMs } from "../../events/value-semantics.js";
 import { EVENT_PROVIDERS } from "./registry.js";
@@ -273,7 +274,8 @@ export async function orchestrateProviders(options = {}) {
       const occurredAt = timestampMs(event.startedAt);
       return occurredAt === null || occurredAt >= cutoff;
     });
-  const dedupedEvents = mergeDuplicateEvents(events);
+  // Merge may keep an older stored score after it adopts a newer updatedAt.
+  const dedupedEvents = mergeDuplicateEvents(events).map((event) => withReadTimeQuality(event, now));
   const duplicateCount = Math.max(0, events.length - dedupedEvents.length);
   const duplicateCountByProvider = Object.fromEntries(providerResults.map((result) => [result.providerId, 0]));
   if (duplicateCount) {
@@ -303,7 +305,12 @@ export async function orchestrateProviders(options = {}) {
   return {
     events: dedupedEvents.map(toLegacyEvent),
     canonicalEvents: dedupedEvents,
-    providerResults: providerResults.map((result) => ({ ...result, duplicateCount: duplicateCountByProvider[result.providerId] || 0 })),
+    providerResults: providerResults.map((result) => ({
+      ...result,
+      // Copy. The provider cache keeps the retrieval-time score.
+      events: (result.events || []).map((event) => withReadTimeQuality(event, now)),
+      duplicateCount: duplicateCountByProvider[result.providerId] || 0,
+    })),
     observations: providerResults.flatMap((result) => result.observations || []).slice(0, 500),
     storylines: buildStorylines(providerResults.flatMap((result) => result.observations || []).slice(0, 500), { now }),
     sourceStatus,
