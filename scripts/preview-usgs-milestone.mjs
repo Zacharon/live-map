@@ -13,7 +13,7 @@ const replayNow=replayClock ? Date.parse(replayClock) : Date.now();
 if(!Number.isFinite(replayNow))throw Error('Invalid replay clock');
 const preview=createLocalPublicPreview({now:()=>replayClock ? replayNow : Date.now(),cacheFile:path.resolve(process.argv[3]||path.join(proof,'cache.json')),cacheOnly:true,fetchImpl:()=>{throw Error('Upstream prohibited');}});
 const aliases={'/':'/index.html','/sources':'/source-explorer.html','/countries':'/countries.html','/diagnostics':'/diagnostics.html'};
-const allowed=/^\/(?:(?:index|404|source-explorer|countries|diagnostics|about)\.html|[a-z0-9-]+\.(?:css|js|txt|xml|svg|ico|png|webp)|(?:src|vendor|data)\/[a-z0-9_./-]+)$/i;
+const allowed=/^\/(?:(?:index|globe|404|source-explorer|countries|diagnostics|about)\.html|[a-z0-9-]+\.(?:css|js|txt|xml|svg|ico|png|webp)|(?:src|vendor|data)\/[a-z0-9_./-]+)$/i;
 const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.wasm':'application/wasm','.xml':'application/xml','.ico':'image/x-icon','.webp':'image/webp'};
 http.createServer(async(req,res)=>{try{
  const url=new URL(req.url,'http://127.0.0.1:'+port);

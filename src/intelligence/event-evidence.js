@@ -21,6 +21,7 @@ function usgsQualityLimitations(event) {
 }
 
 // Read-only projection: never creates an assessment, approval or durable case.
+// WHY: docs/USGS_SPINE_CONTRACT.md#evidence-boundary
 export function projectUsgsEvidence(event, { sourceStatus = {}, now = Date.now() } = {}) {
   if (event?.provider !== 'usgs' || !/^usgs:[\w.-]+$/.test(event.id || '')) return null;
   let source;

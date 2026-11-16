@@ -1,8 +1,11 @@
 ## 2026-11-16 - USGS inspection and export candidate
 
-Shared response-clock scores and read-only evidence projection are under local
-validation. See [contract](USGS_SPINE_CONTRACT.md). Browser acceptance and independent
-review remain separate from owner acceptance, source activation and release.
+USGS evidence and response-clock scores now share the inspection/export path.
+Fixed Filters reopening after timeline selection/reload and globe Back losing its
+return target. The isolated synthetic Edge journey passed 21 checks including
+keyboard, downloads, 320px layout and camera continuity; no upstream reads.
+See [contract and reproduction](USGS_SPINE_CONTRACT.md). Draft review and owner
+acceptance remain separate from source activation, hosted verification and release.
 
 ## 2026-10-27 - Events API timeout fix is ready for review
 

@@ -60,6 +60,7 @@ export function computeQualityDimensions(event, now = Date.now()) {
 // Ingest may store a score against the retrieval clock. A later replay has to
 // derive freshness again, and attention with it, because attention includes
 // that term. Callers copy; this does not rewrite the cached snapshot.
+// WHY: docs/USGS_SPINE_CONTRACT.md#response-clock
 export function withReadTimeQuality(event, now = Date.now()) {
   if (!event || typeof event !== "object") return event;
   const quality = computeQualityDimensions(event, now);

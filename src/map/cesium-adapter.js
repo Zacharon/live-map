@@ -378,7 +378,9 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
 
   let lastTarget = { lat: sharedView.lat, lon: sharedView.lon, zoom: sharedView.zoom };
 
+  // WHY: docs/USGS_SPINE_CONTRACT.md#camera-continuity
   let appliedPose = null;
+  let programmedFlight = false;
   const pose = () => ({ position: Cesium.Cartesian3.clone(viewer.camera.positionWC), direction: Cesium.Cartesian3.clone(viewer.camera.directionWC) });
   const closeVector = (a, b, epsilon) => Cesium.Cartesian3.distance(a, b) < epsilon;
   let initialized = false;
@@ -386,6 +388,7 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
     const lat = Number(view.lat);
     const lon = Number(view.lon);
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+    viewer.camera.cancelFlight();
     const from = lastTarget;
     lastTarget = { lat, lon, zoom: view.zoom };
     const height = options.cameraHeightFromZoom?.(view.zoom, lat, viewer.canvas.clientWidth || container.clientWidth) || 8_000_000;
@@ -401,7 +404,17 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
       const duration = flightDuration(from, lastTarget);
       container.dataset.globeLastFlight = String(duration);
       appliedPose = null;
-      viewer.camera.flyTo({ destination, orientation, duration, complete: () => { appliedPose = pose(); }, easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT });
+      const target = { ...lastTarget };
+      programmedFlight = true;
+      viewer.camera.flyTo({ destination, orientation, duration,
+        complete: () => {
+          programmedFlight = false;
+          lastTarget = target;
+          appliedPose = pose();
+          options.onViewChange?.({ ...target });
+        },
+        cancel: () => { programmedFlight = false; appliedPose = null; },
+        easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT });
     } else {
       viewer.camera.setView({ destination, orientation });
       appliedPose = pose();
@@ -654,7 +667,7 @@ export async function createCesiumGlobe(container, sharedView, options = {}) {
   let preservedResizeView = null;
 
   const onCameraMoveEnd = () => {
-    if (resizing || viewer.canvas.clientWidth !== stableCanvasWidth) return;
+    if (programmedFlight || resizing || viewer.canvas.clientWidth !== stableCanvasWidth) return;
     const view = currentTarget();
     updateChokepointLabels();
     options.onViewChange?.(view);

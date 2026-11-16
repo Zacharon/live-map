@@ -1,53 +1,89 @@
-# USGS evidence projection v1
+# USGS inspection and export
 
-`projectUsgsEvidence(event, {sourceStatus, now})` is a read-only application capability.
-It accepts a normalized USGS event and the source status from the same API envelope,
-returning an evidence-schema record or null for unsupported identity/source URLs.
-Human inspection and JSON export call this same handler; agents import it from
-`src/intelligence/event-evidence.js` with the event and status returned by `/api/events`.
-The stable ID is unchanged. Missing clocks remain null. Current freshness requires
-a healthy source and retrieval within the existing 15-minute provider policy.
-`freshnessScore` and the attention term that includes it are derived at read
-time from the source revision and the response clock. A cached retrieval-time
-score is not authoritative and the cache file is not rewritten on replay.
-When the event already carries `Source feed clock is ahead of local retrieval; freshness is uncertain.`,
-`projectUsgsEvidence` keeps that sentence with the projection caveats. Markdown
-export copies the same sentence into caveats. The inspector already reads the
-event limitation list.
+`projectUsgsEvidence(event, {sourceStatus, now})` is a public read-only capability.
+The event and source status must come from the same `/api/events` envelope.
+Human inspection, JSON/Markdown exports and agent imports use the same projection.
+It returns an evidence record or null for unsupported identities/unsafe source URLs.
+It creates no case, assessment, approval or durable user record.
 
-Read-time score and exported limitation, gates recorded 2026-11-13 for this
-candidate only. No user-data write or external effect, so gates 5–7 are not
-applicable.
+## Response clock
 
-| Gate | Result | Evidence |
-|---|---|---|
-| Shared capabilities | PASS | Served canonical, legacy, and provider-result events use `withReadTimeQuality`. `normalizeEvent` uses the same formula. Inspector, JSON evidence, and Markdown call `projectUsgsEvidence`. |
-| Shared state | PASS | Replay response scores match across those copies. The on-disk cache remains the retrieval snapshot. |
-| Scoped authority | PASS | Unchanged public read-only projection. No new grant, identity, or approval. |
-| Human usability | PARTIAL | `artifactToMarkdown` and the cache-only replay assert the exported sentence and recomputed score. The local preview UI was not opened; the milestone server writes evidence under artifacts/usgs-composition-local in this checkout. |
+Cached scores describe ingestion time. `withReadTimeQuality` recomputes freshness
+and its attention term after deduplication, then exposes the same response-time
+scores in canonical, legacy and provider-result events. It copies records rather
+than rewriting cache or retrieval clocks. Retaining a stored score would make old
+records look fresh during replay; computing before merge could retain an obsolete
+score when dedupe adopts a later revision. Unknown/future revision clocks remain
+unknown. Severity, confidence and impact retain their independent meanings.
 
-Authority is public read-only event data. No authenticated actor, delegated grant,
-write, case insertion, assessment, approval or durable receipt is created. Review
-remains `not-reviewed`. Reads are repeatable for identical input and `now`; there
-is no mutation, retry key, cancellation or Undo. Export is a local snapshot with
-its generation timestamp, original occurrence/revision/retrieval times and source.
-It does not establish a durable assessment/review/export workflow.
+## Evidence boundary
 
-The loopback milestone server uses the existing API builder and provider normalizer.
-Replay contacts no providers. Capture and outage switches are rejected in this isolated composition. No synthetic events are substituted. Production flags and hosting are unchanged.
+Occurrence, publication, revision and retrieval are separate clocks. Missing clocks
+remain null; zero values remain valid. Current evidence freshness requires healthy
+source status and retrieval age within 15 minutes. A carried source-clock-ahead
+caveat survives projection and Markdown. Allowlisted USGS HTTPS identity is required;
+unsupported records receive no USGS evidence. This is one reporting organization;
+an epicenter is not an impact footprint. Projection never establishes independent
+corroboration or changes review status.
 
+## Drawer recovery
 
-Local composed candidate usage (no source activation):
+Selecting a report closes Filters and must persist that closure. Keeping the saved
+open value reopens Filters on reload, leaving Reports inert on narrow screens.
+The browser regression selects from the advanced timeline, reloads at 390px and
+uses keyboard selection and Back. Human controls and agent inspection still share
+one event identity and read model; no new authority is granted.
 
-```powershell
+## Camera continuity
+
+A programmatic camera target is exact; picking rendered terrain back from a screen
+pixel adds cumulative rounding. Preserve the target while the camera pose matches
+its applied pose, and derive a new ellipsoid target after operator movement.
+Programmatic flights suppress intermediate move-end synchronization and commit
+the captured target on completion. Otherwise cancel/start callbacks can overwrite
+the return target with the selected event. Keep the current globe route, tile
+warmup, flight behavior and rendering lifecycle.
+The hidden 2D renderer must not overwrite the visible globe's shared camera state.
+
+## Reproduce offline
+
+```sh
 node tests/usgs-spine-tests.mjs
 node tests/usgs-composition-tests.mjs
-node scripts/preview-usgs-milestone.mjs 8792 artifacts/usgs-composition-local/saved-cache.json --now=2026-10-15T19:22:30.442Z
+node scripts/runtime-usgs-flow.mjs
 ```
 
-The preview is loopback-only and cache-only; capture/outage switches are rejected.
-The replay test invokes the same `/api/events` response and event-artifact builder
-used by the drawer export controls. The saved cache is dated historical evidence,
-not current coverage. Browser/keyboard/visual acceptance is NOT RUN for this composition.
-Authority is public read-only data; no approval fields or persistent case writes
-are added. Export creates a local snapshot, without changing application state.
+The browser harness uses the existing isolated headless Edge/CDP helper and a
+small explicitly synthetic cache generated in temporary storage. It blocks external
+HTTPS, serves cache-only on loopback and checks actual downloaded JSON/Markdown.
+No upstream feed calls or source activation. Local outputs/profiles are ignored.
+Optional dated cache export: `node tests/usgs-composition-tests.mjs <cache-file>`.
+Preview a supplied cache with `node scripts/preview-usgs-milestone.mjs <port> <cache-file>
+--now=<ISO-clock>`; without a replay clock, old records can correctly fall outside
+the time window. Capture/outage switches are rejected. A cache is never live coverage.
+
+## Acceptance scope
+
+Shared capabilities, read-only state and public scoped authority are tested locally.
+Human usability is exercised by the browser harness; owner visual acceptance and
+independent consequential review remain separate. Gates 5-7 for new durable writes
+or external effects do not apply to this read-only projection. Existing browser
+view-preference persistence uses the existing storage rules. No authenticated actor,
+approval, release, hosted ingestion or native database recovery is certified here.
+
+
+## Local verification (2026-11-16)
+
+The isolated Edge run passed 21 checks: keyboard select/detail, real JSON and
+Markdown downloads, Back focus, advanced timeline, earlier/latest loaded-data
+windows, mobile reload, export focus, 320px overflow, native Tab traversal,
+actual Cesium globe selection/Back, repeated refresh and narrow/wide resize.
+It recorded zero unhandled exceptions and zero upstream reads. This is synthetic
+local browser evidence, not owner visual acceptance or hosted/live coverage.
+
+Regression suites cover post-dedupe freshness and attention, unknown/future
+clocks, byte-preserved replay, source rejection, aviation import semantics,
+selection, provider deadlines and existing platform behavior. Required syntax and
+offline validator checks run separately. The validator intentionally skips source
+URL reachability. Independent H3/review, owner acceptance, source activation,
+production verification and deployment remain open. No merge is authorized.

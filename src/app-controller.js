@@ -1069,6 +1069,8 @@ export function bootLiveMap() {
     state.selectedChokepointId = null;
     state.rightDrawerOpen = true;
     state.leftDrawerOpen = false;
+    // WHY: docs/USGS_SPINE_CONTRACT.md#drawer-recovery
+    workspaceStorage.setItem("live-map-left-drawer-v1", "closed");
     state.mobilePane = 'detail';
     workspaceStorage.setItem("live-map-right-drawer-v1", "open");
     if (els.eventDialog.open) els.eventDialog.close();
