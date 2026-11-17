@@ -1,0 +1,920 @@
+{
+  "schema": "dedup-authored-v1",
+  "split": "holdout",
+  "labels": "agent-authored, not user labels or real events",
+  "cases": [
+    {
+      "id": "holdout-syndication",
+      "rationale": "Declared wire copy is one origin",
+      "records": [
+        {
+          "id": "holdout-syndication-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-syndication-a",
+          "providerEventId": "holdout-syndication-a",
+          "sourceUrl": "https://holdout-syndication-a.example/report",
+          "sourceOrganizationId": "wire-one",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          },
+          "syndication": "wire-one"
+        },
+        {
+          "id": "holdout-syndication-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-syndication-b",
+          "providerEventId": "holdout-syndication-b",
+          "sourceUrl": "https://holdout-syndication-b.example/report",
+          "sourceOrganizationId": "mirror-one",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          },
+          "syndication": "wire-one"
+        }
+      ],
+      "positivePairs": [
+        [
+          "holdout-syndication-a",
+          "holdout-syndication-b"
+        ]
+      ]
+    },
+    {
+      "id": "holdout-canonical-url",
+      "rationale": "Tracking-only URL variant",
+      "records": [
+        {
+          "id": "holdout-canonical-url-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-canonical-url-a",
+          "providerEventId": "holdout-canonical-url-a",
+          "sourceUrl": "https://wire.example/item?utm_source=a",
+          "sourceOrganizationId": "holdout-canonical-url-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-canonical-url-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-canonical-url-b",
+          "providerEventId": "holdout-canonical-url-b",
+          "sourceUrl": "https://wire.example/item?utm_source=b",
+          "sourceOrganizationId": "holdout-canonical-url-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": [
+        [
+          "holdout-canonical-url-a",
+          "holdout-canonical-url-b"
+        ]
+      ]
+    },
+    {
+      "id": "holdout-paraphrase",
+      "rationale": "Same authored incident with little word overlap",
+      "records": [
+        {
+          "id": "holdout-paraphrase-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-paraphrase-a",
+          "providerEventId": "holdout-paraphrase-a",
+          "sourceUrl": "https://holdout-paraphrase-a.example/report",
+          "sourceOrganizationId": "holdout-paraphrase-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-paraphrase-b",
+          "title": "Blaze at Cedar manufacturing site shuts eastern highway",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-paraphrase-b",
+          "providerEventId": "holdout-paraphrase-b",
+          "sourceUrl": "https://holdout-paraphrase-b.example/report",
+          "sourceOrganizationId": "holdout-paraphrase-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": [
+        [
+          "holdout-paraphrase-a",
+          "holdout-paraphrase-b"
+        ]
+      ]
+    },
+    {
+      "id": "holdout-updated-time",
+      "rationale": "Revision clock changes; occurrence stays fixed",
+      "records": [
+        {
+          "id": "holdout-updated-time-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "wire",
+          "providerEventId": "one",
+          "sourceUrl": "https://holdout-updated-time-a.example/report",
+          "sourceOrganizationId": "holdout-updated-time-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-updated-time-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": "2026-01-03T00:00:00Z",
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "wire",
+          "providerEventId": "one",
+          "sourceUrl": "https://holdout-updated-time-b.example/report",
+          "sourceOrganizationId": "holdout-updated-time-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": [
+        [
+          "holdout-updated-time-a",
+          "holdout-updated-time-b"
+        ]
+      ]
+    },
+    {
+      "id": "holdout-different-incidents",
+      "rationale": "Distinct simultaneous fires in same area",
+      "records": [
+        {
+          "id": "holdout-different-incidents-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-different-incidents-a",
+          "providerEventId": "holdout-different-incidents-a",
+          "sourceUrl": "https://holdout-different-incidents-a.example/report",
+          "sourceOrganizationId": "holdout-different-incidents-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-different-incidents-b",
+          "title": "Factory fire closes west road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-different-incidents-b",
+          "providerEventId": "holdout-different-incidents-b",
+          "sourceUrl": "https://holdout-different-incidents-b.example/report",
+          "sourceOrganizationId": "holdout-different-incidents-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": []
+    },
+    {
+      "id": "holdout-missing-time",
+      "rationale": "Known fixture duplicate; insufficient time evidence must abstain",
+      "records": [
+        {
+          "id": "holdout-missing-time-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-missing-time-a",
+          "providerEventId": "holdout-missing-time-a",
+          "sourceUrl": "https://holdout-missing-time-a.example/report",
+          "sourceOrganizationId": "holdout-missing-time-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-missing-time-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": null,
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-missing-time-b",
+          "providerEventId": "holdout-missing-time-b",
+          "sourceUrl": "https://holdout-missing-time-b.example/report",
+          "sourceOrganizationId": "holdout-missing-time-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": [
+        [
+          "holdout-missing-time-a",
+          "holdout-missing-time-b"
+        ]
+      ]
+    },
+    {
+      "id": "holdout-missing-geo",
+      "rationale": "Known fixture duplicate; no geography invention",
+      "records": [
+        {
+          "id": "holdout-missing-geo-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-missing-geo-a",
+          "providerEventId": "holdout-missing-geo-a",
+          "sourceUrl": "https://holdout-missing-geo-a.example/report",
+          "sourceOrganizationId": "holdout-missing-geo-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-missing-geo-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": null,
+          "longitude": null,
+          "provider": "holdout-missing-geo-b",
+          "providerEventId": "holdout-missing-geo-b",
+          "sourceUrl": "https://holdout-missing-geo-b.example/report",
+          "sourceOrganizationId": "holdout-missing-geo-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": [
+        [
+          "holdout-missing-geo-a",
+          "holdout-missing-geo-b"
+        ]
+      ]
+    },
+    {
+      "id": "holdout-unknown-severity",
+      "rationale": "Grouping must retain unknown separately from zero",
+      "records": [
+        {
+          "id": "holdout-unknown-severity-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-unknown-severity-a",
+          "providerEventId": "holdout-unknown-severity-a",
+          "sourceUrl": "https://holdout-unknown-severity-a.example/report",
+          "sourceOrganizationId": "holdout-unknown-severity-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-unknown-severity-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-unknown-severity-b",
+          "providerEventId": "holdout-unknown-severity-b",
+          "sourceUrl": "https://holdout-unknown-severity-b.example/report",
+          "sourceOrganizationId": "holdout-unknown-severity-b",
+          "severity": 0,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": [
+        [
+          "holdout-unknown-severity-a",
+          "holdout-unknown-severity-b"
+        ]
+      ]
+    },
+    {
+      "id": "holdout-time-outside",
+      "rationale": "One second outside six hour window",
+      "records": [
+        {
+          "id": "holdout-time-outside-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-time-outside-a",
+          "providerEventId": "holdout-time-outside-a",
+          "sourceUrl": "https://holdout-time-outside-a.example/report",
+          "sourceOrganizationId": "holdout-time-outside-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-time-outside-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T06:00:01Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-time-outside-b",
+          "providerEventId": "holdout-time-outside-b",
+          "sourceUrl": "https://holdout-time-outside-b.example/report",
+          "sourceOrganizationId": "holdout-time-outside-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": []
+    },
+    {
+      "id": "holdout-time-edge",
+      "rationale": "Different authored incident one second inside window",
+      "records": [
+        {
+          "id": "holdout-time-edge-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-time-edge-a",
+          "providerEventId": "holdout-time-edge-a",
+          "sourceUrl": "https://holdout-time-edge-a.example/report",
+          "sourceOrganizationId": "holdout-time-edge-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-time-edge-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T05:59:59Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-time-edge-b",
+          "providerEventId": "holdout-time-edge-b",
+          "sourceUrl": "https://holdout-time-edge-b.example/report",
+          "sourceOrganizationId": "holdout-time-edge-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": []
+    },
+    {
+      "id": "holdout-geo-outside",
+      "rationale": "Just beyond 35km",
+      "records": [
+        {
+          "id": "holdout-geo-outside-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-geo-outside-a",
+          "providerEventId": "holdout-geo-outside-a",
+          "sourceUrl": "https://holdout-geo-outside-a.example/report",
+          "sourceOrganizationId": "holdout-geo-outside-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-geo-outside-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10.316,
+          "longitude": 0,
+          "provider": "holdout-geo-outside-b",
+          "providerEventId": "holdout-geo-outside-b",
+          "sourceUrl": "https://holdout-geo-outside-b.example/report",
+          "sourceOrganizationId": "holdout-geo-outside-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": []
+    },
+    {
+      "id": "holdout-geo-edge",
+      "rationale": "Different incident just inside 35km",
+      "records": [
+        {
+          "id": "holdout-geo-edge-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-geo-edge-a",
+          "providerEventId": "holdout-geo-edge-a",
+          "sourceUrl": "https://holdout-geo-edge-a.example/report",
+          "sourceOrganizationId": "holdout-geo-edge-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-geo-edge-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10.314,
+          "longitude": 0,
+          "provider": "holdout-geo-edge-b",
+          "providerEventId": "holdout-geo-edge-b",
+          "sourceUrl": "https://holdout-geo-edge-b.example/report",
+          "sourceOrganizationId": "holdout-geo-edge-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": []
+    },
+    {
+      "id": "holdout-category",
+      "rationale": "Conflicting category despite title",
+      "records": [
+        {
+          "id": "holdout-category-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-category-a",
+          "providerEventId": "holdout-category-a",
+          "sourceUrl": "https://holdout-category-a.example/report",
+          "sourceOrganizationId": "holdout-category-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-category-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "flood",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-category-b",
+          "providerEventId": "holdout-category-b",
+          "sourceUrl": "https://holdout-category-b.example/report",
+          "sourceOrganizationId": "holdout-category-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": []
+    },
+    {
+      "id": "holdout-exact-url-conflict",
+      "rationale": "Rolling URL reused on later incident",
+      "records": [
+        {
+          "id": "holdout-exact-url-conflict-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-exact-url-conflict-a",
+          "providerEventId": "holdout-exact-url-conflict-a",
+          "sourceUrl": "https://wire.example/rolling",
+          "sourceOrganizationId": "holdout-exact-url-conflict-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-exact-url-conflict-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-03T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-exact-url-conflict-b",
+          "providerEventId": "holdout-exact-url-conflict-b",
+          "sourceUrl": "https://wire.example/rolling",
+          "sourceOrganizationId": "holdout-exact-url-conflict-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": []
+    },
+    {
+      "id": "holdout-unknown-family",
+      "rationale": "Unknown organization is not independent confirmation",
+      "records": [
+        {
+          "id": "holdout-unknown-family-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-unknown-family-a",
+          "providerEventId": "holdout-unknown-family-a",
+          "sourceUrl": "https://holdout-unknown-family-a.example/report",
+          "sourceOrganizationId": null,
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-unknown-family-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-unknown-family-b",
+          "providerEventId": "holdout-unknown-family-b",
+          "sourceUrl": "https://holdout-unknown-family-b.example/report",
+          "sourceOrganizationId": null,
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": [
+        [
+          "holdout-unknown-family-a",
+          "holdout-unknown-family-b"
+        ]
+      ]
+    },
+    {
+      "id": "holdout-negation",
+      "rationale": "Lexical overlap cannot resolve negation",
+      "records": [
+        {
+          "id": "holdout-negation-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-negation-a",
+          "providerEventId": "holdout-negation-a",
+          "sourceUrl": "https://holdout-negation-a.example/report",
+          "sourceOrganizationId": "holdout-negation-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-negation-b",
+          "title": "No factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-negation-b",
+          "providerEventId": "holdout-negation-b",
+          "sourceUrl": "https://holdout-negation-b.example/report",
+          "sourceOrganizationId": "holdout-negation-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": []
+    },
+    {
+      "id": "holdout-numbers",
+      "rationale": "Different authored quakes; magnitude normalization hard negative",
+      "records": [
+        {
+          "id": "holdout-numbers-a",
+          "title": "Magnitude 4 earthquake at Cedar ridge",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-numbers-a",
+          "providerEventId": "holdout-numbers-a",
+          "sourceUrl": "https://holdout-numbers-a.example/report",
+          "sourceOrganizationId": "holdout-numbers-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "holdout-numbers-b",
+          "title": "Magnitude 6 earthquake at Cedar ridge",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "holdout-numbers-b",
+          "providerEventId": "holdout-numbers-b",
+          "sourceUrl": "https://holdout-numbers-b.example/report",
+          "sourceOrganizationId": "holdout-numbers-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": []
+    },
+    {
+      "id": "holdout-chain",
+      "rationale": "A-B and B-C close, A-C beyond time bound; never bridge all three",
+      "records": [
+        {
+          "id": "chain-a",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T00:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "chain-a",
+          "providerEventId": "chain-a",
+          "sourceUrl": "https://chain-a.example/report",
+          "sourceOrganizationId": "chain-a",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "chain-b",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T04:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "chain-b",
+          "providerEventId": "chain-b",
+          "sourceUrl": "https://chain-b.example/report",
+          "sourceOrganizationId": "chain-b",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        },
+        {
+          "id": "chain-c",
+          "title": "Factory fire closes east road at Cedar industrial park",
+          "category": "fire",
+          "startedAt": "2026-01-01T08:00:00Z",
+          "updatedAt": null,
+          "latitude": 10,
+          "longitude": 0,
+          "provider": "chain-c",
+          "providerEventId": "chain-c",
+          "sourceUrl": "https://chain-c.example/report",
+          "sourceOrganizationId": "chain-c",
+          "severity": null,
+          "confidence": null,
+          "sourceStatus": "authored-fixture",
+          "provenance": {
+            "kind": "synthetic",
+            "author": "experiment agent"
+          }
+        }
+      ],
+      "positivePairs": [
+        [
+          "chain-a",
+          "chain-b"
+        ]
+      ]
+    }
+  ]
+}

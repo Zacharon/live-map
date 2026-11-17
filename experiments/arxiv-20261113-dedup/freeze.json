@@ -1,0 +1,8 @@
+{
+  "createdAt": "2026-11-14T07:08:44.954Z",
+  "policy": "Frozen before core implementation/evaluation. No tuning on holdout. Splits share authored templates; not distribution-independent.",
+  "hashes": {
+    "development.json": "f541f089bb2bd2da99534a394525ce49d77d4f75dbf2ccfa84d7b4f79a345a52",
+    "holdout.json": "1909ced2e8575033897411686d0240f2052e3119ff4f0226279dc8c03ecec42c"
+  }
+}

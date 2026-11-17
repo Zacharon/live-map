@@ -1,0 +1,10 @@
+﻿[
+    {
+        "Path":  "src\\events\\event-deduplication.js",
+        "Hash":  "092E17943DC5390BAE60B1676D9FE70D91BB5DCA8636EBAC448E305F32E389FC"
+    },
+    {
+        "Path":  "src\\events\\value-semantics.js",
+        "Hash":  "67427EBB03BD6E09C5DD9492FAE43BC37990647F123A9BEE54000AE6E8D21B8B"
+    }
+]

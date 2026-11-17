@@ -1,0 +1,7 @@
+﻿PASS node --check baseline-adapter.mjs
+PASS node --check cli.mjs
+PASS node --check evaluate.mjs
+PASS node --check freeze-fixtures.mjs
+PASS node --check grouping.mjs
+PASS node --check test.mjs
+PASS node --check write-report.mjs

@@ -1,0 +1,21 @@
+﻿import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
+import {group,candidate,families,embeddingAdapter} from './grouping.mjs';
+const fixture=JSON.parse(readFileSync(new URL('development.json',import.meta.url),'utf8'));const r=fixture.cases[0].records;
+const before=JSON.stringify(r);const out=group(r);assert.equal(JSON.stringify(r),before);assert.deepEqual(out.records,r);assert.equal(out.retainedRecords,2);assert.equal(out.declaredFamilyCount,1);
+assert.deepEqual(group([...r].reverse()).groups,out.groups);
+assert.equal(candidate({...r[0],severity:null},{...r[1],severity:0}).state,'match');assert.equal(out.records[0].severity,null);
+assert.equal(candidate(r[0],{...r[1],latitude:null}).state,'abstain');
+assert.equal(candidate(r[0],{...r[1],sourceUrl:r[0].sourceUrl,category:'flood'}).state,'separate');
+assert.equal(families([{id:'1',sourceOrganizationId:'a',syndication:'wire'},{id:'2',sourceOrganizationId:'b',syndication:'wire'},{id:'3',sourceOrganizationId:'b'}]).declaredFamilyCount,1);
+assert.equal(families([{id:'1'},{id:'2'}]).declaredFamilyCount,0);
+assert.throws(()=>group([r[0],r[0]]));assert.throws(()=>group(r,{method:'bad'}));assert.throws(()=>embeddingAdapter({}));
+const cli=new URL('cli.mjs',import.meta.url);const req=JSON.stringify({capability:'dedup.group.v1',records:r});const json=spawnSync(process.execPath,[cli.pathname.replace(/^\/(.:)/,'$1'),'--request','-','--json'],{input:req,encoding:'utf8'});assert.equal(json.status,0,json.stderr);assert.deepEqual(JSON.parse(json.stdout),out);
+const human=spawnSync(process.execPath,[cli.pathname.replace(/^\/(.:)/,'$1'),'--request','-'],{input:req,encoding:'utf8'});assert.equal(human.status,0,human.stderr);assert.match(human.stdout,/2 records retained/);
+const invalid=spawnSync(process.execPath,[cli.pathname.replace(/^\/(.:)/,'$1'),'--request','-','--json'],{input:'{}',encoding:'utf8'});assert.equal(invalid.status,1);assert.equal(JSON.parse(invalid.stderr).error,'invalid-request');
+console.log('PASS: retention/provenance, immutability, deterministic ordering, family transitivity/unknowns, unknown-vs-zero, constraints, validation, CLI human/JSON parity and structured rejection');
+const h=JSON.parse(readFileSync(new URL('holdout.json',import.meta.url),'utf8'));
+for(const c of [...fixture.cases,...h.cases])for(const method of ['baseline','candidate']){const b=JSON.stringify(c.records),o=group(c.records,{method});assert.equal(JSON.stringify(c.records),b);assert.deepEqual(o.records,c.records);assert.deepEqual(o.groups.flatMap(g=>g.recordIds).sort(),c.records.map(r=>r.id).sort());assert.ok(o.declaredFamilyCount<=c.records.length);assert.equal(o.independentConfirmationCount,null);}
+const chain=h.cases.find(c=>c.id==='holdout-chain');assert.ok(group(chain.records).groups.every(g=>g.recordIds.length<3));
+console.log('PASS: every frozen case retains each original record exactly once; no transitive three-record bridge');
