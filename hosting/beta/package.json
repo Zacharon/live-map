@@ -1,0 +1,1 @@
+{"name":"live-map-beta-runtime","private":true,"type":"module","dependencies":{"@netlify/blobs":"^10.0.0","@netlify/functions":"^5.0.0","satellite.js":"^7.1.0"}}
