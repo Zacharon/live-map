@@ -66,6 +66,39 @@ export function observationFromFeedItem(item, feed, now = new Date()) {
   return createSourceObservation({ provider: feed.providerId, observationType: "feed", externalId: `${feed.id}:${item.guid || item.link}`, url: item.link, title: item.title, excerpt: item.summary, publishedAt: item.publishedAt || item.updatedAt, sourceOrganizationId: feed.sourceOrganizationId || feed.id, sourceOrganizationName: feed.name, publisher: feed.name, sourceTier: feed.sourceTier, verificationState: feed.verificationState || "unverified" }, now);
 }
 
+async function readBoundedFeedText(response, maxBytes) {
+  const declared = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    await response.body?.cancel();
+    throw new Error("Feed response exceeds byte limit");
+  }
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const parts = [];
+  let bytes = 0;
+  let finished = false;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        finished = true;
+        break;
+      }
+      bytes += value.byteLength;
+      // Check decoded-response bytes before retaining or decoding this chunk.
+      // Content-Length may be absent, incorrect, or refer to compressed bytes.
+      if (bytes > maxBytes) throw new Error("Feed response exceeds byte limit");
+      parts.push(decoder.decode(value, { stream: true }));
+    }
+    parts.push(decoder.decode());
+    return parts.join("");
+  } finally {
+    if (!finished) await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+}
+
 async function fetchTextWithSafety(url, options = {}) {
   let current = assertSafeFetchUrl(url).href;
   for (let redirect = 0; redirect < 3; redirect += 1) {
@@ -86,8 +119,7 @@ async function fetchTextWithSafety(url, options = {}) {
         continue;
       }
       if (!response.ok) throw new Error(`Feed returned ${response.status}`);
-      const text = await response.text();
-      return text.slice(0, options.maxBytes || 1024 * 1024);
+      return await readBoundedFeedText(response, options.maxBytes || 1024 * 1024);
     } catch (error) {
       if (error?.name === "AbortError" || options.signal?.aborted) throw abortError("Feed fetch timed out.");
       throw error;

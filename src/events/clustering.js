@@ -30,12 +30,12 @@ export function clusterKeyForEvent(event) {
 }
 
 function severityScore(event) {
-  return SEVERITIES[event.severity]?.score ?? 0;
+  return SEVERITIES[event.severity]?.score ?? -1;
 }
 
 function dominantSeverity(events) {
-  let best = "low";
-  let bestScore = 0;
+  let best = "unknown";
+  let bestScore = -1;
   for (const event of events) {
     const score = severityScore(event);
     if (score > bestScore) {

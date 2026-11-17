@@ -1,9 +1,10 @@
+import { severityScore, severityBand } from "./severity.js";
 import { safeSourceUrl } from "../sources/source-url.js";
 import { computeQualityDimensions } from "./event-quality.js";
 import { classifyEvent } from "./taxonomy.js";
 import { finiteNumber, nullableScore, timestampMs, validCoordinates } from "./value-semantics.js";
 
-const SEVERITY_LABELS = ["low", "moderate", "high", "critical"];
+const SEVERITY_LABELS = ["unknown", "low", "moderate", "high", "critical"];
 const VALID_STATUS = new Set(["active", "monitoring", "resolved", "unknown"]);
 export const RECORD_KINDS = ["event", "observation", "discovery-lead", "moving-object"];
 
@@ -14,11 +15,8 @@ export function clamp(value, min, max) {
 }
 
 export function severityLabelFromScore(score) {
-  const value = clamp(score, 0, 100);
-  if (value >= 85) return "critical";
-  if (value >= 65) return "high";
-  if (value >= 35) return "moderate";
-  return "low";
+  const band = severityBand(score);
+  return band === "medium" ? "moderate" : band;
 }
 
 export function uiSeverityFromScore(score) {
@@ -38,7 +36,7 @@ export function scoreFromLegacySeverity(severity) {
     case "low":
       return 20;
     default:
-      return 25;
+      return null;
   }
 }
 
@@ -87,13 +85,8 @@ export function createNormalizedEvent(input) {
   const updatedAt = toIsoString(input.updatedAt);
   const sourcePublishedAt = toIsoString(input.sourcePublishedAt);
   const lastVerifiedAt = toIsoString(input.lastVerifiedAt);
-  const severity =
-    typeof input.severity === "number"
-      ? clamp(input.severity, 0, 100)
-      : clamp(input.severityScore ?? scoreFromLegacySeverity(input.severityLabel || input.severity), 0, 100);
-  const severityLabel = SEVERITY_LABELS.includes(input.severityLabel)
-    ? input.severityLabel
-    : severityLabelFromScore(severity);
+  const severity = severityScore(input);
+  const severityLabel = severityLabelFromScore(severity);
   const providerEventId = input.providerEventId ?? input.providerId ?? null;
   const stableId = input.id || `${input.provider}:${providerEventId || stableStringHash(`${input.title}:${startedAt}:${input.latitude}:${input.longitude}`)}`;
   const taxonomy = classifyEvent(input);

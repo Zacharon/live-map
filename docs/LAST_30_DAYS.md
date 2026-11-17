@@ -1,3 +1,55 @@
+## 2026-11-17 - Forge staging CI moves to Node 22
+
+Dependabot PR #108 (PGlite 0.5.13 to 0.5.16, pglite-postgis 0.2.13 to 0.2.16) failed `forge-staging`:
+`CREATE EXTENSION postgis` reported "could not load library postgis-3.so ... null function or function
+signature mismatch". Reproduced locally with only main's migrations: 0.5.16 fails on Node 20.20.2 and
+loads on Node 22.18.0 and 24.16.0; 0.5.13 loads on Node 20. PGlite is a test-only devDependency, so
+only the `forge-staging` job moves to Node 22. The other jobs, and `engines`, stay on Node 20.
+
+## 2026-11-16 - USGS inspection and export candidate
+
+USGS evidence and response-clock scores now share the inspection/export path.
+Fixed Filters reopening after timeline selection/reload and globe Back losing its
+return target. The isolated synthetic Edge journey passed 21 checks including
+keyboard, downloads, 320px layout and camera continuity; no upstream reads.
+See [contract and reproduction](USGS_SPINE_CONTRACT.md). Draft review and owner
+acceptance remain separate from source activation, hosted verification and release.
+
+## 2026-11-12 - Local RSS redirect boundary regression repair
+
+RSS redirects now stay inside the configured feed origin, including protocol and
+port, and reject empty destinations, embedded credentials and IPv6 literals.
+A mocked reachable IPv4-mapped loopback redirect failed before the repair and
+passes afterward; permitted same-origin moves and unknown source clocks remain
+covered. A second RED/GREEN regression closes RSS's whole-body read: its existing
+1 MiB limit is now enforced on streamed bytes before buffering/decoding, with
+cancellation on overflow and split UTF-8 coverage. No DNS lookup API or runtime
+dependency was added. This is local evidence,
+not a claim about deployed egress, DNS, provider reachability or production safety.
+See [commands, gates and remaining limits](security-regression-2026-11-12.md).
+Independent H3 and hosted validation remain pending. No provider activation,
+publication or deployment occurred; inherited untracked research is preserved.
+
+## 2026-11-02 - Unknown severity local trial
+
+Local candidate preserves unknown versus zero severity across normalization, filters and risk consumers. See [trial report](tstack-20261102/live-map/REPORT.md). Review and validation results are recorded there; existing owner, H3 and hosted gates remain open.
+
+## 2026-10-31 - Event-to-original-source journey (same isolated candidate)
+
+Extended the existing refresh candidate within the selected journey: Clear report filters resets verification too; the inspector places source revision and supplied retrieval time beside Open original source; NWS keeps a supplied alert-specific web/GeoJSON identity instead of substituting the active-feed collection or homepage. Missing original links and clocks remain unavailable. Invalid supplied web links still fail validation. No URL is invented from a URN.
+
+An unrelated render keeps the in-flight refresh label, and a delayed manual feedback reset leaves demo mode's reload label intact. The original refresh patch/evidence remains separate. Local synthetic regressions cover the source/filter/detail path and failure/retry; browser/keyboard/mobile acceptance and independent coordinator review remain separate. No providers, globe layers, deployment or canonical installation changed.
+
+## 2026-10-31 - Truthful manual refresh feedback (isolated local fix)
+
+Manual refresh now reserves success copy for an accepted response, qualifies partial/empty/saved-read results, and reports failure after timeout, network or malformed responses. Intentional offline previews retain their Public snapshots outcome. Generation guards prevent an old completion timer from replacing feedback during a newer request. Existing source timestamps, cached reports, request scheduling and provider settings remain unchanged.
+
+Local regression checks execute the actual controller request lifecycle and error renderer with synthetic responses, including failed refresh followed by successful retry. This isolated branch is not installed into the canonical checkout or deployed; browser/screen-reader acceptance and independent H3 are separate evidence. See the task's refresh verification report for commands, results and limits.
+
+## 2026-10-30 - Isolated globe performance candidate
+
+Removed repeated temporary WebGL capability probes while a live viewer exists. Synthetic headless measurement confirms zero repeat probes; variable timings do not establish an overall speedup. See [measurement and limits](GLOBE_PERFORMANCE_LOCAL_2026-10-30.md). No canonical installation or deployment; existing gates remain open.
+
 ## 2026-10-27 - Events API deadline
 
 `/api/events` and `/.netlify/functions/events` could run past the synchronous function limit because `official-rss` fetched up to seven allowlisted feeds one after another, and ReliefWeb's configured fetch had no abort. The dashboard then showed "Event data temporarily unavailable" when the browser's 15 second request timed out. Providers now share an 8 second deadline, in-flight fetches abort, official feeds and status pages run concurrently, and a timed-out provider stays `degraded` with stale cache or `unavailable` in `sourceStatus`. No new environment variable. Not deployed.
@@ -26,6 +78,15 @@ This follow-up adds `npm ci --ignore-scripts --no-audit --no-fund` to Validate, 
 
 Local Node 20.20.2/npm 10.9.9 installation accepts the current pair and rejects #83 with `ERESOLVE`. Syntax, offline platform tests, 49 audit-repair tests and the offline validator pass. The online validator fails only its external USGS event-URL reachability row in this environment; that is not dependency-install evidence. Dependabot grouping was checked against official documentation and updater source, not a hosted future-update run.
 
+## 2026-10-21 - Frozen grid-region incident extension
+
+- Extended the existing offline multi-site evaluation container to schema v2 for
+  Reuters-attributed Ukrainian grid-region reports. Kept exact assets, physical
+  damage, outage start, restoration, and cessation verification unknown or false;
+  Odesa's 32,700 families is explicitly a report-time regional observation.
+- Focused query/negative tests and feature-standard gates are documented in
+  `MULTI_SITE_INCIDENT_EVALUATION.md`. No provider, public API, or UI change.
+
 ## 2026-10-19 - PR #80 conflict reconciliation
 
 Merged current main into the follow-up candidate, preserving its homepage routing, saved-view serialization and Back behavior alongside local borders, Cloudflare page headers and Netlify environment forwarding. Removed the duplicate globe-generation transform. CSP parity readers now normalize Windows line endings without changing policy assertions. Local syntax/Cloudflare exports, offline platform suite, offline validator, generated-page consistency and both secret scans pass. Production smoke and hosted acceptance remain separate evidence; no deployment.
@@ -41,6 +102,28 @@ Homepage HTML and URL-state defaults now select 2D; /globe and /globe.html defau
 Local syntax, platform suite (including page-mode regression tests), generated-page consistency and browser-secret checks pass. Local controller/state execution checks cover defaults, serialization and navigation; no local interactive browser result is claimed because the connected browser is on a separate machine from this checkout. Regression payload is synthetic.
 
 Read-only hosted checks at https://liveworldmap.netlify.app on October 19 UTC: / returns HTTP 200 with strict script-src 'self'; /globe.html returns HTTP 404 with the same strict policy, independently confirmed in the browser as Netlify's Page not found screen. This does not establish which commit is deployed. Hosted globe startup and candidate behavior remain unverified. No deployment or merge performed.
+
+## 2026-10-19 - Hosted acceptance probe (PARTIAL)
+
+- Fetched remote main `5aabf0f` read-only; globe/workbench foundation is merged.
+  Older local-only/open-PR statements below remain historical.
+- Cloudflare 2D/globe and real USGS source-snapshot journey worked; five frontend
+  assets match main. Serving Worker version remains unbound. Netlify globe 404
+  was reproduced without a serving SHA.
+- Mobile Map cleared selection; USGS Evidence ledger navigation opened Hormuz;
+  export source-count terminology differs from inspector independent evidence;
+  one API 503 exposed an incorrect future retry label before manual recovery.
+- Details and locally retained receipts: `HOSTED_ACCEPTANCE_2026-10-19.md`.
+  No deployment or runtime edits. Hosted acceptance and owner review remain open.
+
+## 2026-10-18 - Frozen multi-site incident evaluation
+
+- Added one offline St. Petersburg four-site case and negative mutation tests in
+  `tests/multi-site-incident-evaluation-tests.mjs`, wired into the platform suite.
+- AP/Reuters/RFE-RL search excerpts only; full-page retrieval failed. All claims
+  retain attribution and uncertainty; ceasefire terms remain brief-only.
+- No runtime/API/provider changes. Operational-evidence/workbench and PortWatch
+  sample files are absent on this base. See `MULTI_SITE_INCIDENT_EVALUATION.md`.
 
 ## 2026-10-17 - 3D globe gets its own page
 
