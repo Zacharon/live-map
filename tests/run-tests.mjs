@@ -37,6 +37,7 @@ import { fetchOfficialFeedEvents, parseFeedItems, normalizeFeedItem } from "../s
 import { normalizeStatuspageIncident } from "../src/data/providers/statuspage.js";
 import { normalizeRipestatObservation } from "../src/data/providers/ripestat.js";
 import { assertSafeFetchUrl } from "../src/data/providers/ssrf-protection.js";
+import { runRssRedirectRegressionTests, runRssBodyRegressionTests } from "./rss-redirect-tests.mjs";
 import { applyPublicationPolicy } from "../src/data/providers/publication-policy.js";
 import { createCompanyIdentity, sameCompany } from "../src/data/providers/company-identity.js";
 import { createMemoryProviderCache } from "../src/data/providers/cache.js";
@@ -1180,6 +1181,9 @@ test("Open signal normalizers preserve metadata-only social boundaries", () => {
   assert.equal(observation.rawRetention, "none");
   assert.equal(observation.verificationState, "unverified");
 });
+
+test("Official RSS redirects remain inside the configured feed origin", runRssRedirectRegressionTests);
+test("Official RSS bodies enforce byte limits before buffering", runRssBodyRegressionTests);
 
 test("Official feed parsing strips unsafe markup and rejects local feed URLs", () => {
   const items = parseFeedItems(`<?xml version="1.0"?><rss><channel><item><title><![CDATA[Test alert]]></title><link>https://example.gov/a</link><pubDate>Tue, 09 Jun 2026 00:00:00 GMT</pubDate><description><![CDATA[<script>x</script><b>Official</b> update]]></description></item></channel></rss>`);

@@ -1,3 +1,18 @@
+## 2026-11-12 - Local RSS redirect boundary regression repair
+
+RSS redirects now stay inside the configured feed origin, including protocol and
+port, and reject empty destinations, embedded credentials and IPv6 literals.
+A mocked reachable IPv4-mapped loopback redirect failed before the repair and
+passes afterward; permitted same-origin moves and unknown source clocks remain
+covered. A second RED/GREEN regression closes RSS's whole-body read: its existing
+1 MiB limit is now enforced on streamed bytes before buffering/decoding, with
+cancellation on overflow and split UTF-8 coverage. No DNS lookup API or runtime
+dependency was added. This is local evidence,
+not a claim about deployed egress, DNS, provider reachability or production safety.
+See [commands, gates and remaining limits](security-regression-2026-11-12.md).
+Independent H3 and hosted validation remain pending. No provider activation,
+publication or deployment occurred; inherited untracked research is preserved.
+
 ## 2026-10-17 - Candidate committed, main merged, globe visual pass
 
 The 53-path candidate and inherited foundation are committed on `feature/evidence-semantic-globe` (draft PR #75 to `main`). Current `main` (33d426f) is merged in. Main's audit-repair suite is reconciled with candidate semantics: undated records stay visible as "Time unknown", unknown exact clocks read "Not supplied", the browser direct-USGS fallback stays removed, and source URLs use the shared `safeSourceUrl` helper. The inherited registry cache-policy assertion is fixed. The validator now skips gitignored root evidence folders. The 3D globe gained a night-atlas restyle, atmosphere/terminator, stars, graticule, optional local borders, severity-styled clustered markers and smooth fly-to ([record and CSP implications](GLOBE_VISUAL_2026-10-17.md)). The repository ruleset requires PRs for updates to every branch, so follow-ups go out as a new stacked branch and PR. No deployment.

@@ -43,7 +43,20 @@ These rules capture the current security baseline, including PR #36.
 - Stored ingestion errors and `/api/changes` database failures return sanitized public status; database connection details remain server-side.
 - Server-side fetch helpers need timeouts, bounded retries, cache/backoff, and sanitized errors.
 - Provider errors must not expose stack traces, raw payloads, tokens, keys, or private contact emails.
-- RSS redirects and upstream response size caps are backlog hardening items.
+- RSS redirects must remain on the validated configured feed origin (same scheme,
+  hostname and effective port). Missing destinations, credentials and IPv6 literal
+  feed hosts are refused before another fetch. No feed currently requires an IPv6
+  literal; such support needs a separately reviewed address policy.
+- The portable RSS guard does not resolve DNS or pin addresses. The configured
+  feed's DNS and deployed egress restrictions remain trust assumptions, not
+  verified public-address guarantees. Cross-origin provider moves fail closed and
+  require review of the registry URL; do not auto-enroll redirect destinations.
+- RSS bodies enforce the existing 1 MiB default on streamed response bytes before
+  decoding or retaining each chunk. Oversized declared lengths refuse before a
+  read; absent/incorrect lengths still hit the streaming counter. Overflow cancels
+  the reader, and the lock is released on success or failure. Streaming UTF-8
+  decoding preserves split multibyte characters. Other provider body caps remain
+  separate work.
 
 ## Required Regression Tests For Security Changes
 
