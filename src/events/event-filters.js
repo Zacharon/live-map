@@ -1,3 +1,4 @@
+import { severityScore, severityBand } from "./severity.js";
 import { SEVERITIES } from "../config.js";
 import { sortEvents } from "./feed-organization.js";
 import { timestampMs } from "./value-semantics.js";
@@ -12,13 +13,13 @@ export function filteredEvents(events, filters, hours, sort, referenceAt = null)
     const occurredAt = timestampMs(event.occurredAt);
     // Undated reports remain inspectable, explicitly labeled unknown; they are
     // never upgraded into a recent event by substituting ingestion time.
-    return domainMatch && recordKindMatch && filters.categories.has(event.category) && filters.severities.has(event.severity) && (occurredAt === null || (occurredAt >= cutoff && (referenceAt === null || occurredAt <= end)));
+    return domainMatch && recordKindMatch && filters.categories.has(event.category) && filters.severities.has(severityBand(severityScore(event))) && (occurredAt === null || (occurredAt >= cutoff && (referenceAt === null || occurredAt <= end)));
   });
   if (query) {
     output = output.filter((event) => `${event.title} ${event.summary} ${event.country} ${event.place} ${event.sourceName} ${event.sourceType} ${event.verificationStatus} ${event.domainLabel} ${event.typeLabel} ${JSON.stringify(event.details)}`.toLowerCase().includes(query));
   }
   if (sort === "newest" || sort === "severity") {
-    return output.sort((a, b) => sort === "newest" ? b.occurredAt - a.occurredAt : SEVERITIES[b.severity].score - SEVERITIES[a.severity].score || b.occurredAt - a.occurredAt);
+    return output.sort((a, b) => sort === "newest" ? b.occurredAt - a.occurredAt : (severityScore(b) ?? -1) - (severityScore(a) ?? -1) || b.occurredAt - a.occurredAt);
   }
   return sortEvents(output, sort);
 }

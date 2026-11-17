@@ -8,6 +8,12 @@ updates:
       time: "09:00"
       timezone: America/New_York
     open-pull-requests-limit: 5
+    groups:
+      # Group available updates; this does not require both packages to change.
+      # Validate runs npm ci to reject incompatible exact pglite peer versions.
+      electric-sql:
+        patterns:
+          - "@electric-sql/*"
 
   - package-ecosystem: github-actions
     directory: /

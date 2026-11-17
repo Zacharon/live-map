@@ -21,6 +21,10 @@ export function normalizeVerificationStatus(value) {
   return "unverified";
 }
 
+// The preview writes this exact sentence when the source clock leads retrieval.
+// Export must copy it rather than invent a paraphrase.
+export const SOURCE_CLOCK_AHEAD_LIMITATION = "Source feed clock is ahead of local retrieval; freshness is uncertain.";
+
 export function computeQualityDimensions(event, now = Date.now()) {
   const updatedAt = timestampMs(event.updatedAt);
   const freshnessScore = updatedAt === null || updatedAt > now ? null
@@ -51,4 +55,15 @@ export function computeQualityDimensions(event, now = Date.now()) {
       corroboration: "Explicit independent-source count; article and merged-record counts are not substitutes.",
     },
   };
+}
+
+// Ingest may store a score against the retrieval clock. A later replay has to
+// derive freshness again, and attention with it, because attention includes
+// that term. Callers copy; this does not rewrite the cached snapshot.
+// WHY: docs/USGS_SPINE_CONTRACT.md#response-clock
+export function withReadTimeQuality(event, now = Date.now()) {
+  if (!event || typeof event !== "object") return event;
+  const quality = computeQualityDimensions(event, now);
+  if (event.freshnessScore === quality.freshnessScore && event.attentionScore === quality.attentionScore) return event;
+  return { ...event, freshnessScore: quality.freshnessScore, attentionScore: quality.attentionScore };
 }
