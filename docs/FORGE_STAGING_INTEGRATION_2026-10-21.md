@@ -28,7 +28,7 @@ Do not replace Live Map's `/api/events` with Forge's envelope. Live Map aggregat
 
 ## Reproduce
 
-Use clean sibling checkouts of Live Map and the pinned Forge revision, Node 20+ and Python 3.11+:
+Use clean sibling checkouts of Live Map and the pinned Forge revision, Node 22+ and Python 3.11+ (from `@electric-sql/pglite` 0.5.16 and `pglite-postgis` 0.2.16, the PostGIS extension no longer loads on Node 20):
 
 ```bash
 npm ci --ignore-scripts
