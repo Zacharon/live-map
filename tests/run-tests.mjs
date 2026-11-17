@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { runMultiSiteIncidentEvaluationTests } from "./multi-site-incident-evaluation-tests.mjs";
+import { runUkraineGridIncidentEvaluationTests } from "./ukraine-grid-incident-evaluation-tests.mjs";
 import fs from "node:fs";
 import { SEVERITIES } from "../src/config.js";
 import { LAYER_CATALOG } from "../src/data/layers.js";
@@ -2168,6 +2170,8 @@ test("Chokepoint UI filtering, rendering, and event enrichment remain safe", () 
   assert.deepEqual(enriched[0].affectedChokepoints, ["Suez Canal"]);
 });
 
+test("Frozen multi-site incident preserves claim and impact boundaries", runMultiSiteIncidentEvaluationTests);
+test("Frozen grid multi-site incident keeps regions and report-time impact separate", runUkraineGridIncidentEvaluationTests);
 await runPendingTests();
 console.log("All tests passed.");
 import './zoom-density-tests.mjs';

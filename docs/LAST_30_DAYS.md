@@ -70,6 +70,15 @@ This follow-up adds `npm ci --ignore-scripts --no-audit --no-fund` to Validate, 
 
 Local Node 20.20.2/npm 10.9.9 installation accepts the current pair and rejects #83 with `ERESOLVE`. Syntax, offline platform tests, 49 audit-repair tests and the offline validator pass. The online validator fails only its external USGS event-URL reachability row in this environment; that is not dependency-install evidence. Dependabot grouping was checked against official documentation and updater source, not a hosted future-update run.
 
+## 2026-10-21 - Frozen grid-region incident extension
+
+- Extended the existing offline multi-site evaluation container to schema v2 for
+  Reuters-attributed Ukrainian grid-region reports. Kept exact assets, physical
+  damage, outage start, restoration, and cessation verification unknown or false;
+  Odesa's 32,700 families is explicitly a report-time regional observation.
+- Focused query/negative tests and feature-standard gates are documented in
+  `MULTI_SITE_INCIDENT_EVALUATION.md`. No provider, public API, or UI change.
+
 ## 2026-10-19 - PR #80 conflict reconciliation
 
 Merged current main into the follow-up candidate, preserving its homepage routing, saved-view serialization and Back behavior alongside local borders, Cloudflare page headers and Netlify environment forwarding. Removed the duplicate globe-generation transform. CSP parity readers now normalize Windows line endings without changing policy assertions. Local syntax/Cloudflare exports, offline platform suite, offline validator, generated-page consistency and both secret scans pass. Production smoke and hosted acceptance remain separate evidence; no deployment.
@@ -85,6 +94,28 @@ Homepage HTML and URL-state defaults now select 2D; /globe and /globe.html defau
 Local syntax, platform suite (including page-mode regression tests), generated-page consistency and browser-secret checks pass. Local controller/state execution checks cover defaults, serialization and navigation; no local interactive browser result is claimed because the connected browser is on a separate machine from this checkout. Regression payload is synthetic.
 
 Read-only hosted checks at https://liveworldmap.netlify.app on October 19 UTC: / returns HTTP 200 with strict script-src 'self'; /globe.html returns HTTP 404 with the same strict policy, independently confirmed in the browser as Netlify's Page not found screen. This does not establish which commit is deployed. Hosted globe startup and candidate behavior remain unverified. No deployment or merge performed.
+
+## 2026-10-19 - Hosted acceptance probe (PARTIAL)
+
+- Fetched remote main `5aabf0f` read-only; globe/workbench foundation is merged.
+  Older local-only/open-PR statements below remain historical.
+- Cloudflare 2D/globe and real USGS source-snapshot journey worked; five frontend
+  assets match main. Serving Worker version remains unbound. Netlify globe 404
+  was reproduced without a serving SHA.
+- Mobile Map cleared selection; USGS Evidence ledger navigation opened Hormuz;
+  export source-count terminology differs from inspector independent evidence;
+  one API 503 exposed an incorrect future retry label before manual recovery.
+- Details and locally retained receipts: `HOSTED_ACCEPTANCE_2026-10-19.md`.
+  No deployment or runtime edits. Hosted acceptance and owner review remain open.
+
+## 2026-10-18 - Frozen multi-site incident evaluation
+
+- Added one offline St. Petersburg four-site case and negative mutation tests in
+  `tests/multi-site-incident-evaluation-tests.mjs`, wired into the platform suite.
+- AP/Reuters/RFE-RL search excerpts only; full-page retrieval failed. All claims
+  retain attribution and uncertainty; ceasefire terms remain brief-only.
+- No runtime/API/provider changes. Operational-evidence/workbench and PortWatch
+  sample files are absent on this base. See `MULTI_SITE_INCIDENT_EVALUATION.md`.
 
 ## 2026-10-17 - 3D globe gets its own page
 
