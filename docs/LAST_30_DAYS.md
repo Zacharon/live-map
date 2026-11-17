@@ -22,6 +22,10 @@ See [commands, gates and remaining limits](security-regression-2026-11-12.md).
 Independent H3 and hosted validation remain pending. No provider activation,
 publication or deployment occurred; inherited untracked research is preserved.
 
+## 2026-11-02 - Unknown severity local trial
+
+Local candidate preserves unknown versus zero severity across normalization, filters and risk consumers. See [trial report](tstack-20261102/live-map/REPORT.md). Review and validation results are recorded there; existing owner, H3 and hosted gates remain open.
+
 ## 2026-10-27 - Events API deadline
 
 `/api/events` and `/.netlify/functions/events` could run past the synchronous function limit because `official-rss` fetched up to seven allowlisted feeds one after another, and ReliefWeb's configured fetch had no abort. The dashboard then showed "Event data temporarily unavailable" when the browser's 15 second request timed out. Providers now share an 8 second deadline, in-flight fetches abort, official feeds and status pages run concurrently, and a timed-out provider stays `degraded` with stale cache or `unavailable` in `sourceStatus`. No new environment variable. Not deployed.

@@ -129,7 +129,7 @@ for (const value of [undefined, null, "", "bad", NaN, Infinity, false, [], {}]) 
     assert.equal(buildIncidents([event])[0].startedAt, null);
     assert.equal(buildIncidents([event])[0].confidence, null);
     assert.equal(shouldCluster(event, { ...event, id: "other" }), false);
-    const filters = { categories: new Set(["other"]), severities: new Set(["low"]), query: "" };
+    const filters = { categories: new Set(["other"]), severities: new Set(["unknown"]), query: "" };
     // Undated records stay inspectable under an explicit "Time unknown" label; they are never given ingestion time.
     assert.equal(filteredEvents([event], filters, 168, "newest").length, 1);
   });
