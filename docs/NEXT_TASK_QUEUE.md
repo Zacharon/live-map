@@ -1,3 +1,7 @@
+## 2026-11-02 - Unknown severity local trial
+
+Local candidate preserves unknown versus zero severity across normalization, filters and risk consumers. See [trial report](tstack-20261102/live-map/REPORT.md). Review and validation results are recorded there; existing owner, H3 and hosted gates remain open.
+
 ## 2026-10-17 - Globe visual pass awaiting owner review
 
 - Owner visual acceptance of the globe pass (`docs/GLOBE_VISUAL_2026-10-17.md`, screenshots in `artifacts/globe-visual-2026-10-17/`).

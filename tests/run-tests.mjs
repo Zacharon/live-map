@@ -1890,7 +1890,8 @@ test("Threat level missing fields do not crash", () => {
   assert.equal(empty.level, "low");
   assert.ok(empty.caveats.length);
   const sparse = computeThreatLevel({});
-  assert.ok(THREAT_LEVELS_OR_SCORE(sparse));
+  assert.equal(sparse.level, "unknown");
+  assert.equal(sparse.score, null);
 });
 
 test("Threat level ranks high/recent/clustered above low/old/single", () => {

@@ -95,3 +95,7 @@ Netlify helper responses use:
 ## Nullable event/source metadata (October 12 repair candidate)
 
 Canonical source occurrence/publication/update/verification clocks are ISO strings or null, and legacy/UI clocks are epoch milliseconds or null. Ingestion/generated clocks describe processing, never source observation. Confidence is numeric (including legitimate zero) or null. Unknown source freshness is null. Source/provider URLs are absolute HTTP(S) without embedded credentials or null; invalid supplied ingestion URLs produce errors and raw imported UI links remain unavailable. Existing route names/envelopes are preserved. See [repair capability and editing guide](AUDIT_REPAIR_2026-10-12.md).
+
+## Local unknown severity candidate (2026-11-02)
+
+Canonical severity is nullable; absent or invalid severity has label `unknown`. Legacy events carry `severity: unknown` and `severityScore: null`; numeric zero remains low with score zero. Unknown can be selected explicitly in severity filters and sorts after known zero. Country risk counts `unknownSeverityEvents` and excludes them from severity-weighted pressure, with a limitation notice; this does not imply safety. Threat and all-unknown clusters remain unscored. Known label mappings are 20/45/70/90 on the canonical 0-100 scale. Confidence, freshness and impact retain separate fields. No feeds or hosting policy changed.
