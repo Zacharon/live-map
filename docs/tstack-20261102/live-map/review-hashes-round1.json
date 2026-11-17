@@ -1,0 +1,19 @@
+{
+  "docs/API_CONTRACTS.md": "ec1c23d713694fb29e93d139c2485eeed6ef55ce4b4729d9cf79f52fbacc58c5",
+  "docs/LAST_30_DAYS.md": "fbb5f18146b176869f919eaf8acbb8c3aadb0653820d39f72a6c5cc8c690634f",
+  "docs/NEXT_TASK_QUEUE.md": "7f976e95efa4084a49c7c187c52883eb18dfb1dbd341e5bea91bc34234b19281",
+  "src/config.js": "1359639bb2cb4495cf88186f216f912106d8e94df70a6f8666fe3fa6eb15355f",
+  "src/events/change-awareness.js": "b8a63a609ec734bc91a726854eb0e59d7ede773bc24bd81a126196b9fe99637a",
+  "src/events/clustering.js": "476e8940b4f45dc92609a1061cc40e13585edf583656517d46e1f25fe47c48a3",
+  "src/events/event-filters.js": "e270ea05ef484e1098f2bab367b1cabc2adb688901b44df2ee08499778bef6cb",
+  "src/events/event-normalizer.js": "d5284c0a92542b94f77eea39237ca8a281065049bbca74324fe9251d9b093afb",
+  "src/events/feed-organization.js": "0a7ac37d185533759ff841ef1ebb2aab3b04fdb1600cf8a7e54a1f7e516a0ce6",
+  "src/events/incident-clustering.js": "8932c06f6b59ac20877631cb7b10349a9742a5a9d3c3a601a8a97b727774746d",
+  "src/events/normalized-event.js": "2048aad3549b983afffeabc5bd8bb875e2f4595d7be98ba2b76e167d57f0888c",
+  "src/intelligence/threat-level.js": "b30fe8074a8f8687e0da2ecf00761c7b574356fd8dde9dfded5d4b16398835bd",
+  "src/risk/country-risk.js": "4ce7577da5be3784858cb16c9d1b21aadf94d118fd1afaff9e9674decc6b6930",
+  "tests/audit-repair-tests.mjs": "d7d92e6d3be5b42cc6424a21093a01e9acf975b22685e1255f83b54e13c84de6",
+  "tests/run-tests.mjs": "b0919c7e0ca8e2df8de9230e816500c8e768924737ff7ab68e92374fc22e4051",
+  "src/events/severity.js": "333fd3ee27b16f2b68d826d5278e1908c219e3e301baf2023ab8874ccca1175c",
+  "tests/unknown-severity-tests.mjs": "26bdb586529ff672dd6418346859618dfacc6493887db84c2844a23076fb6a5d"
+}

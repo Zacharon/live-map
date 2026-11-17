@@ -1,3 +1,36 @@
+## 2026-11-16 - USGS inspection and export candidate
+
+USGS evidence and response-clock scores now share the inspection/export path.
+Fixed Filters reopening after timeline selection/reload and globe Back losing its
+return target. The isolated synthetic Edge journey passed 21 checks including
+keyboard, downloads, 320px layout and camera continuity; no upstream reads.
+See [contract and reproduction](USGS_SPINE_CONTRACT.md). Draft review and owner
+acceptance remain separate from source activation, hosted verification and release.
+
+## 2026-11-12 - Review local RSS redirect boundary repair
+
+- Independent H3 should challenge the exact local change and mocked regressions in
+  [the repair record](security-regression-2026-11-12.md). No hosted safety or release
+  closure is claimed.
+- Keep configured feed DNS and deployment egress validation separate. Real feed
+  moves to another origin require registry review; do not widen the guard from an
+  untrusted Location header. RSS streamed byte limits are now locally repaired;
+  other provider body-limit work remains separate.
+
+## 2026-11-02 - Unknown severity local trial
+
+Local candidate preserves unknown versus zero severity across normalization, filters and risk consumers. See [trial report](tstack-20261102/live-map/REPORT.md). Review and validation results are recorded there; existing owner, H3 and hosted gates remain open.
+
+## 2026-10-31 - Bounded event-source journey continuation
+
+- Review the cumulative isolated candidate for find/filter/inspect/original-source behavior, NWS identity fallback and adjacent source/retrieval clocks. Preserve unavailable links/times; do not activate new providers or infer source freshness from retrieval.
+- Current desktop/narrow keyboard, loading/error/empty-state and globe acceptance remain queued for the GUI owner. Coordinator review must use the cumulative journey patch, not the older refresh-only patch. Netlify publication is paused; no candidate combination or release follows from this record.
+
+## 2026-10-31 - Refresh feedback local candidate
+
+- The isolated refresh-feedback fix preserves cached report clocks and makes failed attempts distinct from successful, partial, empty and saved-read responses. Regression coverage includes failure/retry and superseded-request feedback.
+- Keep full browser/assistive-technology acceptance and any canonical installation separate. No provider, hosting or deployment change accompanies this fix; existing queue priorities and gates remain unchanged.
+
 ## 2026-10-27 - Events API timeout fix is ready for review
 
 - Review and merge the events deadline pull request, then deploy it separately. Production keeps the current hang until that deploy. Do not deploy from an agent session.
@@ -65,6 +98,8 @@ Next bounded work: reconcile the inherited platform cache-policy assertion, obta
 
 # Next Task Queue
 
+Local performance candidate: review [globe measurements](GLOBE_PERFORMANCE_LOCAL_2026-10-30.md), then collect controlled startup parse/long-task and physical-device evidence separately. Do not infer hosted readiness or latency benefit from the removed repeat probes.
+
 Small, agent-ready tasks only. Do not turn these into broad refactors.
 
 ## Maritime signal candidate (2026-10-02) — owner decision pending
@@ -95,6 +130,23 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 - #59 is a recorded product decision, not completed code. After the visual follow-on, implement versioned meaningful-change snapshots and source-organization-aware suppression in the operator UI. No browser push or public-map promotion.
 
 ## Context Updates
+
+- 2026-10-21: frozen multi-site schema v2 now has an offline Ukraine grid-region
+  case and report-time family impact query. Do not promote it into live ingestion;
+  exact assets, outage/restoration clocks, independent damage and ceasefire
+  verification need new source evidence. See `MULTI_SITE_INCIDENT_EVALUATION.md`.
+
+- 2026-10-19: foundation is merged in remote main `5aabf0f`; prioritize existing
+  hosted acceptance, not a globe rewrite. `HOSTED_ACCEPTANCE_2026-10-19.md` records
+  working Cloudflare 2D/3D/public-USGS snapshots and remaining version binding,
+  USGS-to-case handoff, mobile selection and failure/semantic presentation gaps.
+  Netlify `/globe.html` returned 404, serving SHA unknown. No deployment authorized.
+
+- Completed locally (2026-10-18): frozen multi-site incident evaluation and offline
+  semantic regression tests. See `MULTI_SITE_INCIDENT_EVALUATION.md`. Follow-up:
+  retrieve complete reporting/primary statements and reconcile regional casualty
+  scopes before any new fixture revision; integrate with a workbench only after
+  its absent model is available. No live activation or independent fact claim.
 
 - Completed locally (2026-09-13): progressive event severity thresholds on the shared attention selector; see `PROGRESSIVE_ZOOM_DETAIL.md`. Next bounded density candidate: screen-space decluttering for overlapping high-severity markers while retaining inspectability and the current provider contracts. Not implemented in this slice.
 
@@ -167,17 +219,24 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 
 ### Stream RSS feed size cap
 
-- Goal: stop reading RSS/Atom bodies after the configured byte cap.
-- Touch first: `src/data/providers/rss-feed.js`.
-- Test: fake over-cap feed response must not fully materialize.
+- Locally repaired 2026-11-12 in `src/data/providers/rss-feed.js`: the existing
+  1 MiB default is enforced before buffering/decoding each streamed chunk, with
+  cancellation on overflow and reader-lock cleanup.
+- Mocked ReadableStream RED/GREEN covers missing/false Content-Length, early
+  declared oversize refusal, exact-limit/split-multibyte success and UTF-8 byte
+  overflow. See [the combined repair record](security-regression-2026-11-12.md).
+- Independent H3 and hosted-runtime acceptance remain separate, not implied.
 
 ## P2
 
 ### Harden RSS redirect policy
 
-- Goal: disallow or tightly restrict redirects outside the feed registry.
-- Touch first: `src/data/providers/rss-feed.js`, `src/data/providers/ssrf-protection.js`.
-- Test: private host literals, link-local hosts, non-allowlisted redirect destinations.
+- Locally repaired 2026-11-12: the shared URL guard refuses redirects outside the
+  configured origin, credentials, empty destinations and IPv6 literals. Relative
+  same-origin redirects remain supported; request-budget behavior is unchanged.
+- Evidence: [RED/GREEN, offline checks and residual assumptions](security-regression-2026-11-12.md).
+- Pending: independent H3 and separate DNS/egress/provider validation before any
+  hosted closure. Do not merge this item with streaming response byte limits.
 
 ### Draft evidence record model
 

@@ -21,6 +21,7 @@ export const CATEGORIES = {
 };
 
 export const SEVERITIES = {
+  unknown: { label: "Unknown", color: "#9ca3af", score: -1 },
   critical: { label: "Critical", color: "#ff355d", score: 4 },
   high: { label: "High", color: "#ff8a3d", score: 3 },
   medium: { label: "Medium", color: "#f6c453", score: 2 },

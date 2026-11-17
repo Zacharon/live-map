@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { runMultiSiteIncidentEvaluationTests } from "./multi-site-incident-evaluation-tests.mjs";
+import { runUkraineGridIncidentEvaluationTests } from "./ukraine-grid-incident-evaluation-tests.mjs";
 import fs from "node:fs";
 import { SEVERITIES } from "../src/config.js";
 import { LAYER_CATALOG } from "../src/data/layers.js";
@@ -37,6 +39,7 @@ import { fetchOfficialFeedEvents, parseFeedItems, normalizeFeedItem } from "../s
 import { normalizeStatuspageIncident } from "../src/data/providers/statuspage.js";
 import { normalizeRipestatObservation } from "../src/data/providers/ripestat.js";
 import { assertSafeFetchUrl } from "../src/data/providers/ssrf-protection.js";
+import { runRssRedirectRegressionTests, runRssBodyRegressionTests } from "./rss-redirect-tests.mjs";
 import { applyPublicationPolicy } from "../src/data/providers/publication-policy.js";
 import { createCompanyIdentity, sameCompany } from "../src/data/providers/company-identity.js";
 import { createMemoryProviderCache } from "../src/data/providers/cache.js";
@@ -1254,6 +1257,9 @@ test("Open signal normalizers preserve metadata-only social boundaries", () => {
   assert.equal(observation.verificationState, "unverified");
 });
 
+test("Official RSS redirects remain inside the configured feed origin", runRssRedirectRegressionTests);
+test("Official RSS bodies enforce byte limits before buffering", runRssBodyRegressionTests);
+
 test("Official feed parsing strips unsafe markup and rejects local feed URLs", () => {
   const items = parseFeedItems(`<?xml version="1.0"?><rss><channel><item><title><![CDATA[Test alert]]></title><link>https://example.gov/a</link><pubDate>Tue, 09 Jun 2026 00:00:00 GMT</pubDate><description><![CDATA[<script>x</script><b>Official</b> update]]></description></item></channel></rss>`);
   assert.equal(items.length, 1);
@@ -1963,7 +1969,8 @@ test("Threat level missing fields do not crash", () => {
   assert.equal(empty.level, "low");
   assert.ok(empty.caveats.length);
   const sparse = computeThreatLevel({});
-  assert.ok(THREAT_LEVELS_OR_SCORE(sparse));
+  assert.equal(sparse.level, "unknown");
+  assert.equal(sparse.score, null);
 });
 
 test("Threat level ranks high/recent/clustered above low/old/single", () => {
@@ -2163,6 +2170,8 @@ test("Chokepoint UI filtering, rendering, and event enrichment remain safe", () 
   assert.deepEqual(enriched[0].affectedChokepoints, ["Suez Canal"]);
 });
 
+test("Frozen multi-site incident preserves claim and impact boundaries", runMultiSiteIncidentEvaluationTests);
+test("Frozen grid multi-site incident keeps regions and report-time impact separate", runUkraineGridIncidentEvaluationTests);
 await runPendingTests();
 console.log("All tests passed.");
 import './zoom-density-tests.mjs';

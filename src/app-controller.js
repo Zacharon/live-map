@@ -766,7 +766,7 @@ export function bootLiveMap() {
     contactDetail.hidden = !selectedContact;
     contactDetail.innerHTML = renderContactDetail(selectedContact);
     mapController.renderReferencePoints({ airports: state.tracking.airports ? AIRPORTS : [], ports: state.tracking.ports ? PORTS : [] });
-    const sharedView = { ...state.mapView, lat: center.lat, lon: center.lng, zoom: mapController.map.getZoom() };
+    const sharedView = { ...state.mapView };
     const graphRecords = (intelligence.records || []).filter((record) => record.recordKind !== "relationship");
     const graphNodes = [
       ...graphRecords.map((record) => graphNodeFromRecord(record)),
@@ -796,8 +796,10 @@ export function bootLiveMap() {
       onContextLoss() { state.mapMode = "2d"; state.mapView.mapMode = "2d"; syncUrlState(); render(); },
       onViewChange(view) {
         if (state.mapMode === "2d" || !Number.isFinite(view.lat) || !Number.isFinite(view.lon) || !Number.isFinite(view.zoom)) return;
+        Object.assign(state.mapView, { lat: view.lat, lon: view.lon, zoom: view.zoom });
+        syncUrlState();
         // Leaflet remains the shared viewport for feed attention and the 2D return path.
-        mapController.map.setView([view.lat, view.lon], view.zoom, { animate: false });
+        mapController.map.setView([view.lat, view.lon], view.zoom, { animate: false, reset: true });
       },
       onViewportChange() { if (state.mapMode !== "2d") render(); },
       onSelectId(id) {
@@ -897,6 +899,7 @@ export function bootLiveMap() {
       els.eventDetailDrawer.innerHTML = "";
     } else {
       renderOsintEventDetailDrawer(els.eventDetailDrawer, {
+        sourceStatus: state.sourceStatus,
         event: selectedEvent,
         cluster: selectedCluster,
         changeStatus: selectedChangeStatus,
@@ -943,7 +946,7 @@ export function bootLiveMap() {
     document.body.dataset.liveMapChokepoint = state.selectedChokepointId || "";
     document.body.dataset.liveMapDataMode = state.demo ? "mixed" : (state.dataMode || "public");
     if (els.dataMode) els.dataMode.value = state.demo ? "mixed" : (state.dataMode || "public");
-    if (els.refreshNow) els.refreshNow.textContent = state.demo ? "Reload demo" : "Refresh reports";
+    if (els.refreshNow) els.refreshNow.textContent = state.demo ? "Reload demo" : state.apiStatus === "loading" ? "Refreshing reports…" : "Refresh reports";
     if (els.baseMap && state.mapView.basemap) els.baseMap.value = state.mapView.basemap;
     } catch (error) {
       console.error(error);
@@ -1066,6 +1069,8 @@ export function bootLiveMap() {
     state.selectedChokepointId = null;
     state.rightDrawerOpen = true;
     state.leftDrawerOpen = false;
+    // WHY: docs/USGS_SPINE_CONTRACT.md#drawer-recovery
+    workspaceStorage.setItem("live-map-left-drawer-v1", "closed");
     state.mobilePane = 'detail';
     workspaceStorage.setItem("live-map-right-drawer-v1", "open");
     if (els.eventDialog.open) els.eventDialog.close();
@@ -1235,8 +1240,10 @@ export function bootLiveMap() {
     render();
     els.systemStatus.innerHTML = "<i></i> Updating";
     els.refreshNow.disabled = true;
+    els.refreshNow.textContent = "Refreshing reports…";
     const controller = eventRequestController = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CONFIG.requestTimeoutMs);
+    let refreshOutcome = "Refresh failed";
     try {
       const response = await fetch(`${CONFIG.endpoint}?hours=${state.hours}&t=${Date.now()}`, { cache: "no-store", signal: controller.signal });
       if (!response.ok) {
@@ -1265,6 +1272,9 @@ export function bootLiveMap() {
       renderSourceHealth(els.sourceHealth, result, state.errors);
       render();
       scheduleNextLoad(CONFIG.refreshSeconds * 1000);
+      refreshOutcome = result.localPreview
+        ? (result.localPreview.cacheOnly ? "Saved public reads reloaded" : "Local public data refreshed")
+        : noData ? "No provider data" : isPartial ? "Partial data refreshed" : "Reports refreshed";
     } catch (error) {
       if(generation!==eventRequestGeneration)return;
       state.apiStatus='error';
@@ -1288,6 +1298,7 @@ export function bootLiveMap() {
         if (els.sourceHealth) els.sourceHealth.textContent = "Loaded local public snapshots. Preview /api remains JSON 503 by design — this is not live coverage.";
         if (els.publicDataStatus) els.publicDataStatus.innerHTML = "<strong>Public snapshots</strong><p>Genuine saved records only. Capture time and observation period are on each card. Not a live feed.</p>";
         state.dataMode = "public";
+        refreshOutcome = "Public snapshots";
       } else if (!state.events.length) {
         els.eventList.innerHTML = '<div class="empty">Event data temporarily unavailable. Filters and the map remain usable; use Retry when connectivity returns.</div>';
       }
@@ -1296,9 +1307,14 @@ export function bootLiveMap() {
     } finally {
       clearTimeout(timeout);
       if(generation!==eventRequestGeneration)return;
-      if(generation===eventRequestGeneration)els.refreshNow.disabled = false;
-      if (manual) els.refreshNow.textContent = "Refreshed";
-      setTimeout(() => (els.refreshNow.textContent = "Refresh"), 1200);
+      els.refreshNow.disabled = false;
+      if (manual) {
+        // A completed attempt is not necessarily a successful retrieval.
+        els.refreshNow.textContent = refreshOutcome;
+        setTimeout(() => {
+          if (generation === eventRequestGeneration && state.apiStatus !== "loading" && !state.demo) els.refreshNow.textContent = "Refresh reports";
+        }, 1200);
+      }
     }
   }
 
@@ -1368,7 +1384,7 @@ export function bootLiveMap() {
     if (event.target.closest("a")) return;
     const watchSource=event.target.closest('[data-watch-source]'),watchChanges=event.target.closest('[data-watch-changes]');
     if(watchSource||watchChanges){if(watchSource)state.watchSource=watchSource.dataset.watchSource;else state.watchChangeFilter=watchChanges.dataset.watchChanges;state.listPage=0;syncUrlState();render();return;}
-    if(event.target.closest('[data-watch-reset]')){clearInspectorSelection();state.mobilePane='feed';state.rightDrawerOpen=true;state.watchSource='';state.watchChangeFilter='all';state.selectedCountryIso3=null;state.mapView.viewportOnly=false;state.mapView.asOf=null;resetDashboardFilters();els.search.value='';els.globalSearch.value='';els.globalSearchResults.hidden=true;state.listPage=0;syncUrlState();render();els.search.focus();return;}
+    if(event.target.closest('[data-watch-reset]')){clearInspectorSelection();state.mobilePane='feed';state.rightDrawerOpen=true;state.watchSource='';state.watchChangeFilter='all';state.selectedCountryIso3=null;state.mapView.viewportOnly=false;state.mapView.asOf=null;state.mapView.verification='all';resetDashboardFilters();els.search.value='';els.globalSearch.value='';els.globalSearchResults.hidden=true;state.listPage=0;syncUrlState();render();els.search.focus();return;}
     const mobileButton = event.target.closest('[data-mobile-pane]');
     if (mobileButton) {
       if (state.selectedEventId) clearInspectorSelection();
@@ -1647,6 +1663,7 @@ export function bootLiveMap() {
         if (selected) {
           const changeStatus = null;
           artifact = buildEventArtifact(selected, {
+            sourceStatus: state.sourceStatus,
             allEvents: visibleEvents,
             clusters: visibleClusters,
             changeStatus,
@@ -1918,7 +1935,7 @@ export function bootLiveMap() {
     render();
     if (state.mapMode === '2d') window.requestAnimationFrame(() => {
       mapController.map.invalidateSize({ pan: false });
-      mapController.map.setView([view.lat, view.lon], view.zoom, { animate: false });
+      mapController.map.setView([view.lat, view.lon], view.zoom, { animate: false, reset: true });
       render();
     });
     mapController.invalidateMapSize();
@@ -2015,6 +2032,7 @@ export function bootLiveMap() {
   });
   let viewportTimer;
   mapController.map.on('moveend',()=>{
+    if (document.getElementById('map').hidden) return;
     const center=mapController.map.getCenter(); Object.assign(state.mapView,{lat:center.lat,lon:center.lng,zoom:mapController.map.getZoom()}); syncUrlState();
     movingRequest++; movingAbort?.abort(); clearTimeout(viewportTimer);
     viewportTimer=setTimeout(()=>{render();loadMovingObjects();scheduleMovingRefresh();},200);

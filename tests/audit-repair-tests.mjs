@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import fs from "node:fs";
+import vm from "node:vm";
 import { safeSourceUrl, sourceLink } from "../src/sources/source-url.js";
 import { timestampMs, confidenceValue } from "../src/events/event-values.js";
 import { createNormalizedEvent, toLegacyEvent, validateNormalizedEvent } from "../src/events/normalized-event.js";
-import { normalizeEvent, relativeTime, exactTime } from "../src/events/event-normalizer.js";
+import { normalizeEvent, relativeTime, exactTime, escapeHtml } from "../src/events/event-normalizer.js";
 import { normalizeFeedItem, observationFromFeedItem } from "../src/data/providers/rss-feed.js";
 import { canonicalizeObservationUrl } from "../src/intelligence/source-observations.js";
 import { renderEventDetailDrawer } from "../src/ui/osint-dashboard-v2/event-detail-drawer.js";
@@ -129,7 +130,7 @@ for (const value of [undefined, null, "", "bad", NaN, Infinity, false, [], {}]) 
     assert.equal(buildIncidents([event])[0].startedAt, null);
     assert.equal(buildIncidents([event])[0].confidence, null);
     assert.equal(shouldCluster(event, { ...event, id: "other" }), false);
-    const filters = { categories: new Set(["other"]), severities: new Set(["low"]), query: "" };
+    const filters = { categories: new Set(["other"]), severities: new Set(["unknown"]), query: "" };
     // Undated records stay inspectable under an explicit "Time unknown" label; they are never given ingestion time.
     assert.equal(filteredEvents([event], filters, 168, "newest").length, 1);
   });
@@ -251,6 +252,242 @@ test("Obsolete USGS docs references are removed while the functional feed is unc
 test("CI enforces focused regressions and CodeQL failure without activating smoke", () => {
   assert.doesNotMatch(fs.readFileSync(".github/workflows/security.yml", "utf8"), /continue-on-error:\s*true/);
   assert.match(fs.readFileSync(".github/workflows/validate.yml", "utf8"), /npm run test:platform && npm run test:audit-repair/);
+});
+
+// Execute the controller's actual request lifecycle without starting maps,
+// reading browser storage, or making provider requests. Only its I/O is faked.
+function refreshHarness({ cacheAvailable = true } = {}) {
+  const source = fs.readFileSync("src/app-controller.js", "utf8");
+  const start = source.indexOf("  async function loadEvents(manual = false) {");
+  const end = source.indexOf("  let movingAbort =", start);
+  assert.ok(start >= 0 && end > start, "Controller request lifecycle must be available");
+  const errorStart = source.indexOf("function renderFeedError(element) {");
+  const errorEnd = source.indexOf("function updateCountDebug(", errorStart);
+  assert.ok(errorStart >= 0 && errorEnd > errorStart, "Controller recovery feedback must be available");
+  const timers = new Map();
+  const requests = [];
+  const scheduledLoads = [];
+  let nextTimer = 0;
+  const element = () => ({ textContent: "", innerHTML: "", disabled: false, classList: { add() {}, toggle() {} } });
+  const els = Object.fromEntries(["refreshNow", "systemStatus", "sourceHealth", "publicDataStatus", "eventList", "feedError"].map(key => [key, element()]));
+  const cached = { events: [{ id: "synthetic-cached", occurredAt: 1000, updatedAt: 2000 }], generatedAt: 3000 };
+  const state = { demo: false, hours: 168, events: cacheAvailable ? structuredClone(cached.events) : [], lastLoaded: cacheAvailable ? cached.generatedAt : null, errors: [], apiFailure: null };
+  let renderError;
+  const context = {
+    state, els, eventRequestGeneration: 0, eventRequestController: null, changeTimer: null, retryAttempts: 0,
+    RETRY_BASE_MS: 30000, RETRY_CAP_MS: 300000,
+    CONFIG: { endpoint: "/synthetic/events", requestTimeoutMs: 100, refreshSeconds: 60 },
+    AbortController, escapeHtml, relativeTime, console: { error() {} },
+    setTimeout(callback, delay) { const id = ++nextTimer; timers.set(id, { callback, delay }); return id; },
+    clearTimeout(id) { timers.delete(id); },
+    fetch(url, { signal }) {
+      return new Promise((resolve, reject) => {
+        signal.addEventListener("abort", () => reject(Object.assign(new Error("Synthetic timeout"), { name: "AbortError" })), { once: true });
+        requests.push({ resolve, reject });
+      });
+    },
+    render() { els.refreshNow.textContent = state.demo ? "Reload demo" : state.apiStatus === "loading" ? "Refreshing reports…" : "Refresh reports"; renderError(els.feedError); },
+    applyResult(result) { state.events = result.events; state.lastLoaded = result.generatedAt; state.errors = result.errors || []; },
+    writeEventCache() {}, scheduleChangePoll() {}, renderSourceHealth() {},
+    scheduleNextLoad(delay) { scheduledLoads.push(delay); },
+    readEventCache() { return cacheAvailable ? structuredClone(cached) : null; },
+    classifyFetchError(error) { return error.name === "AbortError" ? "timeout" : "network"; },
+    safeFailureMessage(kind) { return `Synthetic ${kind} failure; retained reports are cached.`; },
+    async hydrateSnapshotRecords() {}, async loadPublicSnapshots() {},
+  };
+  context.window = { clearTimeout: context.clearTimeout };
+  const lifecycle = vm.runInNewContext(`${source.slice(errorStart, errorEnd)}\n${source.slice(start, end)}\n({loadEvents, renderFeedError})`, context);
+  const load = lifecycle.loadEvents;
+  renderError = lifecycle.renderFeedError;
+  const respond = (requestIndex, payload = {}, { ok = true, status = 200, contentType = "application/json" } = {}) => {
+    requests[requestIndex].resolve({ ok, status, headers: { get: () => contentType }, async json() { return payload; } });
+  };
+  const fire = delay => {
+    for (const [id, timer] of [...timers]) if (timer.delay === delay) { timers.delete(id); timer.callback(); }
+  };
+  return { load, state, els, requests, scheduledLoads, respond, fire };
+}
+
+for (const failure of ["503", "timeout", "network", "non-json", "invalid-json"]) {
+  test(`Manual refresh ${failure} retains clocks and permits a successful retry`, async () => {
+    const h = refreshHarness();
+    const before = structuredClone(h.state.events);
+    const pending = h.load(true);
+    assert.equal(h.els.refreshNow.disabled, true);
+    if (failure === "timeout") h.fire(100);
+    else if (failure === "network") h.requests[0].reject(new TypeError("Synthetic network failure"));
+    else if (failure === "invalid-json") h.requests[0].resolve({ ok: true, headers: { get: () => "application/json" }, async json() { throw new SyntaxError("Synthetic malformed JSON"); } });
+    else h.respond(0, {}, failure === "503" ? { ok: false, status: 503 } : { contentType: "text/html" });
+    await pending;
+    assert.equal(h.els.refreshNow.textContent, "Refresh failed");
+    assert.match(h.els.systemStatus.innerHTML, /Feed unavailable/);
+    assert.equal(h.els.feedError.hidden, false);
+    assert.match(h.els.feedError.innerHTML, /data-provider-retry>Retry now/);
+    assert.equal(h.els.refreshNow.disabled, false);
+    assert.deepEqual(h.state.events, before);
+    assert.equal(h.state.lastLoaded, 3000);
+    assert.ok(h.state.apiFailure);
+    assert.equal(h.scheduledLoads.at(-1), 30000);
+
+    const retry = h.load(true);
+    const updated = [{ ...before[0], updatedAt: 4000 }];
+    h.respond(1, { events: updated, generatedAt: 5000 });
+    await retry;
+    assert.equal(h.els.refreshNow.textContent, "Reports refreshed");
+    assert.equal(h.els.refreshNow.disabled, false);
+    assert.equal(h.state.apiFailure, null);
+    assert.equal(h.els.feedError.hidden, true);
+    assert.equal(h.els.feedError.innerHTML, "");
+    assert.equal(h.state.events[0].occurredAt, 1000);
+    assert.equal(h.state.events[0].updatedAt, 4000);
+    assert.equal(h.state.lastLoaded, 5000);
+    assert.equal(h.scheduledLoads.at(-1), 60000);
+  });
+}
+
+test("Failed first refresh restores cached reports without inventing new clocks", async () => {
+  const h = refreshHarness();
+  h.state.events = [];
+  const pending = h.load(true);
+  h.respond(0, {}, { ok: false, status: 503 });
+  await pending;
+  assert.equal(h.state.events[0].id, "synthetic-cached");
+  assert.equal(h.state.events[0].occurredAt, 1000);
+  assert.equal(h.state.events[0].updatedAt, 2000);
+  assert.equal(h.state.lastLoaded, 3000);
+  assert.equal(h.els.refreshNow.textContent, "Refresh failed");
+  assert.match(h.els.sourceHealth.textContent, /cached data/);
+});
+
+test("Failure without cached reports keeps an empty recoverable state", async () => {
+  const h = refreshHarness({ cacheAvailable: false });
+  const pending = h.load(true);
+  h.respond(0, {}, { ok: false, status: 503 });
+  await pending;
+  assert.equal(h.state.events.length, 0);
+  assert.equal(h.state.lastLoaded, null);
+  assert.equal(h.els.refreshNow.textContent, "Refresh failed");
+  assert.equal(h.els.refreshNow.disabled, false);
+  assert.match(h.els.feedError.innerHTML, /No cached refresh is available yet/);
+  assert.match(h.els.feedError.innerHTML, /data-provider-retry>Retry now/);
+});
+
+for (const [payload, button, status] of [
+  [{ events: [{ id: "synthetic" }], systemStatus: "partial-data" }, "Partial data refreshed", "Partial data"],
+  [{ events: [] }, "No provider data", "No provider data"],
+  [{ events: [{ id: "synthetic" }], localPreview: { cacheOnly: true } }, "Saved public reads reloaded", "Saved public reads"],
+]) {
+  test(`Manual refresh qualifies success: ${button}`, async () => {
+    const h = refreshHarness();
+    const pending = h.load(true);
+    h.respond(0, { ...payload, generatedAt: 5000 });
+    await pending;
+    assert.equal(h.els.refreshNow.textContent, button);
+    assert.ok(h.els.systemStatus.innerHTML.includes(status));
+    assert.equal(h.state.apiFailure, null);
+  });
+}
+
+test("Intentional preview 503 loads snapshots without a live refresh success or retry loop", async () => {
+  const h = refreshHarness();
+  const pending = h.load(true);
+  h.respond(0, { error: "offline-preview" }, { ok: false, status: 503 });
+  await pending;
+  assert.equal(h.els.refreshNow.textContent, "Public snapshots");
+  assert.match(h.els.systemStatus.innerHTML, /Public snapshots/);
+  assert.equal(h.state.apiFailure.kind, "offline-preview");
+  assert.equal(h.els.refreshNow.disabled, false);
+  assert.equal(h.scheduledLoads.length, 0);
+});
+
+test("Superseded requests and old feedback timers cannot overwrite the newest refresh", async () => {
+  const h = refreshHarness();
+  const first = h.load(true);
+  h.respond(0, { events: [{ id: "first" }], generatedAt: 4000 });
+  await first;
+  const second = h.load(true);
+  h.fire(1200);
+  assert.equal(h.els.refreshNow.textContent, "Refreshing reports…");
+  assert.equal(h.els.refreshNow.disabled, true);
+  const third = h.load(true);
+  await second; // Starting the third request aborts the second.
+  assert.equal(h.els.refreshNow.disabled, true);
+  h.respond(2, { events: [{ id: "latest" }], generatedAt: 6000 });
+  await third;
+  assert.equal(h.state.events[0].id, "latest");
+  assert.equal(h.els.refreshNow.textContent, "Reports refreshed");
+  h.fire(1200);
+  assert.equal(h.els.refreshNow.textContent, "Refresh reports");
+});
+
+test("Old manual feedback timer preserves the demo reload action", async () => {
+  const h = refreshHarness();
+  const pending = h.load(true);
+  h.respond(0, { events: [{ id: "synthetic" }], generatedAt: 4000 });
+  await pending;
+  h.state.demo = true;
+  h.els.refreshNow.textContent = "Reload demo";
+  h.fire(1200);
+  assert.equal(h.els.refreshNow.textContent, "Reload demo");
+});
+
+test("NWS uses supplied alert identity rather than the feed or provider homepage", () => {
+  const id = "https://api.weather.gov/alerts/synthetic-alert";
+  for (const web of [undefined, "https://www.weather.gov/", "https://api.weather.gov/alerts/active"]) {
+    const result = normalizeNwsAlert({ id, properties: { id: "urn:oid:synthetic-alert", web, event: "Tornado Warning" } }, now);
+    assert.ok(result.event);
+    assert.equal(result.event.sourceUrl, id);
+  }
+  const original = "https://www.weather.gov/alert/synthetic";
+  assert.equal(normalizeNwsAlert({ id, properties: { web: original } }, now).event.sourceUrl, original);
+  assert.equal(normalizeNwsAlert({ properties: { id: "urn:oid:synthetic" } }, now).event.sourceUrl, null);
+  assert.equal(normalizeNwsAlert({ id, properties: { web: "javascript:bad" } }, now).event, null);
+});
+
+test("Filter, inspect and original source preserve distinct source and retrieval clocks", () => {
+  const sourceUrl = "https://api.weather.gov/alerts/synthetic-alert";
+  const canonical = normalizeNwsAlert({ id: sourceUrl, properties: { id: "urn:synthetic", event: "Tornado Warning", sent: "2026-10-12T10:00:00Z", onset: "2026-10-12T09:00:00Z" } }, now).event;
+  const event = normalizeEvent({ ...toLegacyEvent(canonical), retrievedAt: "2026-10-12T11:00:00Z" });
+  const filters = { categories: new Set([event.category]), severities: new Set([event.severity]), query: "tornado" };
+  const found = filteredEvents([event], filters, 24, "newest", now.getTime());
+  assert.equal(found.length, 1);
+  const html = renderEventDetailDrawer(found[0]);
+  const supporting = html.split('<section class="detail-source-evidence"')[1].split("</section>")[0];
+  assert.ok(supporting.includes(`href="${sourceUrl}"`));
+  assert.match(supporting, />Open original source<\/a>/);
+  assert.ok(supporting.includes(`Source revision: ${exactTime(event.updatedAt)}`));
+  assert.ok(supporting.includes(`Retrieved: ${exactTime(event.retrievedAt)}`));
+  filters.query = "no-such-synthetic-event";
+  assert.equal(filteredEvents([event], filters, 24, "newest", now.getTime()).length, 0);
+  const missing = renderEventDetailDrawer(normalizeEvent(toLegacyEvent(normalizeNwsAlert({ properties: { id: "urn:synthetic" } }, now).event)));
+  const missingSource = missing.split('<section class="detail-source-evidence"')[1].split("</section>")[0];
+  assert.match(missingSource, /Open original source unavailable/);
+  assert.ok(missingSource.includes(`Source revision: ${exactTime(null)}`));
+  assert.ok(missingSource.includes(`Retrieved: ${exactTime(null)}`));
+  const legacy = renderEventDetailDrawer({ ...event, sourceUrl: "https://api.weather.gov/alerts/active" });
+  assert.match(legacy, /Open original source unavailable/);
+  assert.doesNotMatch(legacy, /href="https:\/\/api.weather.gov\/alerts\/active"/);
+});
+
+test("Clear report filters removes the verification constraint without changing provider settings", () => {
+  const source = fs.readFileSync("src/app-controller.js", "utf8");
+  const handler = source.split("\n").find(line => line.includes("if(event.target.closest('[data-watch-reset]'))"));
+  assert.ok(handler);
+  const state = { mapView: { verification: "supported", viewportOnly: true, asOf: "2026-10-12" } };
+  const providerSettings = { enabled: false };
+  let focused = false;
+  const input = { value: "synthetic", focus() { focused = true; } };
+  vm.runInNewContext(`(function(){${handler}})()`, {
+    state, providerSettings, event: { target: { closest() { return {}; } } },
+    els: { search: input, globalSearch: { value: "synthetic" }, globalSearchResults: { hidden: false } },
+    clearInspectorSelection() {}, resetDashboardFilters() {}, syncUrlState() {}, render() {},
+  });
+  assert.equal(state.mapView.verification, "all");
+  assert.equal(state.mapView.viewportOnly, false);
+  assert.equal(state.mapView.asOf, null);
+  assert.equal(input.value, "");
+  assert.equal(focused, true);
+  assert.deepEqual(providerSettings, { enabled: false });
 });
 
 test("Source URL check retries a transient failure once and keeps hard failures", async () => {

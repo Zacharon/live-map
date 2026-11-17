@@ -38,7 +38,7 @@ export function eventSignature(event) {
     title: String(event.title || ""),
     occurredAt: Number.isFinite(occurredAt) ? occurredAt : 0,
     updatedAt: Number.isFinite(updatedAt) ? updatedAt : 0,
-    severity: String(event.severity || "low"),
+    severity: String(event.severity ?? "unknown"),
     domain: String(event.domain || ""),
     category: String(event.category || event.type || "other"),
     source: String(event.sourceName || event.provider || event.source || ""),
