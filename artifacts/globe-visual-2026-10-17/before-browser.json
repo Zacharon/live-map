@@ -1,0 +1,30 @@
+{
+  "rows": [
+    {
+      "step": "global",
+      "renderer": "cesium",
+      "reason": "",
+      "events": "12"
+    },
+    {
+      "step": "selected",
+      "renderer": "cesium",
+      "reason": "",
+      "events": "3"
+    },
+    {
+      "step": "hormuz",
+      "renderer": "cesium",
+      "reason": "",
+      "events": "1"
+    },
+    {
+      "step": "mobile",
+      "renderer": "cesium",
+      "reason": "",
+      "events": "12"
+    }
+  ],
+  "errors": [],
+  "network": []
+}

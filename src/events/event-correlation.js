@@ -1,3 +1,5 @@
+import { timestampMs } from "./event-values.js";
+
 function toRad(value) {
   return (value * Math.PI) / 180;
 }
@@ -62,10 +64,10 @@ export function correlateEventsToMarkets(events = [], exchanges = [], now = Date
           instrumentId: exchange.primaryIndex || null,
           marketEntityId: exchange.id,
           distanceKm: Math.round(distance),
-          timeDifferenceMinutes: Math.round((now - Number(event.occurredAt || now)) / 60000),
+          timeDifferenceMinutes: timestampMs(event.occurredAt) === null ? null : Math.round((now - timestampMs(event.occurredAt)) / 60000),
           confidence: distance < 250 ? 68 : 45,
           explanation: `${event.title} is geographically proximate to ${exchange.name}. This is not evidence of causality and requires analyst review.`,
-          temporalProximity: `${Math.round((now - Number(event.occurredAt || now)) / 60000)} minutes`,
+          temporalProximity: timestampMs(event.occurredAt) === null ? "Unknown time" : `${Math.round((now - timestampMs(event.occurredAt)) / 60000)} minutes`,
           geographicProximity: `${Math.round(distance)} km`,
           evidence: [event.sourceUrl].filter(Boolean),
           analystReviewRequired: true,

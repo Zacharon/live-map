@@ -1,0 +1,15 @@
+
+Live Map validator report
+=========================
+PASS JavaScript syntax - 161 files checked
+PASS Browser-side secret scan - 142 browser-served files checked
+PASS local /api/events events - 1 events returned
+PASS local /api/events freshness - generated 0 seconds from now
+WARN local /api/events source mode - mode=partial-netlify-function
+WARN local /api/events provider errors - gdacs: GDACS returned 503; noaa-swpc: NOAA SWPC returned 503; cisa-kev: CISA KEV returned 503; official-rss: Feed returned 503; statuspage: GitHub Status returned 503
+PASS local /api/events source status - 27 sources reported
+PASS local /api/events coordinates - 1 valid coordinate pairs
+PASS local /api/events attribution - 1 events include source attribution
+WARN Source URL reachability - Not checked in offline fixture mode
+
+Result: PASS (10 checks, 0 failed)

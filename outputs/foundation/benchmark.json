@@ -1,0 +1,17 @@
+{
+  "result": "PASS",
+  "cases": "zoom budgets, stable ordering, major preservation, filter-first, selection, dateline, zero/missing coordinates, state roundtrip, stale/out-of-order positions, disabled types, wind vectors",
+  "benchmark": {
+    "events": 10000,
+    "objects": 2000,
+    "iterations": 50,
+    "targetP95Ms": 50,
+    "medianMs": 6.378699999999981,
+    "p95Ms": 10.49509999999998,
+    "cpu": "Intel(R) Core(TM) i7-4770K CPU @ 3.50GHz",
+    "ramGB": 16,
+    "runtime": "v24.16.0",
+    "platform": "win32",
+    "scope": "Pure data pipeline only; browser FPS and memory not measured"
+  }
+}

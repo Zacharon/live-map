@@ -15,6 +15,9 @@ const DEFAULTS = {
 };
 
 export const PROVIDER_CAPABILITIES = {
+  'nhc-current-storms':capability({supportedDomains:['weather'],supportsGeometry:true,defaultEnabled:false}),
+  'digitraffic-ais':capability({supportedDomains:['maritime'],supportedRecordKinds:['moving-object'],supportsGeometry:true,defaultEnabled:false,licenseClass:'CC-BY-4.0'}),
+  'adsb-lol':capability({supportedDomains:['aviation'],supportedRecordKinds:['moving-object'],supportsGeometry:true,defaultEnabled:false,licenseClass:'ODbL-1.0'}),
   usgs: capability({ supportedDomains: ["natural-disaster"], supportsGeometry: true, supportsIncrementalFetch: true, expectedVolume: "medium" }),
   eonet: capability({ supportedDomains: ["natural-disaster", "weather"], supportsGeometry: true, expectedVolume: "medium" }),
   "nws-alerts": capability({ supportedDomains: ["weather"], supportsGeometry: true, supportsIncrementalFetch: true, expectedVolume: "high" }),

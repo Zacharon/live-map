@@ -1,0 +1,1380 @@
+{
+  "kind": "live-map-investigation-case",
+  "schemaVersion": "workbench-v1",
+  "handling": "public-safe-local-only",
+  "case": {
+    "id": "case:aviation-riyadh-2026-10",
+    "caseType": "aviation-infrastructure-incident-v1",
+    "genuine": true,
+    "reviewState": "review_required",
+    "asOf": "2026-10-12T05:43:10.000Z",
+    "revision": 1,
+    "unsaved": false,
+    "events": [
+      {
+        "id": "ruh-2026-10-10",
+        "eventDate": "2026-10-10",
+        "period": "Saturday afternoon; exact event time unknown",
+        "airport": "RUH/OERK"
+      },
+      {
+        "id": "ruh-2026-10-11",
+        "eventDate": "2026-10-11",
+        "period": "Sunday afternoon; exact event time unknown",
+        "airport": "RUH/OERK"
+      }
+    ],
+    "sources": [
+      {
+        "id": "reuters-initial",
+        "url": "https://ca.marketscreener.com/news/latest/Several-wounded-in-Riyadh-airport-attack-operations-suspended-Saudi-aviation-authority-says--12494708/",
+        "organization": "Reuters via MarketScreener",
+        "originGroup": "reuters",
+        "access": "read-public-report",
+        "authority": null,
+        "attribution": "Reuters via MarketScreener",
+        "clocks": {
+          "publishedAt": "2026-10-10T17:21:00Z",
+          "updatedAt": "2026-10-10T17:23:00Z",
+          "retrievedAt": "2026-10-12T05:41:38Z",
+          "raw": "Published Oct 10 13:21 EDT; updated 13:23 EDT",
+          "precision": "timestamp",
+          "retrievalWindow": {
+            "start": "2026-10-12T05:41:32Z",
+            "end": "2026-10-12T05:41:38Z"
+          }
+        },
+        "limitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection."
+        ]
+      },
+      {
+        "id": "gazette-followup",
+        "url": "https://saudigazette.com.sa/article/665290/saudi-arabia/12-killed-309-injured-in-riyadh-airport-attack-saudi-aviation-authority-confirms",
+        "organization": "Saudi Gazette relaying GACA",
+        "originGroup": "saudi-gazette",
+        "access": "read-public-report",
+        "authority": null,
+        "attribution": "Saudi Gazette relaying GACA",
+        "clocks": {
+          "publishedAt": null,
+          "updatedAt": null,
+          "retrievedAt": "2026-10-12T05:41:38Z",
+          "raw": "Oct 11 01:37 AM; timezone not stated; page header has unrelated July 2025 date",
+          "precision": "unknown-or-day-only",
+          "retrievalWindow": {
+            "start": "2026-10-12T05:41:32Z",
+            "end": "2026-10-12T05:41:38Z"
+          }
+        },
+        "limitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection."
+        ]
+      },
+      {
+        "id": "reuters-revised",
+        "url": "https://www.marketscreener.com/news/yemen-s-houthis-renew-warning-over-saudi-airports-after-deadly-riyadh-attack-ce785ddcdc88f123",
+        "organization": "Reuters via MarketScreener",
+        "originGroup": "reuters",
+        "access": "read-public-report",
+        "authority": null,
+        "attribution": "Reuters via MarketScreener",
+        "clocks": {
+          "publishedAt": "2026-10-11T09:20:00Z",
+          "updatedAt": "2026-10-12T00:23:00Z",
+          "retrievedAt": "2026-10-12T05:43:10.000Z",
+          "raw": "Published Oct 11 05:20 EDT; modified Oct 11 20:23 EDT",
+          "precision": "timestamp",
+          "retrievalWindow": {
+            "start": "2026-10-12T05:43:08Z",
+            "end": "2026-10-12T05:43:10.000Z"
+          }
+        },
+        "limitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection."
+        ]
+      },
+      {
+        "id": "easa",
+        "url": "https://www.easa.europa.eu/en/domains/air-operations/czibs/czib-2026-09-r1",
+        "organization": "EASA",
+        "originGroup": "easa",
+        "access": "read-official-advisory",
+        "authority": "aviation-regulator",
+        "attribution": "EASA",
+        "clocks": {
+          "publishedAt": null,
+          "updatedAt": null,
+          "retrievedAt": "2026-10-12T05:43:10.000Z",
+          "raw": "Issued 2026-09-30; revised 2026-10-09; valid through 2026-11-16 (day precision)",
+          "precision": "unknown-or-day-only",
+          "retrievalWindow": {
+            "start": "2026-10-12T05:43:08Z",
+            "end": "2026-10-12T05:43:10.000Z"
+          }
+        },
+        "limitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection."
+        ]
+      },
+      {
+        "id": "etihad-early",
+        "url": "https://www.etihad.com/en-us/manage/flight-status",
+        "organization": "Etihad Airways",
+        "originGroup": "etihad",
+        "access": "search-result-snapshot",
+        "authority": null,
+        "attribution": "Etihad Airways",
+        "clocks": {
+          "publishedAt": null,
+          "updatedAt": null,
+          "retrievedAt": "2026-10-12T05:41:38Z",
+          "raw": "Earlier search snapshot: 11–13 October cancellations; no publication/update clock",
+          "precision": "unknown-or-day-only",
+          "retrievalWindow": null,
+          "retrievalPrecision": "session-before-recording-clock"
+        },
+        "limitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Exact acquisition time unknown; retrievedAt is session evidence recording time."
+        ]
+      },
+      {
+        "id": "etihad-later",
+        "url": "https://www.etihad.com/en-us/manage/flight-status",
+        "organization": "Etihad Airways",
+        "originGroup": "etihad",
+        "access": "read-carrier-notice",
+        "authority": null,
+        "attribution": "Etihad Airways",
+        "clocks": {
+          "publishedAt": null,
+          "updatedAt": null,
+          "retrievedAt": "2026-10-12T05:43:10.000Z",
+          "raw": "Later full page: 12–13 October cancellations; no publication/update clock",
+          "precision": "unknown-or-day-only",
+          "retrievalWindow": {
+            "start": "2026-10-12T05:43:08Z",
+            "end": "2026-10-12T05:43:10.000Z"
+          }
+        },
+        "limitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection."
+        ]
+      },
+      {
+        "id": "klm",
+        "url": "https://saudi.klm.com/information/travel-alerts",
+        "organization": "KLM",
+        "originGroup": "klm",
+        "access": "read-carrier-notice",
+        "authority": null,
+        "attribution": "KLM",
+        "clocks": {
+          "publishedAt": null,
+          "updatedAt": "2026-10-09T21:45:00Z",
+          "retrievedAt": "2026-10-12T05:43:10.000Z",
+          "raw": "Last updated Friday October 9 23:45 Amsterdam; year from dated notice context; unrelated page sections contain inconsistent dates",
+          "precision": "unknown-or-day-only",
+          "retrievalWindow": {
+            "start": "2026-10-12T05:43:08Z",
+            "end": "2026-10-12T05:43:10.000Z"
+          }
+        },
+        "limitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection."
+        ]
+      },
+      {
+        "id": "canada",
+        "url": "https://travel.gc.ca/destinations/saudi-arabia",
+        "organization": "Government of Canada",
+        "originGroup": "canada",
+        "access": "read-official-travel-advisory",
+        "authority": null,
+        "attribution": "Government of Canada",
+        "clocks": {
+          "publishedAt": null,
+          "updatedAt": "2026-10-11T13:58:00Z",
+          "retrievedAt": "2026-10-12T05:43:10.000Z",
+          "raw": "Last updated 11 October 2026 09:58 ET; airline regulator closure order not provided",
+          "precision": "unknown-or-day-only",
+          "retrievalWindow": {
+            "start": "2026-10-12T05:43:08Z",
+            "end": "2026-10-12T05:43:10.000Z"
+          }
+        },
+        "limitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection."
+        ]
+      },
+      {
+        "id": "spa-lead",
+        "url": "https://www.spa.gov.sa/en/N2698686",
+        "organization": "Saudi Press Agency relaying GACA",
+        "originGroup": "gaca",
+        "access": "search-excerpt-only",
+        "authority": null,
+        "attribution": "Saudi Press Agency relaying GACA",
+        "clocks": {
+          "publishedAt": null,
+          "updatedAt": null,
+          "retrievedAt": "2026-10-12T05:41:38Z",
+          "raw": "October 11 date in search excerpt; body empty/inaccessible",
+          "precision": "unknown-or-day-only",
+          "retrievalWindow": {
+            "start": "2026-10-12T05:41:32Z",
+            "end": "2026-10-12T05:41:38Z"
+          }
+        },
+        "limitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection."
+        ]
+      },
+      {
+        "id": "ap-start-1",
+        "url": "https://apnews.com/article/d2e0868ffb18d883c16465d7d6a87ccb",
+        "organization": "Associated Press",
+        "originGroup": "ap",
+        "access": "unavailable",
+        "authority": null,
+        "attribution": "Associated Press",
+        "clocks": {
+          "publishedAt": null,
+          "updatedAt": null,
+          "retrievedAt": "2026-10-12T05:41:38Z",
+          "raw": "Supplied starting point; open returned internal error",
+          "precision": "unknown-or-day-only",
+          "retrievalWindow": null,
+          "retrievalPrecision": "session-before-recording-clock"
+        },
+        "limitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Exact acquisition time unknown; retrievedAt is session evidence recording time."
+        ]
+      },
+      {
+        "id": "ap-start-2",
+        "url": "https://apnews.com/article/f0e0e6105f33400e37bb20bb9a8130af",
+        "organization": "Associated Press",
+        "originGroup": "ap",
+        "access": "unavailable",
+        "authority": null,
+        "attribution": "Associated Press",
+        "clocks": {
+          "publishedAt": null,
+          "updatedAt": null,
+          "retrievedAt": "2026-10-12T05:41:38Z",
+          "raw": "Supplied starting point; open returned internal error",
+          "precision": "unknown-or-day-only",
+          "retrievalWindow": null,
+          "retrievalPrecision": "session-before-recording-clock"
+        },
+        "limitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Exact acquisition time unknown; retrievedAt is session evidence recording time."
+        ]
+      },
+      {
+        "id": "airport",
+        "url": "https://www.kkia.sa/en",
+        "organization": "King Khalid International Airport",
+        "originGroup": "kkia",
+        "access": "general-page-only",
+        "authority": null,
+        "attribution": "King Khalid International Airport",
+        "clocks": {
+          "publishedAt": null,
+          "updatedAt": null,
+          "retrievedAt": "2026-10-12T05:41:38Z",
+          "raw": "General airport page and February terminal news found; no incident reopening notice confirmed",
+          "precision": "unknown-or-day-only",
+          "retrievalWindow": null,
+          "retrievalPrecision": "session-before-recording-clock"
+        },
+        "limitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Exact acquisition time unknown; retrievedAt is session evidence recording time."
+        ]
+      }
+    ],
+    "evidence": [
+      {
+        "id": "attack-10",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "aviation",
+        "nodeType": "public-report",
+        "title": "2026-10-10: attack — reported-attack",
+        "summary": "Reuters relays GACA reporting an airport attack and injuries.",
+        "sourceId": "reuters-initial",
+        "sourceUrl": "https://ca.marketscreener.com/news/latest/Several-wounded-in-Riyadh-airport-attack-operations-suspended-Saudi-aviation-authority-says--12494708/",
+        "canonicalUrl": "https://ca.marketscreener.com/news/latest/Several-wounded-in-Riyadh-airport-attack-operations-suspended-Saudi-aviation-authority-says--12494708",
+        "upstreamOrganization": "Reuters via MarketScreener",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": "2026-10-10T17:21:00.000Z",
+        "retrievedAt": "2026-10-12T05:41:38.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-10",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": null
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "Reuters via MarketScreener",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-10",
+            "facet": "attack",
+            "state": "reported-attack",
+            "snapshotId": "reuters-initial",
+            "asOfText": "Published Oct 10 13:21 EDT; updated 13:23 EDT",
+            "fields": {
+              "attributedAuthority": "GACA",
+              "perpetrator": "not established by this initial record"
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "casualties-10-initial",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "aviation",
+        "nodeType": "public-report",
+        "title": "2026-10-10: casualties — unquantified",
+        "summary": "GACA initially reported several wounded; a numerical toll was unknown.",
+        "sourceId": "reuters-initial",
+        "sourceUrl": "https://ca.marketscreener.com/news/latest/Several-wounded-in-Riyadh-airport-attack-operations-suspended-Saudi-aviation-authority-says--12494708/",
+        "canonicalUrl": "https://ca.marketscreener.com/news/latest/Several-wounded-in-Riyadh-airport-attack-operations-suspended-Saudi-aviation-authority-says--12494708",
+        "upstreamOrganization": "Reuters via MarketScreener",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": "2026-10-10T17:21:00.000Z",
+        "retrievedAt": "2026-10-12T05:41:38.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-10",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": null
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "Reuters via MarketScreener",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-10",
+            "facet": "casualties",
+            "state": "unquantified",
+            "snapshotId": "reuters-initial",
+            "asOfText": "Published Oct 10 13:21 EDT; updated 13:23 EDT",
+            "fields": {
+              "killed": null,
+              "injured": null,
+              "killedQualifier": "unknown",
+              "injuredQualifier": "unknown",
+              "attributedAuthority": "GACA"
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "casualties-10-followup",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "aviation",
+        "nodeType": "public-report",
+        "title": "2026-10-10: casualties — reported-count",
+        "summary": "Saudi Gazette relays GACA: 12 killed and 309 injured for Saturday.",
+        "sourceId": "gazette-followup",
+        "sourceUrl": "https://saudigazette.com.sa/article/665290/saudi-arabia/12-killed-309-injured-in-riyadh-airport-attack-saudi-aviation-authority-confirms",
+        "canonicalUrl": "https://saudigazette.com.sa/article/665290/saudi-arabia/12-killed-309-injured-in-riyadh-airport-attack-saudi-aviation-authority-confirms",
+        "upstreamOrganization": "Saudi Gazette relaying GACA",
+        "sourceOrganizationId": "saudi-gazette",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-12T05:41:38.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-10",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": null
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "Saudi Gazette relaying GACA",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-10",
+            "facet": "casualties",
+            "state": "reported-count",
+            "snapshotId": "gazette-followup",
+            "asOfText": "Oct 11 01:37 AM; timezone not stated; page header has unrelated July 2025 date",
+            "fields": {
+              "killed": 12,
+              "injured": 309,
+              "killedQualifier": "exact-reported",
+              "injuredQualifier": "exact-reported",
+              "attributedAuthority": "GACA"
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "casualties-10-revised",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "aviation",
+        "nodeType": "public-report",
+        "title": "2026-10-10: casualties — reported-count",
+        "summary": "Revised Reuters reporting gives 13 killed and more than 300 injured for Saturday.",
+        "sourceId": "reuters-revised",
+        "sourceUrl": "https://www.marketscreener.com/news/yemen-s-houthis-renew-warning-over-saudi-airports-after-deadly-riyadh-attack-ce785ddcdc88f123",
+        "canonicalUrl": "https://www.marketscreener.com/news/yemen-s-houthis-renew-warning-over-saudi-airports-after-deadly-riyadh-attack-ce785ddcdc88f123",
+        "upstreamOrganization": "Reuters via MarketScreener",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": "2026-10-11T09:20:00.000Z",
+        "retrievedAt": "2026-10-12T05:43:10.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-10",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": null
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "Reuters via MarketScreener",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-10",
+            "facet": "casualties",
+            "state": "reported-count",
+            "snapshotId": "reuters-revised",
+            "asOfText": "Published Oct 11 05:20 EDT; modified Oct 11 20:23 EDT",
+            "fields": {
+              "killed": 13,
+              "injured": 300,
+              "killedQualifier": "exact-reported",
+              "injuredQualifier": "more-than",
+              "revisionRelationship": "Later report, same event; preserve earlier figures. No authority revision clock supplied."
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "damage-10",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "aviation",
+        "nodeType": "public-report",
+        "title": "2026-10-10: damage — reported-damage",
+        "summary": "GACA reported property damage; its extent remained under assessment.",
+        "sourceId": "gazette-followup",
+        "sourceUrl": "https://saudigazette.com.sa/article/665290/saudi-arabia/12-killed-309-injured-in-riyadh-airport-attack-saudi-aviation-authority-confirms",
+        "canonicalUrl": "https://saudigazette.com.sa/article/665290/saudi-arabia/12-killed-309-injured-in-riyadh-airport-attack-saudi-aviation-authority-confirms",
+        "upstreamOrganization": "Saudi Gazette relaying GACA",
+        "sourceOrganizationId": "saudi-gazette",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-12T05:41:38.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-10",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": null
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "Saudi Gazette relaying GACA",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-10",
+            "facet": "damage",
+            "state": "reported-damage",
+            "snapshotId": "gazette-followup",
+            "asOfText": "Oct 11 01:37 AM; timezone not stated; page header has unrelated July 2025 date",
+            "fields": {
+              "verifiedExtent": null,
+              "repairCost": null
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "ops-10-suspended",
+        "recordKind": "evidence",
+        "evidenceKind": "official-notice",
+        "subjectDomain": "aviation",
+        "nodeType": "official-notice",
+        "title": "2026-10-10: airportOperations — reported-suspended",
+        "summary": "GACA reporting described suspended airport operations.",
+        "sourceId": "reuters-initial",
+        "sourceUrl": "https://ca.marketscreener.com/news/latest/Several-wounded-in-Riyadh-airport-attack-operations-suspended-Saudi-aviation-authority-says--12494708/",
+        "canonicalUrl": "https://ca.marketscreener.com/news/latest/Several-wounded-in-Riyadh-airport-attack-operations-suspended-Saudi-aviation-authority-says--12494708",
+        "upstreamOrganization": "Reuters via MarketScreener",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": "2026-10-10T17:21:00.000Z",
+        "retrievedAt": "2026-10-12T05:41:38.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-10",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": null
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "Reuters via MarketScreener",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-10",
+            "facet": "airportOperations",
+            "state": "reported-suspended",
+            "snapshotId": "reuters-initial",
+            "asOfText": "Published Oct 10 13:21 EDT; updated 13:23 EDT",
+            "fields": {
+              "terminalCoverage": null,
+              "partialOperations": null,
+              "reopeningAt": null
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "attack-11",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "aviation",
+        "nodeType": "public-report",
+        "title": "2026-10-11: attack — reported-attack",
+        "summary": "Coalition reporting described a separate Sunday projectile attack at Terminal 4.",
+        "sourceId": "reuters-revised",
+        "sourceUrl": "https://www.marketscreener.com/news/yemen-s-houthis-renew-warning-over-saudi-airports-after-deadly-riyadh-attack-ce785ddcdc88f123",
+        "canonicalUrl": "https://www.marketscreener.com/news/yemen-s-houthis-renew-warning-over-saudi-airports-after-deadly-riyadh-attack-ce785ddcdc88f123",
+        "upstreamOrganization": "Reuters via MarketScreener",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": "2026-10-11T09:20:00.000Z",
+        "retrievedAt": "2026-10-12T05:43:10.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-11",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": null
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "Reuters via MarketScreener",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-11",
+            "facet": "attack",
+            "state": "reported-attack",
+            "snapshotId": "reuters-revised",
+            "asOfText": "Published Oct 11 05:20 EDT; modified Oct 11 20:23 EDT",
+            "fields": {
+              "attributedAuthority": "Saudi-led coalition",
+              "perpetrator": "unknown for this Sunday event"
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "damage-11",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "aviation",
+        "nodeType": "public-report",
+        "title": "2026-10-11: damage — reported-damage",
+        "summary": "Coalition reporting described a fire; verified damage extent is unknown.",
+        "sourceId": "reuters-revised",
+        "sourceUrl": "https://www.marketscreener.com/news/yemen-s-houthis-renew-warning-over-saudi-airports-after-deadly-riyadh-attack-ce785ddcdc88f123",
+        "canonicalUrl": "https://www.marketscreener.com/news/yemen-s-houthis-renew-warning-over-saudi-airports-after-deadly-riyadh-attack-ce785ddcdc88f123",
+        "upstreamOrganization": "Reuters via MarketScreener",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": "2026-10-11T09:20:00.000Z",
+        "retrievedAt": "2026-10-12T05:43:10.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-11",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": null
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "Reuters via MarketScreener",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-11",
+            "facet": "damage",
+            "state": "reported-damage",
+            "snapshotId": "reuters-revised",
+            "asOfText": "Published Oct 11 05:20 EDT; modified Oct 11 20:23 EDT",
+            "fields": {
+              "verifiedExtent": null,
+              "repairCost": null
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "casualties-11",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "aviation",
+        "nodeType": "public-report",
+        "title": "2026-10-11: casualties — reported-count",
+        "summary": "GACA reporting gives one killed and 11 injured for Sunday.",
+        "sourceId": "reuters-revised",
+        "sourceUrl": "https://www.marketscreener.com/news/yemen-s-houthis-renew-warning-over-saudi-airports-after-deadly-riyadh-attack-ce785ddcdc88f123",
+        "canonicalUrl": "https://www.marketscreener.com/news/yemen-s-houthis-renew-warning-over-saudi-airports-after-deadly-riyadh-attack-ce785ddcdc88f123",
+        "upstreamOrganization": "Reuters via MarketScreener",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": "2026-10-11T09:20:00.000Z",
+        "retrievedAt": "2026-10-12T05:43:10.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-11",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": null
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "Reuters via MarketScreener",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-11",
+            "facet": "casualties",
+            "state": "reported-count",
+            "snapshotId": "reuters-revised",
+            "asOfText": "Published Oct 11 05:20 EDT; modified Oct 11 20:23 EDT",
+            "fields": {
+              "killed": 1,
+              "injured": 11,
+              "killedQualifier": "exact-reported",
+              "injuredQualifier": "exact-reported",
+              "attributedAuthority": "GACA"
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "ops-canada",
+        "recordKind": "evidence",
+        "evidenceKind": "official-notice",
+        "subjectDomain": "aviation",
+        "nodeType": "official-notice",
+        "title": "2026-10-11: airportOperations — reported-closed",
+        "summary": "Canada’s advisory describes RUH as closed.",
+        "sourceId": "canada",
+        "sourceUrl": "https://travel.gc.ca/destinations/saudi-arabia",
+        "canonicalUrl": "https://travel.gc.ca/destinations/saudi-arabia",
+        "upstreamOrganization": "Government of Canada",
+        "sourceOrganizationId": "canada",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-12T05:43:10.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-11",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": null
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "Government of Canada",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-11",
+            "facet": "airportOperations",
+            "state": "reported-closed",
+            "snapshotId": "canada",
+            "asOfText": "Last updated 11 October 2026 09:58 ET; airline regulator closure order not provided",
+            "fields": {
+              "authorityType": "foreign-travel-advisory",
+              "closureOrder": null,
+              "partialOperations": null,
+              "reopeningAt": null
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "airspace-easa",
+        "recordKind": "evidence",
+        "evidenceKind": "official-notice",
+        "subjectDomain": "aviation",
+        "nodeType": "official-notice",
+        "title": "2026-10-10: airspace — avoidance-advisory",
+        "summary": "EASA recommends avoiding two specified Jeddah FIR areas and caution elsewhere.",
+        "sourceId": "easa",
+        "sourceUrl": "https://www.easa.europa.eu/en/domains/air-operations/czibs/czib-2026-09-r1",
+        "canonicalUrl": "https://www.easa.europa.eu/en/domains/air-operations/czibs/czib-2026-09-r1",
+        "upstreamOrganization": "EASA",
+        "sourceOrganizationId": "easa",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-12T05:43:10.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-10",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": null
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "EASA",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-10",
+            "facet": "airspace",
+            "state": "avoidance-advisory",
+            "snapshotId": "easa",
+            "asOfText": "Pre-event context, revised October 9; not evidence of an October 10 or 11 closure",
+            "fields": {
+              "noticeId": "CZIB-2026-09-R1",
+              "validUntilDay": "2026-11-16",
+              "applicability": "EASA operators; authorized TCO operations to/from/within EU",
+              "closureOrder": null,
+              "geographicCoverage": "Two waypoint-defined areas; no geometry imported"
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "threat-houthi",
+        "recordKind": "evidence",
+        "evidenceKind": "official-notice",
+        "subjectDomain": "aviation",
+        "nodeType": "official-notice",
+        "title": "2026-10-11: airspace — threat",
+        "summary": "Reuters reports the Houthis warning airlines and travellers against Saudi airports.",
+        "sourceId": "reuters-revised",
+        "sourceUrl": "https://www.marketscreener.com/news/yemen-s-houthis-renew-warning-over-saudi-airports-after-deadly-riyadh-attack-ce785ddcdc88f123",
+        "canonicalUrl": "https://www.marketscreener.com/news/yemen-s-houthis-renew-warning-over-saudi-airports-after-deadly-riyadh-attack-ce785ddcdc88f123",
+        "upstreamOrganization": "Reuters via MarketScreener",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": "2026-10-11T09:20:00.000Z",
+        "retrievedAt": "2026-10-12T05:43:10.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-11",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": null
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "Reuters via MarketScreener",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-11",
+            "facet": "airspace",
+            "state": "threat",
+            "snapshotId": "reuters-revised",
+            "asOfText": "Published Oct 11 05:20 EDT; modified Oct 11 20:23 EDT",
+            "fields": {
+              "speaker": "Houthis",
+              "officialClosure": null
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "klm-suspension",
+        "recordKind": "evidence",
+        "evidenceKind": "official-notice",
+        "subjectDomain": "aviation",
+        "nodeType": "official-notice",
+        "title": "2026-10-11: airlineSuspension — voluntary-suspension",
+        "summary": "KLM reports paused Riyadh flights through October 24.",
+        "sourceId": "klm",
+        "sourceUrl": "https://saudi.klm.com/information/travel-alerts",
+        "canonicalUrl": "https://saudi.klm.com/information/travel-alerts",
+        "upstreamOrganization": "KLM",
+        "sourceOrganizationId": "klm",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-12T05:43:10.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-11",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": "KLM"
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "KLM",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-11",
+            "facet": "airlineSuspension",
+            "state": "voluntary-suspension",
+            "snapshotId": "klm",
+            "asOfText": "Last updated Friday October 9 23:45 Amsterdam; year from dated notice context; unrelated page sections contain inconsistent dates",
+            "fields": {
+              "carrier": "KLM",
+              "throughDay": "2026-10-24",
+              "cause": "regional security situation; no event-specific causation established"
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "flights-etihad-earlier",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "aviation",
+        "nodeType": "public-report",
+        "title": "2026-10-11: flightDisruption — listed-cancellations",
+        "summary": "Earlier Etihad search snapshot listed Riyadh cancellations for October 11–13.",
+        "sourceId": "etihad-early",
+        "sourceUrl": "https://www.etihad.com/en-us/manage/flight-status",
+        "canonicalUrl": "https://www.etihad.com/en-us/manage/flight-status",
+        "upstreamOrganization": "Etihad Airways",
+        "sourceOrganizationId": "etihad",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-12T05:41:38.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-11",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": "Etihad"
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Exact acquisition time unknown; retrievedAt is session evidence recording time.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "Etihad Airways",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-11",
+            "facet": "flightDisruption",
+            "state": "listed-cancellations",
+            "snapshotId": "etihad-early",
+            "asOfText": "Earlier search snapshot: 11–13 October cancellations; no publication/update clock",
+            "fields": {
+              "carrier": "Etihad",
+              "flights": [
+                {
+                  "number": "EY559",
+                  "date": "2026-10-11",
+                  "status": "cancelled",
+                  "from": "AUH",
+                  "to": "RUH"
+                },
+                {
+                  "number": "EY560",
+                  "date": "2026-10-11",
+                  "status": "cancelled",
+                  "from": "RUH",
+                  "to": "AUH"
+                },
+                {
+                  "number": "EY559",
+                  "date": "2026-10-12",
+                  "status": "cancelled",
+                  "from": "AUH",
+                  "to": "RUH"
+                },
+                {
+                  "number": "EY560",
+                  "date": "2026-10-12",
+                  "status": "cancelled",
+                  "from": "RUH",
+                  "to": "AUH"
+                },
+                {
+                  "number": "EY551",
+                  "date": "2026-10-13",
+                  "status": "cancelled",
+                  "from": "AUH",
+                  "to": "RUH"
+                },
+                {
+                  "number": "EY552",
+                  "date": "2026-10-13",
+                  "status": "cancelled",
+                  "from": "RUH",
+                  "to": "AUH"
+                }
+              ],
+              "coverage": "Only these named sectors; search snapshot; no actual telemetry, denominator or diversions"
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      },
+      {
+        "id": "flights-etihad-later",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "aviation",
+        "nodeType": "public-report",
+        "title": "2026-10-11: flightDisruption — listed-cancellations",
+        "summary": "Later Etihad page lists four October 12 and two October 13 Riyadh cancellations.",
+        "sourceId": "etihad-later",
+        "sourceUrl": "https://www.etihad.com/en-us/manage/flight-status",
+        "canonicalUrl": "https://www.etihad.com/en-us/manage/flight-status",
+        "upstreamOrganization": "Etihad Airways",
+        "sourceOrganizationId": "etihad",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-12T05:43:10.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "airport": "RUH/OERK",
+          "eventId": "ruh-2026-10-11",
+          "completeness": "bounded-reporting; not complete traffic or inspection",
+          "carrier": "Etihad"
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Public metadata and short attributed summaries only. No continuing feed; no primary incident inspection.",
+          "Event, statement and publication clocks are separate; unknown clock is null."
+        ],
+        "rightsAttribution": "Etihad Airways",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "aviation": {
+            "eventId": "ruh-2026-10-11",
+            "facet": "flightDisruption",
+            "state": "listed-cancellations",
+            "snapshotId": "etihad-later",
+            "asOfText": "Later full page: 12–13 October cancellations; no publication/update clock",
+            "fields": {
+              "carrier": "Etihad",
+              "flights": [
+                {
+                  "number": "EY559",
+                  "date": "2026-10-12",
+                  "status": "cancelled",
+                  "from": "AUH",
+                  "to": "RUH"
+                },
+                {
+                  "number": "EY560",
+                  "date": "2026-10-12",
+                  "status": "cancelled",
+                  "from": "RUH",
+                  "to": "AUH"
+                },
+                {
+                  "number": "EY555",
+                  "date": "2026-10-12",
+                  "status": "cancelled",
+                  "from": "AUH",
+                  "to": "RUH"
+                },
+                {
+                  "number": "EY556",
+                  "date": "2026-10-12",
+                  "status": "cancelled",
+                  "from": "RUH",
+                  "to": "AUH"
+                },
+                {
+                  "number": "EY551",
+                  "date": "2026-10-13",
+                  "status": "cancelled",
+                  "from": "AUH",
+                  "to": "RUH"
+                },
+                {
+                  "number": "EY552",
+                  "date": "2026-10-13",
+                  "status": "cancelled",
+                  "from": "RUH",
+                  "to": "AUH"
+                }
+              ],
+              "coverage": "Carrier-announced cancellations; no actual telemetry or airport-wide denominator",
+              "revisionRelationship": "Adds EY555/EY556; omission of October 11 is not retraction or reopening"
+            },
+            "confidence": {
+              "source": "attributed-public-source; independently unauthenticated here",
+              "level": "medium",
+              "rationale": "Readable attributed source supports the reported statement only; no independent on-site or complete operational verification."
+            }
+          },
+          "method": "bounded-public-report-review"
+        }
+      }
+    ],
+    "requirement": {
+      "id": "watch:aviation-riyadh",
+      "summary": "Separate October 10–11 attack reporting, evolving casualties, operational status, flights, airspace, carrier decisions and unknown economic effects.",
+      "extra": {
+        "question": "What does each source establish, and what remains unknown?",
+        "definitionOfDone": "Frozen source-bound local case; no accepted operating verdict.",
+        "audience": "local-analyst"
+      }
+    },
+    "claims": [],
+    "assessments": [],
+    "products": [],
+    "parked": [],
+    "feedback": [],
+    "collections": [],
+    "relationships": [],
+    "history": [
+      {
+        "type": "public-reporting-freeze",
+        "at": "2026-10-12T05:43:10.000Z"
+      }
+    ],
+    "sourceEvaluations": [],
+    "unknowns": {
+      "airportPartialOperations": null,
+      "officialReopening": null,
+      "divertedFlightRows": null,
+      "airportWideCancellations": null,
+      "officialSaudiAirspaceClosure": null,
+      "observedTraffic": null,
+      "verifiedDamageExtent": null,
+      "economicLoss": null
+    },
+    "excluded": {
+      "otherEvents": "October 8 attacks, Dammam October 11, weekly cumulative casualty total, and unrelated oil facilities are outside this case.",
+      "economic": "No measured airport loss, passenger revenue, repair bill, price impact or causal counterfactual found in bounded sources."
+    }
+  }
+}

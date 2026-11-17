@@ -1,5 +1,6 @@
 import { createNormalizedEvent, stableStringHash } from "../../events/normalized-event.js";
 import { STATUSPAGE_REGISTRY } from "./statuspage-registry.js";
+import { abortError } from "./fetch-timeout.js";
 
 function impactSeverity(impact = "") {
   const value = String(impact).toLowerCase();
@@ -18,7 +19,7 @@ export function normalizeStatuspageIncident(incident = {}, page = {}, now = new 
   const status = String(incident.status || "investigating").toLowerCase();
   const impact = String(incident.impact || "none").toLowerCase();
   if (!incident.id || status === "resolved" || impact === "none" || status === "scheduled") return { event: null, errors: [] };
-  const updatedAt = incident.updated_at || incident.created_at || now;
+  const updatedAt = incident.updated_at ?? null;
   const result = createNormalizedEvent({
     id: `statuspage:${page.id}:${incident.id}`,
     provider: "statuspage",
@@ -32,7 +33,7 @@ export function normalizeStatuspageIncident(incident = {}, page = {}, now = new 
     geographic: false,
     mapDisplayStatus: "not-mapped",
     nonGeographicReason: "Statuspage incidents describe service availability, not verified physical locations.",
-    startedAt: incident.created_at || now,
+    startedAt: incident.created_at ?? null,
     updatedAt,
     ingestedAt: now,
     severity: impactSeverity(impact),
@@ -43,7 +44,7 @@ export function normalizeStatuspageIncident(incident = {}, page = {}, now = new 
     sourceType: "Official status page",
     sourceTier: "tier-1-primary-official",
     publisher: page.name,
-    sourcePublishedAt: incident.created_at || updatedAt,
+    sourcePublishedAt: incident.created_at ?? null,
     verification: {
       state: "primary-confirmed",
       evidenceLevel: "official-statuspage-incident",
@@ -75,7 +76,7 @@ function normalizeSlackCurrent(payload = {}, page = {}, now = new Date()) {
       status: incident.status || "investigating",
       impact: incident.type || "minor",
       created_at: incident.date_created,
-      updated_at: incident.date_updated || incident.date_created,
+      updated_at: incident.date_updated ?? null,
       shortlink: page.homepageUrl,
       incident_updates: [{ body: incident.notes || incident.title || "" }],
     }, page, now)
@@ -87,17 +88,28 @@ export async function fetchStatuspageEvents(context = {}) {
   const events = [];
   const rejected = [];
   let receivedCount = 0;
-  for (const page of (context.statuspageRegistry || STATUSPAGE_REGISTRY).slice(0, 5)) {
+  const pages = (context.statuspageRegistry || STATUSPAGE_REGISTRY).slice(0, 5);
+  const settled = await Promise.allSettled(pages.map(async (page) => {
     const payload = await context.fetchJson(page.apiUrl, page.name);
-    const results = page.adapter === "slack-current"
+    return page.adapter === "slack-current"
       ? normalizeSlackCurrent(payload, page, now)
       : (payload.incidents || []).map((incident) => normalizeStatuspageIncident(incident, page, now));
-    receivedCount += results.length;
-    for (const result of results) {
+  }));
+  let failures = 0;
+  let timedOut = Boolean(context.signal?.aborted);
+  for (const item of settled) {
+    if (item.status === "rejected") {
+      failures += 1;
+      timedOut = timedOut || item.reason?.name === "AbortError";
+      continue;
+    }
+    receivedCount += item.value.length;
+    for (const result of item.value) {
       if (result.event) events.push(result.event);
       else if (result.errors?.length) rejected.push({ errors: result.errors });
     }
   }
-  return { events, rejected, receivedCount, warnings: [] };
+  if (!events.length && failures) throw timedOut ? abortError("Status page fetch timed out.") : new Error("Status pages unavailable.");
+  return { events, rejected, receivedCount, status: failures ? "degraded" : undefined, warnings: failures ? ["One or more official status pages were unavailable."] : [] };
 }
 

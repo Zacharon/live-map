@@ -1,0 +1,9 @@
+# Crawl hints only. Not an access-control mechanism.
+User-agent: *
+Allow: /
+Allow: /sources
+Allow: /countries
+Allow: /diagnostics
+Disallow: /artifacts
+Disallow: /qa-artifacts
+Sitemap: /sitemap.xml

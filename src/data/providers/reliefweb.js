@@ -1,4 +1,5 @@
 import { createNormalizedEvent } from "../../events/normalized-event.js";
+import { abortError, createLinkedSignal } from "./fetch-timeout.js";
 
 export const RELIEFWEB_BASE_URL = "https://api.reliefweb.int/v2";
 const COUNTRY_CENTROIDS = {
@@ -67,8 +68,8 @@ export function normalizeReliefWebRecord(record, now = new Date()) {
     countryCode: point?.countryCode || null,
     countryName: point?.countryName || firstName(fields.country) || "Multiple/unknown",
     locationName: point?.countryName || firstName(fields.country) || "Humanitarian update",
-    startedAt: fields.date?.created || fields.date?.original || now,
-    updatedAt: fields.date?.changed || fields.date?.created || now,
+    startedAt: fields.date?.created || fields.date?.original || null,
+    updatedAt: fields.date?.changed || fields.date?.created || null,
     ingestedAt: now,
     severity: reliefWebType(record) === "recovery" ? 35 : 58,
     confidence: 78,
@@ -112,10 +113,10 @@ export function normalizeReliefWebRecord(record, now = new Date()) {
   return { event: result.valid ? result.event : null, errors: result.errors };
 }
 
-export function reliefWebQuery(hours, now = Date.now()) {
+export function reliefWebQuery(hours, now = Date.now(), runtimeEnv = globalThis?.process?.env ?? {}) {
   const changedAfter = new Date(now - Math.max(24, hours || 72) * 3600000).toISOString();
   return {
-    appname: globalThis?.process?.env?.RELIEFWEB_APPNAME,
+    appname: runtimeEnv.RELIEFWEB_APPNAME,
     limit: 100,
     fields: { include: ["id", "title", "body", "date", "url", "url_alias", "source", "country", "primary_country", "disaster", "disaster_type", "theme", "format", "language", "type"] },
     filter: { field: "date.changed", value: { from: changedAfter } },
@@ -124,7 +125,8 @@ export function reliefWebQuery(hours, now = Date.now()) {
 }
 
 export async function fetchReliefWebEvents(context) {
-  const appname = globalThis?.process?.env?.RELIEFWEB_APPNAME;
+  const runtimeEnv = context.env ?? globalThis?.process?.env ?? {};
+  const appname = runtimeEnv.RELIEFWEB_APPNAME;
   if (!appname) {
     return {
       events: [],
@@ -135,14 +137,25 @@ export async function fetchReliefWebEvents(context) {
       requestAttempted: false,
     };
   }
-  const response = await fetch(`${RELIEFWEB_BASE_URL}/reports`, {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json" },
-    body: JSON.stringify(reliefWebQuery(Math.min(context.hours || 72, 72), context.now)),
-  });
-  if (response.status === 429) throw new Error("ReliefWeb returned 429");
-  if (!response.ok) throw new Error(`ReliefWeb returned ${response.status}`);
-  const data = await response.json();
+  const timeoutMs = Math.min(context.provider?.timeoutMs || context.schedule?.requestTimeoutMs || 15000, context.deadlineMs || context.provider?.timeoutMs || context.schedule?.requestTimeoutMs || 15000);
+  const linked = createLinkedSignal(context.signal, timeoutMs);
+  let data;
+  try {
+    const response = await fetch(`${RELIEFWEB_BASE_URL}/reports`, {
+      method: "POST",
+      signal: linked.signal,
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify(reliefWebQuery(Math.min(context.hours || 72, 72), context.now, runtimeEnv)),
+    });
+    if (response.status === 429) throw new Error("ReliefWeb returned 429");
+    if (!response.ok) throw new Error(`ReliefWeb returned ${response.status}`);
+    data = await response.json();
+  } catch (error) {
+    if (error?.name === "AbortError" || context.signal?.aborted) throw abortError("ReliefWeb timed out.");
+    throw error;
+  } finally {
+    linked.clear();
+  }
   const now = new Date(context.now);
   const normalized = [];
   const rejected = [];

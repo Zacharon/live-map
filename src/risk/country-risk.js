@@ -1,3 +1,5 @@
+import { severityScore } from "../events/severity.js";
+import { timestampMs } from "../events/event-values.js";
 import { CII_LEVELS, SEVERITIES } from "../config.js";
 import { COUNTRIES, countryForEvent } from "../data/countries.js";
 
@@ -61,15 +63,16 @@ function sourceTierWeight(event) {
 }
 
 function timeWeight(event, now) {
-  const timestamp = Number(event.occurredAt || event.startedAt || event.updatedAt || now);
+  const timestamp = timestampMs(event.occurredAt, event.startedAt, event.updatedAt);
+  if (timestamp === null) return 0;
   const ageDays = Math.max(0, (now - timestamp) / 86400000);
   const halfLife = HALF_LIFE_DAYS[event.category] || HALF_LIFE_DAYS[event.type] || HALF_LIFE_DAYS[event.domain] || HALF_LIFE_DAYS.other;
   return Math.pow(0.5, ageDays / halfLife);
 }
 
 function eventSeverityWeight(event) {
-  const severity = Number(event.severityScore ?? SEVERITIES[event.severity]?.score ?? event.severity ?? 20);
-  return clamp(severity, 0, 100) / 100;
+  const severity = severityScore(event);
+  return severity === null ? null : severity / 100;
 }
 
 function incidentKey(event) {
@@ -81,9 +84,9 @@ function weightedIncidentEvents(events, now) {
   for (const event of events) {
     const key = incidentKey(event);
     const existing = incidents.get(key);
-    if (!existing || Number(event.severityScore || 0) > Number(existing.severityScore || 0)) incidents.set(key, event);
+    if (!existing || (severityScore(event) ?? -1) > (severityScore(existing) ?? -1)) incidents.set(key, event);
   }
-  return [...incidents.values()].map((event) => {
+  return [...incidents.values()].filter((event) => severityScore(event) !== null).map((event) => {
     const recordPenalty = event.recordKind === "discovery-lead" ? 0.15 : event.recordKind === "observation" ? 0.45 : 1;
     const weight = timeWeight(event, now) * verificationWeight(event) * sourceTierWeight(event) * eventSeverityWeight(event) * recordPenalty;
     return { event, weight };
@@ -260,13 +263,14 @@ export function computeCountryRiskScores(events = [], now = Date.now(), _weights
       providerCoverage: confidence.providerCoverage,
       calculatedAt: now,
       activeEvents: group.events.length,
+      unknownSeverityEvents: group.events.filter((event) => severityScore(event) === null).length,
       activeIncidents: new Set(group.events.map(incidentKey)).size,
       eventCountsByDomain,
       topFactors,
       topFactor: topFactors[0]?.id || "structuralBaseline",
       factors,
       sources: [...new Set(group.events.map((event) => event.sourceName || event.source).filter(Boolean))],
-      limitations: group.events.length ? ["CII v2 is experimental and not an official rating.", "Score and confidence are calculated separately."] : ["No recent mapped events in the selected window.", "Confidence reduced because live event evidence is limited."],
+      limitations: group.events.length ? ["CII v2 is experimental and not an official rating.", "Score and confidence are calculated separately.", "Unknown-severity events are counted but excluded from severity-weighted pressure."] : ["No recent mapped events in the selected window.", "Confidence reduced because live event evidence is limited."],
       coordinates: group.country.centroid,
       bounds: group.country.bounds,
       mostRecentEventAt: newest || null,

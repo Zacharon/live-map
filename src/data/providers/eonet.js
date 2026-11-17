@@ -80,8 +80,8 @@ export function normalizeEonetEvent(rawEvent, now = new Date()) {
     longitude: point.longitude,
     countryName: "Multiple/unknown",
     locationName: rawEvent.title || "Event location",
-    startedAt: geometry?.date || now,
-    updatedAt: geometry?.date || now,
+    startedAt: geometry?.date || null,
+    updatedAt: geometry?.date || null,
     ingestedAt: now,
     severity: eonetSeverity(category),
     confidence: 82,
@@ -127,6 +127,7 @@ export async function fetchEonetEvents(context) {
       break;
     } catch (error) {
       lastError = error;
+      if (context.signal?.aborted || error?.name === "AbortError") break;
     }
   }
   if (!data) throw lastError;

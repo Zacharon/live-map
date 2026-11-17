@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {renderEvidenceDetail} from '../src/ui/evidence-detail.js';
+import {renderInvestigationWorkbench} from '../src/ui/investigation-workbench.js';
+import {syntheticMaritimeSignals} from '../src/data/fixtures/synthetic-maritime-signals.js';
+const record=syntheticMaritimeSignals().find(r=>r.id==='fixture-cargo-confirmed');
+const html=renderEvidenceDetail(record);
+for(const text of ['partial','medium','Fixture cargo matches cover this sample only.','Invented test values.','2026-06-26T10:00:00','4 cargoes'])assert.ok(html.includes(text),text);
+assert.ok(renderEvidenceDetail(null).includes('data-evidence-empty'));
+assert.ok(renderEvidenceDetail({...record,extra:{analyticalConfidence:{level:'unvalidated',rationale:'claim'}}}).includes('No scoped analytical confidence assessment.'));
+const workbench=renderInvestigationWorkbench({chokepoint:{id:'strait-of-hormuz',name:'Hormuz'},caseObject:{evidence:[record]},open:true,tab:'evidence',selectedEvidenceId:record.id});
+assert.ok(workbench.includes(`data-evidence-select="${record.id}" aria-pressed="true"`));
+assert.ok(workbench.includes(`data-evidence-detail="${record.id}"`));
+assert.ok(renderInvestigationWorkbench({chokepoint:{id:'strait-of-hormuz'},caseObject:{evidence:[]},open:true,tab:'evidence'}).includes('None attached.'));
+console.log('direct-selection-tests: schema-bound detail, selected row, unknown and empty states passed');
