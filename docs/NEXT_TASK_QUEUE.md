@@ -21,6 +21,16 @@ acceptance remain separate from source activation, hosted verification and relea
 
 Local candidate preserves unknown versus zero severity across normalization, filters and risk consumers. See [trial report](tstack-20261102/live-map/REPORT.md). Review and validation results are recorded there; existing owner, H3 and hosted gates remain open.
 
+## 2026-10-31 - Bounded event-source journey continuation
+
+- Review the cumulative isolated candidate for find/filter/inspect/original-source behavior, NWS identity fallback and adjacent source/retrieval clocks. Preserve unavailable links/times; do not activate new providers or infer source freshness from retrieval.
+- Current desktop/narrow keyboard, loading/error/empty-state and globe acceptance remain queued for the GUI owner. Coordinator review must use the cumulative journey patch, not the older refresh-only patch. Netlify publication is paused; no candidate combination or release follows from this record.
+
+## 2026-10-31 - Refresh feedback local candidate
+
+- The isolated refresh-feedback fix preserves cached report clocks and makes failed attempts distinct from successful, partial, empty and saved-read responses. Regression coverage includes failure/retry and superseded-request feedback.
+- Keep full browser/assistive-technology acceptance and any canonical installation separate. No provider, hosting or deployment change accompanies this fix; existing queue priorities and gates remain unchanged.
+
 ## 2026-10-27 - Events API timeout fix is ready for review
 
 - Review and merge the events deadline pull request, then deploy it separately. Production keeps the current hang until that deploy. Do not deploy from an agent session.

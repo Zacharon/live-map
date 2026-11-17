@@ -946,7 +946,7 @@ export function bootLiveMap() {
     document.body.dataset.liveMapChokepoint = state.selectedChokepointId || "";
     document.body.dataset.liveMapDataMode = state.demo ? "mixed" : (state.dataMode || "public");
     if (els.dataMode) els.dataMode.value = state.demo ? "mixed" : (state.dataMode || "public");
-    if (els.refreshNow) els.refreshNow.textContent = state.demo ? "Reload demo" : "Refresh reports";
+    if (els.refreshNow) els.refreshNow.textContent = state.demo ? "Reload demo" : state.apiStatus === "loading" ? "Refreshing reports…" : "Refresh reports";
     if (els.baseMap && state.mapView.basemap) els.baseMap.value = state.mapView.basemap;
     } catch (error) {
       console.error(error);
@@ -1240,8 +1240,10 @@ export function bootLiveMap() {
     render();
     els.systemStatus.innerHTML = "<i></i> Updating";
     els.refreshNow.disabled = true;
+    els.refreshNow.textContent = "Refreshing reports…";
     const controller = eventRequestController = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CONFIG.requestTimeoutMs);
+    let refreshOutcome = "Refresh failed";
     try {
       const response = await fetch(`${CONFIG.endpoint}?hours=${state.hours}&t=${Date.now()}`, { cache: "no-store", signal: controller.signal });
       if (!response.ok) {
@@ -1270,6 +1272,9 @@ export function bootLiveMap() {
       renderSourceHealth(els.sourceHealth, result, state.errors);
       render();
       scheduleNextLoad(CONFIG.refreshSeconds * 1000);
+      refreshOutcome = result.localPreview
+        ? (result.localPreview.cacheOnly ? "Saved public reads reloaded" : "Local public data refreshed")
+        : noData ? "No provider data" : isPartial ? "Partial data refreshed" : "Reports refreshed";
     } catch (error) {
       if(generation!==eventRequestGeneration)return;
       state.apiStatus='error';
@@ -1293,6 +1298,7 @@ export function bootLiveMap() {
         if (els.sourceHealth) els.sourceHealth.textContent = "Loaded local public snapshots. Preview /api remains JSON 503 by design — this is not live coverage.";
         if (els.publicDataStatus) els.publicDataStatus.innerHTML = "<strong>Public snapshots</strong><p>Genuine saved records only. Capture time and observation period are on each card. Not a live feed.</p>";
         state.dataMode = "public";
+        refreshOutcome = "Public snapshots";
       } else if (!state.events.length) {
         els.eventList.innerHTML = '<div class="empty">Event data temporarily unavailable. Filters and the map remain usable; use Retry when connectivity returns.</div>';
       }
@@ -1301,9 +1307,14 @@ export function bootLiveMap() {
     } finally {
       clearTimeout(timeout);
       if(generation!==eventRequestGeneration)return;
-      if(generation===eventRequestGeneration)els.refreshNow.disabled = false;
-      if (manual) els.refreshNow.textContent = "Refreshed";
-      setTimeout(() => (els.refreshNow.textContent = "Refresh"), 1200);
+      els.refreshNow.disabled = false;
+      if (manual) {
+        // A completed attempt is not necessarily a successful retrieval.
+        els.refreshNow.textContent = refreshOutcome;
+        setTimeout(() => {
+          if (generation === eventRequestGeneration && state.apiStatus !== "loading" && !state.demo) els.refreshNow.textContent = "Refresh reports";
+        }, 1200);
+      }
     }
   }
 
@@ -1373,7 +1384,7 @@ export function bootLiveMap() {
     if (event.target.closest("a")) return;
     const watchSource=event.target.closest('[data-watch-source]'),watchChanges=event.target.closest('[data-watch-changes]');
     if(watchSource||watchChanges){if(watchSource)state.watchSource=watchSource.dataset.watchSource;else state.watchChangeFilter=watchChanges.dataset.watchChanges;state.listPage=0;syncUrlState();render();return;}
-    if(event.target.closest('[data-watch-reset]')){clearInspectorSelection();state.mobilePane='feed';state.rightDrawerOpen=true;state.watchSource='';state.watchChangeFilter='all';state.selectedCountryIso3=null;state.mapView.viewportOnly=false;state.mapView.asOf=null;resetDashboardFilters();els.search.value='';els.globalSearch.value='';els.globalSearchResults.hidden=true;state.listPage=0;syncUrlState();render();els.search.focus();return;}
+    if(event.target.closest('[data-watch-reset]')){clearInspectorSelection();state.mobilePane='feed';state.rightDrawerOpen=true;state.watchSource='';state.watchChangeFilter='all';state.selectedCountryIso3=null;state.mapView.viewportOnly=false;state.mapView.asOf=null;state.mapView.verification='all';resetDashboardFilters();els.search.value='';els.globalSearch.value='';els.globalSearchResults.hidden=true;state.listPage=0;syncUrlState();render();els.search.focus();return;}
     const mobileButton = event.target.closest('[data-mobile-pane]');
     if (mobileButton) {
       if (state.selectedEventId) clearInspectorSelection();
