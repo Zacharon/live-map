@@ -86,7 +86,7 @@ npm run check
 npm run security:scan
 ```
 
-GitHub Actions uses `actions/setup-node` with Node 20 and remains the authoritative CI environment, but local agents should first try the PATH repair above before reporting that local validation is unavailable.
+GitHub Actions uses `actions/setup-node` with Node 20, except the `forge-staging` job, which uses Node 22 because PGlite 0.5.16 cannot load PostGIS on Node 20. CI remains the authoritative environment, but local agents should first try the PATH repair above before reporting that local validation is unavailable.
 # Open News and Social Validation
 
 Run `npm run test:platform` to exercise observation URL normalization, source independence, deterministic storyline grouping, and metadata-only social normalizers. Keep provider feature flags unset during ordinary validation so no external social/video polling occurs.

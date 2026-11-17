@@ -1,3 +1,11 @@
+## 2026-11-17 - Forge staging CI moves to Node 22
+
+Dependabot PR #108 (PGlite 0.5.13 to 0.5.16, pglite-postgis 0.2.13 to 0.2.16) failed `forge-staging`:
+`CREATE EXTENSION postgis` reported "could not load library postgis-3.so ... null function or function
+signature mismatch". Reproduced locally with only main's migrations: 0.5.16 fails on Node 20.20.2 and
+loads on Node 22.18.0 and 24.16.0; 0.5.13 loads on Node 20. PGlite is a test-only devDependency, so
+only the `forge-staging` job moves to Node 22. The other jobs, and `engines`, stay on Node 20.
+
 ## 2026-11-16 - USGS inspection and export candidate
 
 USGS evidence and response-clock scores now share the inspection/export path.
