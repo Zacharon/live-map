@@ -1,13 +1,64 @@
+## 2026-11-16 - USGS inspection and export candidate
+
+USGS evidence and response-clock scores now share the inspection/export path.
+Fixed Filters reopening after timeline selection/reload and globe Back losing its
+return target. The isolated synthetic Edge journey passed 21 checks including
+keyboard, downloads, 320px layout and camera continuity; no upstream reads.
+See [contract and reproduction](USGS_SPINE_CONTRACT.md). Draft review and owner
+acceptance remain separate from source activation, hosted verification and release.
+
+## 2026-11-12 - Review local RSS redirect boundary repair
+
+- Independent H3 should challenge the exact local change and mocked regressions in
+  [the repair record](security-regression-2026-11-12.md). No hosted safety or release
+  closure is claimed.
+- Keep configured feed DNS and deployment egress validation separate. Real feed
+  moves to another origin require registry review; do not widen the guard from an
+  untrusted Location header. RSS streamed byte limits are now locally repaired;
+  other provider body-limit work remains separate.
+
 ## 2026-11-02 - Unknown severity local trial
 
 Local candidate preserves unknown versus zero severity across normalization, filters and risk consumers. See [trial report](tstack-20261102/live-map/REPORT.md). Review and validation results are recorded there; existing owner, H3 and hosted gates remain open.
 
-## 2026-10-17 - Globe visual pass awaiting owner review
+## 2026-10-27 - Events API timeout fix is ready for review
 
-- Owner visual acceptance of the globe pass (`docs/GLOBE_VISUAL_2026-10-17.md`, screenshots in `artifacts/globe-visual-2026-10-17/`).
-- Owner decision on the production CSP for Cesium (`'unsafe-eval'`, a separate globe route, or a build without Knockout). Until that is decided, the deployed site shows the 2D fallback.
-- Vendor the Natural Earth 1:110m boundary lines (public domain) if borders are approved; the loader is already in place.
-- Merge order: draft PR #75 first, then the stacked follow-up PR.
+- Review and merge the events deadline pull request, then deploy it separately. Production keeps the current hang until that deploy. Do not deploy from an agent session.
+- No new Netlify environment variable. Existing `LIVE_MAP_STORED_USGS` reads now fail visibly after 2 seconds instead of waiting on a database connect. `RELIEFWEB_APPNAME` remains optional and, when set, can no longer hang the function.
+- Confirm `GET /api/events` returns JSON with `sourceStatus` in under 10 seconds after deploy. A provider timeout should be `degraded` or `unavailable`, and other providers should still be present.
+
+## 2026-10-27 - Install-check follow-up includes current main
+
+- PR #87 now contains main, including the Forge staging job and the locked PGlite 0.5.11 / PostGIS 0.2.11 pair. Keep the Validate `npm ci` gate and the Electric SQL grouping comment. Require a successful locked install before merge. No deployment.
+
+## 2026-10-21 — Review Forge staging integration
+
+Review the [fixture-only integration harness](FORGE_STAGING_INTEGRATION_2026-10-21.md) and pinned cross-repository CI job. Keep hosted connectivity and source/hosting/deployment authorization separate. Before additive Forge events enter stored mode, decide a compatible cursor/change model or explicitly approved full-snapshot polling; the current test deliberately keeps stored mode shadow-only. Existing hosted ingestion and owner acceptance gates remain open.
+
+## 2026-10-27 — Globe load, measured locally
+
+The in-memory Natural Earth pyramid and screen-space error 4 are on the globe-loading branch. Local headless Edge still takes about 6.1 s for the tile queue to reach 0 (6.9 s on current main). Error 8 and a Cesium modulepreload did not shorten that wait. Hosted timing and owner visual acceptance stay separate. No deploy.
+
+## 2026-10-21 - Review Dependabot install-check follow-up
+
+- Review the follow-up stacked on PR #86: keep the Electric SQL group and add the clean-install compatibility gate to Validate. Merge through the existing PR process after checks pass.
+- For future Electric SQL PRs, require successful locked installation. Do not require both manifest entries to change or matching package version numbers; inspect the resolved PostGIS peer requirement. If no compatible peer release exists, leave the update unmerged until it can resolve. Deployment previews remain separate evidence.
+
+## 2026-10-19 — Homepage 2D / dedicated globe routing correction
+
+Homepage HTML and URL-state defaults now select 2D; /globe and /globe.html default to 3D. Explicit 3D choices, legacy map=3d links and restored 3D saved views serialize current workspace state before navigating to /globe.html. The origin history entry is normalized to 2D so Back stays usable. Auto remains 2D under the homepage's strict CSP; Auto on the globe page retains adaptive rendering. Saved preferences do not silently choose a renderer on a fresh homepage; saved views remain explicit user actions. Globe-page generation independently selects 3D. netlify.toml is unchanged.
+
+Local syntax, platform suite (including page-mode regression tests), generated-page consistency and browser-secret checks pass. Local controller/state execution checks cover defaults, serialization and navigation; no local interactive browser result is claimed because the connected browser is on a separate machine from this checkout. Regression payload is synthetic.
+
+Read-only hosted checks at https://liveworldmap.netlify.app on October 19 UTC: / returns HTTP 200 with strict script-src 'self'; /globe.html returns HTTP 404 with the same strict policy, independently confirmed in the browser as Netlify's Page not found screen. This does not establish which commit is deployed. Hosted globe startup and candidate behavior remain unverified. No deployment or merge performed.
+
+## 2026-10-19 - Globe follow-ups and hosted ingestion gaps
+
+- PR #80 conflict reconciliation preserves main's state-safe routing; confirm strict homepage and globe-specific CSP headers on a deploy preview after owner authorization. Local offline checks do not close hosted acceptance.
+- Owner visual acceptance (#61) of `/globe.html` and the 2D main page on a deploy preview, including real basemap tiles (the cloud container cannot load them).
+- Hosted durable ingestion is not wired: `wrangler.toml` declares no cron trigger, queue or Hyperdrive binding, so the Worker's `scheduled()`/`queue()` handlers never run, and Netlify has no scheduled function. Needs owner approval (Cloudflare Queues may need a paid plan), then the bindings, `LIVE_MAP_INGEST_USGS`/`LIVE_MAP_STORED_USGS`, and `collection_enabled` in `lm_source_policies`.
+- `src/ingestion/worker-handlers.js` retries messages when the database or policy is off, which only burns retries; ack with a logged reason instead, and add a unit test for the handlers.
+- Current-feed activation (NHC, Digitraffic, ADSB.lol) stays off pending owner approval and the licence reviews below; confirm a real dated `/api/events` response on the host.
 
 ## 2026-10-12 - Aviation installation decision pending
 
@@ -131,12 +182,6 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 
 ## P1
 
-### Add Cloudflare asset security headers
-
-- Goal: match Netlify CSP/security headers for Cloudflare static asset responses.
-- Touch first: `src/worker.js`, `netlify.toml`, `tests/run-tests.mjs`.
-- Test: Worker responses for `/`, `/app.js`, `/sources` include CSP, `X-Content-Type-Options`, and `Referrer-Policy`.
-
 ### Add bounded provider JSON helper
 
 - Goal: avoid unbounded `response.json()` on upstream provider responses.
@@ -145,17 +190,24 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 
 ### Stream RSS feed size cap
 
-- Goal: stop reading RSS/Atom bodies after the configured byte cap.
-- Touch first: `src/data/providers/rss-feed.js`.
-- Test: fake over-cap feed response must not fully materialize.
+- Locally repaired 2026-11-12 in `src/data/providers/rss-feed.js`: the existing
+  1 MiB default is enforced before buffering/decoding each streamed chunk, with
+  cancellation on overflow and reader-lock cleanup.
+- Mocked ReadableStream RED/GREEN covers missing/false Content-Length, early
+  declared oversize refusal, exact-limit/split-multibyte success and UTF-8 byte
+  overflow. See [the combined repair record](security-regression-2026-11-12.md).
+- Independent H3 and hosted-runtime acceptance remain separate, not implied.
 
 ## P2
 
 ### Harden RSS redirect policy
 
-- Goal: disallow or tightly restrict redirects outside the feed registry.
-- Touch first: `src/data/providers/rss-feed.js`, `src/data/providers/ssrf-protection.js`.
-- Test: private host literals, link-local hosts, non-allowlisted redirect destinations.
+- Locally repaired 2026-11-12: the shared URL guard refuses redirects outside the
+  configured origin, credentials, empty destinations and IPv6 literals. Relative
+  same-origin redirects remain supported; request-budget behavior is unchanged.
+- Evidence: [RED/GREEN, offline checks and residual assumptions](security-regression-2026-11-12.md).
+- Pending: independent H3 and separate DNS/egress/provider validation before any
+  hosted closure. Do not merge this item with streaming response byte limits.
 
 ### Draft evidence record model
 
