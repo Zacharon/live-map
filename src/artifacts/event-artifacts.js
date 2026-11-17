@@ -1,3 +1,4 @@
+import { projectUsgsEvidence } from '../intelligence/event-evidence.js';
 import { confidenceValue } from "../events/event-values.js";
 /**
  * Event Artifacts v1 — pure client-side OSINT artifact builders.
@@ -377,6 +378,7 @@ export function buildEventArtifact(event, opts = {}) {
     schemaVersion: ARTIFACT_SCHEMA_VERSION,
     artifactType: "event",
     artifactId: `event-artifact:${eventId}`,
+    evidenceRecord: projectUsgsEvidence(event, { sourceStatus: opts.sourceStatus, now }),
     generatedAt,
     title: asString(event.title, "Untitled event"),
     eventId,

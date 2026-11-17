@@ -1,3 +1,4 @@
+import { severityScore, severityBand } from "./severity.js";
 import { CATEGORIES, SEVERITIES } from "../config.js";
 import { computeQualityDimensions } from "./event-quality.js";
 import { classifyEvent } from "./taxonomy.js";
@@ -15,7 +16,7 @@ export function safeCategory(category) {
 }
 
 export function safeSeverity(severity) {
-  return SEVERITIES[severity] ? severity : "low";
+  return SEVERITIES[severity] ? severity : "unknown";
 }
 
 function firstTimestamp(...values) {
@@ -26,11 +27,10 @@ function firstTimestamp(...values) {
   return null;
 }
 
-export function normalizeEvent(event) {
+export function normalizeEvent(event, now = Date.now()) {
   const rawLat=event.lat ?? event.latitude, rawLon=event.lon ?? event.longitude;
   const coordinatesPresent = validCoordinates(rawLat, rawLon);
   const sourceName = event.sourceName || event.source || event.providerName || "Unknown source";
-  const severityKey = event.uiSeverity || event.severityLabel || event.severity;
   const occurredAt = firstTimestamp(event.occurredAt, event.startedAt);
   const updatedAt = firstTimestamp(event.updatedAt, event.updatedAtIso);
   const taxonomy = classifyEvent(event);
@@ -46,8 +46,8 @@ export function normalizeEvent(event) {
     subtype: event.subtype || taxonomy.subtype,
     taxonomyColor: event.taxonomyColor || taxonomy.color,
     recordKind: event.recordKind || "event",
-    severity: safeSeverity(severityKey === "moderate" ? "medium" : severityKey),
-    severityScore: Number(event.severityScore ?? (typeof event.severity === "number" ? event.severity : 0)),
+    severity: severityBand(severityScore(event)),
+    severityScore: severityScore(event),
     occurredAt,
     updatedAt,
     lat: coordinatesPresent ? finiteNumber(rawLat) : null,
@@ -73,7 +73,7 @@ export function normalizeEvent(event) {
     place: event.place || event.locationName || event.countryName || "Unknown location",
     country: event.country || event.countryName || "Multiple/unknown",
   };
-  const quality = computeQualityDimensions(normalized);
+  const quality = computeQualityDimensions(normalized, now);
   const { severity: qualitySeverity, ...qualityRest } = quality;
   return { ...normalized, qualitySeverity, ...qualityRest };
 }

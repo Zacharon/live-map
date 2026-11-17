@@ -1,3 +1,4 @@
+import { severityScore } from "./severity.js";
 import { SEVERITIES } from "../config.js";
 import { relativeTime } from "./event-normalizer.js";
 import { finiteNumber, timestampMs } from "./value-semantics.js";
@@ -46,7 +47,7 @@ export function sortEvents(events, sortBy = "highest-severity") {
     if (sortBy === "newest-reported") result = timestamp(b, "firstReportedAt") - timestamp(a, "firstReportedAt");
     else if (sortBy === "newest-occurred") result = timestamp(b, "occurredAt") - timestamp(a, "occurredAt");
     else if (sortBy === "recently-updated") result = timestamp(b, "updatedAt") - timestamp(a, "updatedAt");
-    else if (sortBy === "highest-severity") result = Number(b.severityScore || SEVERITIES[b.severity]?.score || 0) - Number(a.severityScore || SEVERITIES[a.severity]?.score || 0);
+    else if (sortBy === "highest-severity") result = (severityScore(b) ?? -1) - (severityScore(a) ?? -1);
     else if (sortBy === "highest-confidence") result = (finiteNumber(b.confidence) ?? -1) - (finiteNumber(a.confidence) ?? -1);
     else if (sortBy === "most-corroborated") result = (finiteNumber(b.corroborationScore) ?? -1) - (finiteNumber(a.corroborationScore) ?? -1);
     else if (sortBy === "highest-impact") result = (finiteNumber(b.impactScore) ?? -1) - (finiteNumber(a.impactScore) ?? -1);

@@ -125,7 +125,12 @@ async function storedUsgsResult(options, hours, now) {
   try {
     const pg = await import("pg");
     const Client = pg.Client || pg.default.Client;
-    client = new Client({ connectionString });
+    client = new Client({
+      connectionString,
+      connectionTimeoutMillis: 2000,
+      query_timeout: 2000,
+      statement_timeout: 2000,
+    });
     await client.connect();
     return await readStoredUsgs(client, { hours, now });
   } catch {
