@@ -1,3 +1,4 @@
+import { severityScore } from "./severity.js";
 import { timestampMs, confidenceValue } from "./event-values.js";
 import { distanceKm } from "./event-deduplication.js";
 import { stableStringHash } from "./normalized-event.js";
@@ -46,6 +47,7 @@ export function buildIncidents(events) {
     const occurrences = eventsInIncident.map((event) => timestampMs(event.occurredAt)).filter((value) => value !== null);
     const updates = eventsInIncident.map((event) => timestampMs(event.updatedAt)).filter((value) => value !== null);
     const confidences = eventsInIncident.map((event) => confidenceValue(event.confidence)).filter((value) => value !== null);
+    const severities = eventsInIncident.map(severityScore).filter((value) => value !== null);
     const lastUpdatedAt = updates.length ? Math.max(...updates) : null;
     return {
       incidentId,
@@ -62,7 +64,7 @@ export function buildIncidents(events) {
       providerIds: [...new Set(eventsInIncident.map((event) => event.provider || event.sourceName))],
       independentSourceCount: Math.max(...eventsInIncident.map((event) => Number(event.independentSourceCount || 1))),
       confidence: confidences.length ? Math.max(...confidences) : null,
-      severity: Math.max(...eventsInIncident.map((event) => Number(event.severityScore || 0))),
+      severity: severities.length ? Math.max(...severities) : null,
       timeline: eventsInIncident
         .map((event) => ({ eventId: event.id, title: event.title, occurredAt: event.occurredAt, provider: event.provider || event.sourceName }))
         .sort((a, b) => a.occurredAt - b.occurredAt),

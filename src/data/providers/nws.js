@@ -1,4 +1,5 @@
 import { createNormalizedEvent } from "../../events/normalized-event.js";
+import { safeSourceUrl } from "../../sources/source-url.js";
 
 export const NWS_ACTIVE_ALERTS_URL = "https://api.weather.gov/alerts/active";
 
@@ -90,7 +91,11 @@ export function normalizeNwsAlert(feature, now = new Date()) {
   const geometry = feature?.geometry || null;
   const point = representativeNwsPoint(geometry);
   const eventName = properties.event || "Weather alert";
-  const sourceUrl = properties.web || properties.id || "https://api.weather.gov/alerts/active";
+  // NWS properties.id can be a URN; the GeoJSON feature id can carry the
+  // specific alert's API URL. A collection feed or homepage is not that alert.
+  const sourceUrl = properties.web && !safeSourceUrl(properties.web) ? properties.web
+    : [properties.web, feature?.id, properties.id].map(safeSourceUrl).find(url =>
+      url && !["/", "/alerts", "/alerts/active"].includes(new URL(url).pathname.replace(/\/$/, "") || "/")) || null;
   const severity = nwsSeverityScore(properties);
   const instruction = summarizeText(properties.instruction, 260);
   const description = summarizeText(properties.description, 520);
