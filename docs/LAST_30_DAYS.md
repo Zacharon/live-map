@@ -1,3 +1,31 @@
+## 2026-11-16 - USGS inspection and export candidate
+
+USGS evidence and response-clock scores now share the inspection/export path.
+Fixed Filters reopening after timeline selection/reload and globe Back losing its
+return target. The isolated synthetic Edge journey passed 21 checks including
+keyboard, downloads, 320px layout and camera continuity; no upstream reads.
+See [contract and reproduction](USGS_SPINE_CONTRACT.md). Draft review and owner
+acceptance remain separate from source activation, hosted verification and release.
+
+## 2026-11-12 - Local RSS redirect boundary regression repair
+
+RSS redirects now stay inside the configured feed origin, including protocol and
+port, and reject empty destinations, embedded credentials and IPv6 literals.
+A mocked reachable IPv4-mapped loopback redirect failed before the repair and
+passes afterward; permitted same-origin moves and unknown source clocks remain
+covered. A second RED/GREEN regression closes RSS's whole-body read: its existing
+1 MiB limit is now enforced on streamed bytes before buffering/decoding, with
+cancellation on overflow and split UTF-8 coverage. No DNS lookup API or runtime
+dependency was added. This is local evidence,
+not a claim about deployed egress, DNS, provider reachability or production safety.
+See [commands, gates and remaining limits](security-regression-2026-11-12.md).
+Independent H3 and hosted validation remain pending. No provider activation,
+publication or deployment occurred; inherited untracked research is preserved.
+
+## 2026-11-02 - Unknown severity local trial
+
+Local candidate preserves unknown versus zero severity across normalization, filters and risk consumers. See [trial report](tstack-20261102/live-map/REPORT.md). Review and validation results are recorded there; existing owner, H3 and hosted gates remain open.
+
 ## 2026-10-31 - Event-to-original-source journey (same isolated candidate)
 
 Extended the existing refresh candidate within the selected journey: Clear report filters resets verification too; the inspector places source revision and supplied retrieval time beside Open original source; NWS keeps a supplied alert-specific web/GeoJSON identity instead of substituting the active-feed collection or homepage. Missing original links and clocks remain unavailable. Invalid supplied web links still fail validation. No URL is invented from a URN.
@@ -9,6 +37,58 @@ An unrelated render keeps the in-flight refresh label, and a delayed manual feed
 Manual refresh now reserves success copy for an accepted response, qualifies partial/empty/saved-read results, and reports failure after timeout, network or malformed responses. Intentional offline previews retain their Public snapshots outcome. Generation guards prevent an old completion timer from replacing feedback during a newer request. Existing source timestamps, cached reports, request scheduling and provider settings remain unchanged.
 
 Local regression checks execute the actual controller request lifecycle and error renderer with synthetic responses, including failed refresh followed by successful retry. This isolated branch is not installed into the canonical checkout or deployed; browser/screen-reader acceptance and independent H3 are separate evidence. See the task's refresh verification report for commands, results and limits.
+
+## 2026-10-30 - Isolated globe performance candidate
+
+Removed repeated temporary WebGL capability probes while a live viewer exists. Synthetic headless measurement confirms zero repeat probes; variable timings do not establish an overall speedup. See [measurement and limits](GLOBE_PERFORMANCE_LOCAL_2026-10-30.md). No canonical installation or deployment; existing gates remain open.
+
+## 2026-10-27 - Events API deadline
+
+`/api/events` and `/.netlify/functions/events` could run past the synchronous function limit because `official-rss` fetched up to seven allowlisted feeds one after another, and ReliefWeb's configured fetch had no abort. The dashboard then showed "Event data temporarily unavailable" when the browser's 15 second request timed out. Providers now share an 8 second deadline, in-flight fetches abort, official feeds and status pages run concurrently, and a timed-out provider stays `degraded` with stale cache or `unavailable` in `sourceStatus`. No new environment variable. Not deployed.
+
+## 2026-10-27 - Globe tile load
+
+Unloaded terrain was drawing `#050b16`. The placeholder is now the graded ocean `#123044`, and fog is on again (Cesium still applies it only below about 800 km). The night-atlas grade is unchanged. A second copy of the Natural Earth pyramid, measured on this machine, raised the tile-queue peak from 25 to 63 and did not shorten time to an empty queue, so the globe keeps one imagery layer.
+
+The 42 local JPEGs (487,779 bytes in this run) are decoded while Cesium loads and then served from memory (`data-globe-tiles-cached`). `netlify.toml` adds `Cache-Control: public, max-age=31536000, immutable` for `/vendor/cesium/*` only, leaving the existing CSP on `/vendor/*`. A second visit in headless Edge transferred 0 bytes of `index.js` and 0 bytes of those JPEGs when that header was present, and transferred 4,754,611 plus 487,779 bytes again under `no-store`.
+
+Local headless Edge, three cold loads of `globe.html?demo=foundation&mapMode=3d`, canvas 872×538, cache disabled. Medians: current main first frame 2310 ms, tile queue empty at 6937 ms, peak 25, five-jump sum 1559 ms, pan 165 fps (frame p50 about 6 ms). After the memory cache and screen-space error 4: first frame 1855 ms, queue empty at 6065 ms, peak 17, jump sum 1450 ms, pan still 165 fps. Screen-space error 8 (one run) lowered the peak to 12 and did not shorten the queue (6248 ms). A globe-only modulepreload moved Cesium's response end from about 0.9 s to about 0.3 s and did not make the first frame earlier, so it is not in the page. These are local timings, not a hosted result. No new hosts, keys, or deploy.
+
+## 2026-10-27 - Main merged into the install-check follow-up
+
+Merged current main into the locked-install follow-up. Validate still runs `npm ci --ignore-scripts --no-audit --no-fund` before the existing checks, and the Electric SQL Dependabot comment still says grouping combines available updates. Main's fixture-only Forge staging job, security workflow updates, and the locked PGlite 0.5.11 / PostGIS 0.2.11 pair (exact peer 0.5.11, from #89) are kept. The lockfile matches main and was not hand-edited. No deployment.
+
+## 2026-10-21 — Forge USGS staging harness
+
+Added fixture-only Forge SQLite → real loopback HTTP → existing Live Map API/filter integration, pinned to Forge PR #4 merge. Exact USGS identity mapping retains Forge aliases; native duplicates win intact. Unrelated providers stay present; failures are sanitized. Stored-cursor mode is shadow-only because Forge has no compatible change feed. No production route/provider/source authorization or hosting changes. See [scope, evidence and remaining gates](FORGE_STAGING_INTEGRATION_2026-10-21.md).
+
+## 2026-10-21 - Dependabot peer compatibility review candidate
+
+PR #86 groups available `@electric-sql/*` version updates, but grouping permits a single changed member. PR #83's actual manifest/lockfile reproduces `npm ci` failure: PGlite 0.5.10 conflicts with PostGIS 0.2.8's exact 0.5.8 peer. After #82, the lock resolves PGlite 0.5.10 and PostGIS 0.2.10 (exact peer 0.5.10); the manifest's PGlite `^0.5.8` range accepts that resolution.
+
+This follow-up adds `npm ci --ignore-scripts --no-audit --no-fund` to Validate, which previously ran checks without installing dependencies, and corrects the grouping comment. It reuses npm's compatibility checks rather than adding a custom version rule. Deployment configuration, manifests and lockfile are unchanged by that follow-up commit. GitHub review/merge remains pending; successful configuration-only previews do not demonstrate future Dependabot update behavior.
+
+Local Node 20.20.2/npm 10.9.9 installation accepts the current pair and rejects #83 with `ERESOLVE`. Syntax, offline platform tests, 49 audit-repair tests and the offline validator pass. The online validator fails only its external USGS event-URL reachability row in this environment; that is not dependency-install evidence. Dependabot grouping was checked against official documentation and updater source, not a hosted future-update run.
+
+## 2026-10-19 - PR #80 conflict reconciliation
+
+Merged current main into the follow-up candidate, preserving its homepage routing, saved-view serialization and Back behavior alongside local borders, Cloudflare page headers and Netlify environment forwarding. Removed the duplicate globe-generation transform. CSP parity readers now normalize Windows line endings without changing policy assertions. Local syntax/Cloudflare exports, offline platform suite, offline validator, generated-page consistency and both secret scans pass. Production smoke and hosted acceptance remain separate evidence; no deployment.
+
+## 2026-10-19 - Main page opens in 2D, borders vendored, Cloudflare CSP
+
+The main page now opens in 2D; choosing 3D opens `/globe.html`, while Auto stays in 2D on the main page, and shared links asking for 3D redirect there. Natural Earth 1:110m boundary lines are vendored (owner approved the download). The Cloudflare Worker now sends the same page CSPs as `netlify.toml` from `src/security-headers.js`. Netlify `/api/events` now passes `process.env`, so `LIVE_MAP_STORED_USGS` can take effect there as it already did for `/api/changes`. A read-only review found hosted durable ingestion is not wired on either host (see the task queue). No deployment.
+
+## 2026-10-19 — Homepage 2D / dedicated globe routing correction
+
+Homepage HTML and URL-state defaults now select 2D; /globe and /globe.html default to 3D. Explicit 3D choices, legacy map=3d links and restored 3D saved views serialize current workspace state before navigating to /globe.html. The origin history entry is normalized to 2D so Back stays usable. Auto remains 2D under the homepage's strict CSP; Auto on the globe page retains adaptive rendering. Saved preferences do not silently choose a renderer on a fresh homepage; saved views remain explicit user actions. Globe-page generation independently selects 3D. netlify.toml is unchanged.
+
+Local syntax, platform suite (including page-mode regression tests), generated-page consistency and browser-secret checks pass. Local controller/state execution checks cover defaults, serialization and navigation; no local interactive browser result is claimed because the connected browser is on a separate machine from this checkout. Regression payload is synthetic.
+
+Read-only hosted checks at https://liveworldmap.netlify.app on October 19 UTC: / returns HTTP 200 with strict script-src 'self'; /globe.html returns HTTP 404 with the same strict policy, independently confirmed in the browser as Netlify's Page not found screen. This does not establish which commit is deployed. Hosted globe startup and candidate behavior remain unverified. No deployment or merge performed.
+
+## 2026-10-17 - 3D globe gets its own page
+
+Owner chose a separate globe page for the production Cesium CSP. `netlify.toml` now sets the CSP per path: `/globe` and `/globe.html` add `'unsafe-eval'` for Cesium's bundled Knockout, and every other page keeps the strict policy. `globe.html` is generated from `index.html` by `scripts/build-globe-page.mjs`. The fallback card on other pages links to the globe page. Header behaviour must still be confirmed on a deploy preview. No deployment.
 
 ## 2026-10-17 - Candidate committed, main merged, globe visual pass
 
@@ -36,7 +116,7 @@ Reproduced canonical Watch cards selecting directly; added omitted Evidence ledg
 
 # Last 30 Days
 
-Last updated: 2026-10-17 (branch merged with main; draft PR #75).
+Last updated: 2026-10-27 (globe tile placeholders; draft PR #75 still the prior globe visual record).
 
 ## Independent maritime signals — isolated local candidate
 
