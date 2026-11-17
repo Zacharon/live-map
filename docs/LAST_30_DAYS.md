@@ -7,6 +7,21 @@ keyboard, downloads, 320px layout and camera continuity; no upstream reads.
 See [contract and reproduction](USGS_SPINE_CONTRACT.md). Draft review and owner
 acceptance remain separate from source activation, hosted verification and release.
 
+## 2026-11-12 - Local RSS redirect boundary regression repair
+
+RSS redirects now stay inside the configured feed origin, including protocol and
+port, and reject empty destinations, embedded credentials and IPv6 literals.
+A mocked reachable IPv4-mapped loopback redirect failed before the repair and
+passes afterward; permitted same-origin moves and unknown source clocks remain
+covered. A second RED/GREEN regression closes RSS's whole-body read: its existing
+1 MiB limit is now enforced on streamed bytes before buffering/decoding, with
+cancellation on overflow and split UTF-8 coverage. No DNS lookup API or runtime
+dependency was added. This is local evidence,
+not a claim about deployed egress, DNS, provider reachability or production safety.
+See [commands, gates and remaining limits](security-regression-2026-11-12.md).
+Independent H3 and hosted validation remain pending. No provider activation,
+publication or deployment occurred; inherited untracked research is preserved.
+
 ## 2026-10-27 - Events API deadline
 
 `/api/events` and `/.netlify/functions/events` could run past the synchronous function limit because `official-rss` fetched up to seven allowlisted feeds one after another, and ReliefWeb's configured fetch had no abort. The dashboard then showed "Event data temporarily unavailable" when the browser's 15 second request timed out. Providers now share an 8 second deadline, in-flight fetches abort, official feeds and status pages run concurrently, and a timed-out provider stays `degraded` with stale cache or `unavailable` in `sourceStatus`. No new environment variable. Not deployed.
