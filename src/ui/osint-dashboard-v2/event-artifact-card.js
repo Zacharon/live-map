@@ -59,6 +59,7 @@ function caveatPreview(caveats = []) {
 export function renderEventArtifactSection(event, opts = {}) {
   if (!event) return "";
   const artifact = buildEventArtifact(event, {
+    sourceStatus: opts.sourceStatus,
     allEvents: opts.allEvents || [],
     clusters: opts.clusters || [],
     changeStatus: opts.changeStatus || null,

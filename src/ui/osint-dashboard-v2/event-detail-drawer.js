@@ -1,3 +1,4 @@
+import { projectUsgsEvidence } from '../../intelligence/event-evidence.js';
 import { sourceLink } from "../../sources/source-url.js";
 import { confidenceText, timestampMs } from "../../events/event-values.js";
 import { CATEGORIES, SEVERITIES } from "../../config.js";
@@ -87,10 +88,11 @@ export function renderClusterDetailDrawer(cluster, { allEvents = [] } = {}) {
   </aside>`;
 }
 
-export function renderEventDetailDrawer(event, { changeStatus = null, allEvents = [], clusters = [] } = {}) {
+export function renderEventDetailDrawer(event, { changeStatus = null, allEvents = [], clusters = [], sourceStatus = {} } = {}) {
   if (!event) {
     return `<aside class="v2-event-detail v2-event-detail-empty" aria-label="Event details"><p class="v2-empty">Select an event from the feed, timeline, map, or connected list to open the analyst card.</p></aside>`;
   }
+  const evidence = projectUsgsEvidence(event, { sourceStatus });
   const subjectCluster = resolveClusterForEvent(event, clusters);
   const connections = buildEventConnections(event, { allEvents, clusters });
   const threat = computeThreatLevel(event, {
@@ -139,6 +141,7 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
     </div>
     <p class="v2-detail-summary">${escapeHtml(event.summary || "No summary available.")}</p>
     <section class="detail-source-evidence" aria-label="Supporting source"><h3>Supporting source</h3><p>${escapeHtml(event.sourceName || 'Unknown source')} · ${escapeHtml(event.verificationStatus || 'unverified')}</p><div class="v2-detail-actions">${sourceAction}${providerLink}</div><p>Occurrence: ${escapeHtml(exactTime(event.occurredAt))}<br>Source revision: ${escapeHtml(exactTime(event.updatedAt))}</p></section>
+    ${evidence ? `<section aria-label="Evidence record" data-event-evidence="${escapeHtml(evidence.id)}"><h3>Evidence record</h3><p><code>${escapeHtml(evidence.id)}</code></p><p>Freshness: ${escapeHtml(evidence.extra.freshness)} · Source: ${escapeHtml(evidence.extra.providerStatus)}</p><p>Review: not reviewed · Read-only snapshot</p></section>` : ''}
     <dl class="v2-detail-facts">
       <div><dt>Source coverage</dt><dd>${escapeHtml(event.coverage || event.metadata?.coverage || "Not supplied; do not infer complete coverage")} </dd></div>
       <div><dt>Limits of this evidence</dt><dd>${escapeHtml(limitationText)}</dd></div>
@@ -161,6 +164,6 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
     <div class="v2-detail-actions">${mapLink}<button type="button" class="v2-detail-link secondary" data-v2-clear-selection>Clear selection</button></div>
     <details class="detail-extra"><summary>Why shown · heuristic context</summary><p class="v2-empty">${escapeHtml(why)}</p>${renderThreatExplain(threat)}</details>
     <details class="detail-extra"><summary>Related reports · heuristic links</summary>${renderConnectionsPanel(connections)}</details>
-    <details class="detail-extra"><summary>Export source snapshot</summary>${renderEventArtifactSection(event, { allEvents, clusters, changeStatus })}</details>
+    <details class="detail-extra"><summary>Export source snapshot</summary>${renderEventArtifactSection(event, { allEvents, clusters, changeStatus, sourceStatus })}</details>
   </aside>`;
 }
