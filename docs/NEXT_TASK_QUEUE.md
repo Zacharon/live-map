@@ -33,6 +33,8 @@ Next bounded work: reconcile the inherited platform cache-policy assertion, obta
 
 # Next Task Queue
 
+Local performance candidate: review [globe measurements](GLOBE_PERFORMANCE_LOCAL_2026-10-30.md), then collect controlled startup parse/long-task and physical-device evidence separately. Do not infer hosted readiness or latency benefit from the removed repeat probes.
+
 Small, agent-ready tasks only. Do not turn these into broad refactors.
 
 ## Maritime signal candidate (2026-10-02) — owner decision pending

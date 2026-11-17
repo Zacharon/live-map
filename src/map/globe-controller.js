@@ -81,7 +81,10 @@ export async function setGlobeMode(mode, events, sharedView = {}, options = {}) 
   const globe = document.getElementById("globeStage");
   if (!mapEl || !globe) return publishRenderer(serial, "leaflet");
   const flags = failFlags();
-  const webgl = webglAvailable() && !contextLost && !flags.failWebgl;
+  // A live viewer already proves capability. Avoid creating and releasing a
+  // temporary GPU context on every camera/filter/layer render. Re-probe after
+  // teardown; context loss and forced failure still take precedence.
+  const webgl = !contextLost && !flags.failWebgl && (Boolean(globeHandle?.ok) || webglAvailable());
   const zoom = sharedView.zoom ?? 2;
   let renderer = "leaflet";
   if (mode === "3d") renderer = webgl ? "cesium" : "leaflet-fallback";

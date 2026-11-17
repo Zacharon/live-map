@@ -24,6 +24,10 @@ Reproduced canonical Watch cards selecting directly; added omitted Evidence ledg
 
 # Last 30 Days
 
+## 2026-10-30 - Isolated globe performance candidate
+
+Removed repeated temporary WebGL capability probes while a live viewer exists. Synthetic headless measurement confirms zero repeat probes; variable timings do not establish an overall speedup. See [measurement and limits](GLOBE_PERFORMANCE_LOCAL_2026-10-30.md). No canonical installation or deployment; existing gates remain open.
+
 Last updated: 2026-10-17 (branch merged with main; draft PR #75).
 
 ## Independent maritime signals — isolated local candidate
