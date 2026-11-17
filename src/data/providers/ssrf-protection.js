@@ -35,13 +35,22 @@ export function assertSafeFetchUrl(value, options = {}) {
     throw new Error("Invalid feed URL");
   }
   if (!allowedProtocols.includes(url.protocol)) throw new Error(`Blocked unsafe protocol ${url.protocol}`);
+  if (url.username || url.password) throw new Error("Blocked credentials in feed URL");
+  // The registry uses DNS names. Refuse IPv6 literals altogether rather than
+  // incompletely classifying mapped, translated, or special-purpose addresses.
+  if (url.hostname.startsWith("[")) throw new Error("Blocked IPv6 literal feed host");
   if (isPrivateHostname(url.hostname)) throw new Error(`Blocked private or local host ${url.hostname}`);
   if (options.allowedHosts && !options.allowedHosts.includes(url.hostname)) throw new Error(`Host ${url.hostname} is not allowlisted`);
   return url;
 }
 
 export function assertSafeRedirect(previousUrl, nextUrl) {
-  const resolved = new URL(nextUrl, previousUrl);
-  return assertSafeFetchUrl(resolved.href);
+  if (typeof nextUrl !== "string" || !nextUrl.trim()) throw new Error("Blocked missing redirect destination");
+  const previous = assertSafeFetchUrl(previousUrl);
+  const resolved = assertSafeFetchUrl(new URL(nextUrl, previous).href);
+  // Untrusted Location headers cannot expand a registry-controlled feed's
+  // authority to another host, port or protocol. DNS/egress remain host controls.
+  if (resolved.origin !== previous.origin) throw new Error("Blocked redirect outside configured feed origin");
+  return resolved;
 }
 

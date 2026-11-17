@@ -7,6 +7,16 @@ keyboard, downloads, 320px layout and camera continuity; no upstream reads.
 See [contract and reproduction](USGS_SPINE_CONTRACT.md). Draft review and owner
 acceptance remain separate from source activation, hosted verification and release.
 
+## 2026-11-12 - Review local RSS redirect boundary repair
+
+- Independent H3 should challenge the exact local change and mocked regressions in
+  [the repair record](security-regression-2026-11-12.md). No hosted safety or release
+  closure is claimed.
+- Keep configured feed DNS and deployment egress validation separate. Real feed
+  moves to another origin require registry review; do not widen the guard from an
+  untrusted Location header. RSS streamed byte limits are now locally repaired;
+  other provider body-limit work remains separate.
+
 ## 2026-10-27 - Events API timeout fix is ready for review
 
 - Review and merge the events deadline pull request, then deploy it separately. Production keeps the current hang until that deploy. Do not deploy from an agent session.
@@ -176,17 +186,24 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 
 ### Stream RSS feed size cap
 
-- Goal: stop reading RSS/Atom bodies after the configured byte cap.
-- Touch first: `src/data/providers/rss-feed.js`.
-- Test: fake over-cap feed response must not fully materialize.
+- Locally repaired 2026-11-12 in `src/data/providers/rss-feed.js`: the existing
+  1 MiB default is enforced before buffering/decoding each streamed chunk, with
+  cancellation on overflow and reader-lock cleanup.
+- Mocked ReadableStream RED/GREEN covers missing/false Content-Length, early
+  declared oversize refusal, exact-limit/split-multibyte success and UTF-8 byte
+  overflow. See [the combined repair record](security-regression-2026-11-12.md).
+- Independent H3 and hosted-runtime acceptance remain separate, not implied.
 
 ## P2
 
 ### Harden RSS redirect policy
 
-- Goal: disallow or tightly restrict redirects outside the feed registry.
-- Touch first: `src/data/providers/rss-feed.js`, `src/data/providers/ssrf-protection.js`.
-- Test: private host literals, link-local hosts, non-allowlisted redirect destinations.
+- Locally repaired 2026-11-12: the shared URL guard refuses redirects outside the
+  configured origin, credentials, empty destinations and IPv6 literals. Relative
+  same-origin redirects remain supported; request-budget behavior is unchanged.
+- Evidence: [RED/GREEN, offline checks and residual assumptions](security-regression-2026-11-12.md).
+- Pending: independent H3 and separate DNS/egress/provider validation before any
+  hosted closure. Do not merge this item with streaming response byte limits.
 
 ### Draft evidence record model
 
