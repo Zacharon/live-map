@@ -1,0 +1,16 @@
+{
+  "command": "node scripts/live-map-validator.mjs --offline",
+  "exit_code": 0,
+  "checks": 10,
+  "failed": 0,
+  "syntaxFiles": 381,
+  "browserSecretFiles": 331,
+  "events": 1,
+  "sources": 28,
+  "warnings": [
+    "mode=partial-netlify-function",
+    "Mocked GDACS, NOAA SWPC, CISA KEV, official RSS, GitHub Status 503",
+    "Source URL reachability NOT RUN offline"
+  ],
+  "note": "Final parser/fixture repair run."
+}

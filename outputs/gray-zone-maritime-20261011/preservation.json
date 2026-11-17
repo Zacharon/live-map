@@ -1,0 +1,16 @@
+{
+  "checkedPaths": 830,
+  "canonicalHashDifferences": [],
+  "canonicalStatusUnchanged": true,
+  "taskDeltaPaths": [
+    "data/development-fixtures/gray-zone-maritime-taiwan-2026-08.json",
+    "docs/LAST_30_DAYS.md",
+    "docs/NEXT_TASK_QUEUE.md",
+    "src/app-controller.js",
+    "src/intelligence/case-io.js",
+    "src/intelligence/gray-zone-maritime.js",
+    "src/ui/evidence-detail.js",
+    "src/ui/investigation-workbench.js",
+    "tests/gray-zone-maritime-tests.mjs"
+  ]
+}

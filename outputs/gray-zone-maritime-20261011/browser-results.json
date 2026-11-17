@@ -1,0 +1,39 @@
+{
+  "surface": "Codex in-app browser, actual loopback candidate, Cesium 3D",
+  "checks": {
+    "namedFixture": "PASS",
+    "threeAttributedStates": [
+      "reported-sighting",
+      "attributed-inference",
+      "attributed-claim"
+    ],
+    "keyboardCCGSelection": "PASS Enter",
+    "selectedVesselReload": "PASS vessel-ccg-2502",
+    "mobile": {
+      "viewportWidth": 390,
+      "viewportHeight": 844,
+      "documentWidth": 390,
+      "receiptPanelWidth": 371,
+      "receiptPanelScrollWidth": 371,
+      "receiptOpen": true
+    },
+    "sourceLoss": [
+      "unknown",
+      "unknown",
+      "unknown"
+    ],
+    "rejectedImport": "Import rejected: vessel-minfudingyu-07902: sighting must retain reported provenance",
+    "preservedPriorCase": true,
+    "actualDownload": "C:/Users/zacha/Downloads/gray-zone-maritime-taiwan-case-2026-10-11T22-00-02-836Z.json",
+    "preservedFinalBytes": "browser-export.json",
+    "sharedReceiptFingerprint": "fnv1a:d007b040",
+    "capturedErrorLog": []
+  },
+  "earlierExport": "browser-export-earlier.json",
+  "limitations": [
+    "Background map/demo clocks are synthetic; fixture has no precise geometry",
+    "Intermediate download capture timed out; final corrected download later succeeded",
+    "Browser filechooser/download operations unusually slow",
+    "No forced delayed-load race, hosted service or physical-device test"
+  ]
+}

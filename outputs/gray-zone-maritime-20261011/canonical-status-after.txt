@@ -1,0 +1,212 @@
+ M .gitignore
+ M README.md
+ M app.js
+ M data/development-fixtures/README.md
+ M docs/API_CONTRACTS.md
+ M docs/CHOKEPOINT_STATUS_SCORING.md
+ M docs/CLOUDFLARE_PAGES_MIGRATION.md
+ M docs/FEATURE_FLAGS.md
+ M docs/LAST_30_DAYS.md
+ M docs/LOCAL_VALIDATION.md
+ M docs/NEXT_TASK_QUEUE.md
+ M docs/SECURITY_INVARIANTS.md
+ M index.html
+ M netlify.toml
+ M netlify/functions/moving-objects.mjs
+ M package.json
+ M scripts/e2e-smoke.mjs
+ M scripts/lib/live-map-checks.mjs
+ M scripts/live-map-validator.mjs
+ M scripts/source-explorer-smoke-test.mjs
+ M src/alerts/alert-rules.js
+ M src/api/events-response.js
+ M src/app-controller.js
+ M src/artifacts/event-artifacts.js
+ M src/consumer/presets.js
+ M src/data/layers.js
+ M src/data/providers/cache.js
+ M src/data/providers/capability-registry.js
+ M src/data/providers/eia.js
+ M src/data/providers/firms.js
+ M src/data/providers/fred.js
+ M src/data/providers/gdelt.js
+ M src/data/providers/open-news-social.js
+ M src/data/providers/opensky.js
+ M src/data/providers/orchestrator.js
+ M src/data/providers/registry.js
+ M src/data/providers/reliefweb.js
+ M src/data/providers/ripestat.js
+ M src/data/providers/rss-feed.js
+ M src/data/providers/scheduling.js
+ M src/data/providers/sec-edgar.js
+ M src/data/providers/source-registry.js
+ M src/data/providers/usgs.js
+ M src/data/strategic-chokepoints.js
+ M src/events/change-awareness.js
+ M src/events/event-deduplication.js
+ M src/events/event-filters.js
+ M src/events/event-normalizer.js
+ M src/events/event-quality.js
+ M src/events/feed-organization.js
+ M src/events/incident-clustering.js
+ M src/events/normalized-event.js
+ M src/intelligence/chokepoint-condition.js
+ M src/intelligence/source-independence.js
+ M src/map/globe-controller.js
+ M src/map/map-controller.js
+ M src/map/marker-renderer.js
+ M src/moving-objects/schema.js
+ M src/search/global-search.js
+ M src/source-explorer-app.js
+ M src/sources/master-source-registry.js
+ M src/state.js
+ M src/ui/chokepoints.js
+ M src/ui/osint-dashboard-v2/event-detail-drawer.js
+ M src/ui/osint-dashboard-v2/shell.js
+ M src/ui/saved-views.js
+ M src/worker.js
+ M tests/run-tests.mjs
+?? 404.html
+?? CONTEXT.md
+?? data/development-fixtures/cisa-kev-frozen.json
+?? data/development-fixtures/gfs-10m-recorded-sample.json
+?? data/development-fixtures/malicious-import-sample.json
+?? data/development-fixtures/nhc-twoat-frozen.xml
+?? data/development-fixtures/portwatch-chokepoint6-sample.json
+?? data/development-fixtures/portwatch-hormuz-2025-01-extract.json
+?? data/development-fixtures/portwatch-hormuz-2025-01-provenance.json
+?? data/development-fixtures/shipping-density-sample.json
+?? db/
+?? docs/AUDIT_REFACTOR_2026-09-30.md
+?? docs/DESIGN_BUILD_2026-09-30.md
+?? docs/DIRECT_SELECTION_AND_SOURCES_LOCAL.md
+?? docs/DURABLE_INGESTION_LOCAL.md
+?? docs/EVIDENCE_SEMANTIC_GLOBE.md
+?? docs/EVIDENCE_TO_ASSESSMENT_WORKBENCH.md
+?? docs/GODS_EYE_VIEW_REUSE.md
+?? docs/LOCAL_INTEGRATION_2026-10-05.md
+?? docs/MARITIME_SIGNALS_LOCAL.md
+?? docs/OWNED_API_INGESTION_PLAN.md
+?? docs/PROGRESSIVE_ZOOM_DETAIL.md
+?? docs/WATCH_DESK_2026-09-29.md
+?? docs/WEBSITE_VIBE_AUDIT_LOCAL.md
+?? docs/WORKING_WATCH_HOSTED_PLAN.md
+?? docs/WORKING_WATCH_LOCAL.md
+?? docs/ZOOM_AWARE_MAP_FOUNDATION.md
+?? favicon.svg
+?? functions/api/changes.js
+?? llms.txt
+?? map-workspace.css
+?? netlify/functions/changes.mjs
+?? node_modules/
+?? outputs/foundation-syntax.txt
+?? outputs/foundation-validation.txt
+?? outputs/foundation/
+?? outputs/zoom-density-platform.txt
+?? package-lock.json
+?? robots.txt
+?? scripts/apply-db-migrations.mjs
+?? scripts/capture-portwatch-hormuz-sample.mjs
+?? scripts/capture-public-snapshots.mjs
+?? scripts/design-browser.mjs
+?? scripts/design-globe-journey.mjs
+?? scripts/design-map-reference.mjs
+?? scripts/design-native-zoom.mjs
+?? scripts/design-preview-capture.mjs
+?? scripts/design-reference-browser.mjs
+?? scripts/design-workspace-browser.mjs
+?? scripts/design-workspace-extra-browser.mjs
+?? scripts/load-frozen-extract.mjs
+?? scripts/prepare-gfs-wind-sample.mjs
+?? scripts/preview-foundation.mjs
+?? scripts/preview-public-local.mjs
+?? scripts/preview-usgs-stored-fixture.mjs
+?? scripts/public-source-dev-read.mjs
+?? scripts/read-digitraffic-docs.mjs
+?? scripts/replay-hormuz-frozen-sample.mjs
+?? scripts/reproduce-direct-selection.mjs
+?? scripts/run-usgs-collection.mjs
+?? scripts/run-usgs-retention.mjs
+?? scripts/runtime-acceptance-browser.mjs
+?? scripts/runtime-direct-selection.mjs
+?? scripts/runtime-investigate-desk.mjs
+?? scripts/runtime-maritime-signals.mjs
+?? scripts/runtime-usability-globe.mjs
+?? scripts/runtime-usgs-stored-browser.mjs
+?? scripts/runtime-working-watch.mjs
+?? scripts/slice-source-fixtures.mjs
+?? scripts/test-usgs-native.mjs
+?? scripts/website-vibe-audit-local.mjs
+?? sitemap.xml
+?? src/api/changes-response.js
+?? src/data/fixtures/
+?? src/data/foundation-demo.js
+?? src/data/local-public-preview.js
+?? src/data/maritime-overlays.js
+?? src/data/providers/adsb-lol.js
+?? src/data/providers/digitraffic.js
+?? src/data/providers/nhc.js
+?? src/data/providers/portwatch.js
+?? src/data/providers/provider-activation.js
+?? src/data/providers/public-tracking-fetch.js
+?? src/data/snapshots/
+?? src/events/value-semantics.js
+?? src/ingestion/
+?? src/intelligence/case-io.js
+?? src/intelligence/content-digest.js
+?? src/intelligence/evaluation-vocabulary.js
+?? src/intelligence/evidence-records.js
+?? src/intelligence/investigation-cycle.js
+?? src/intelligence/knowledge-graph.js
+?? src/intelligence/maritime-signals.js
+?? src/intelligence/operational-evaluator.js
+?? src/intelligence/operational-streams.js
+?? src/intelligence/portwatch-frozen-sample.js
+?? src/intelligence/public-projection.js
+?? src/intelligence/resource-catalog.js
+?? src/intelligence/source-authority.js
+?? src/intelligence/threshold-policy.js
+?? src/map/attention-policy.js
+?? src/map/cesium-adapter.js
+?? src/map/contact-orientation.js
+?? src/map/contact-roster.js
+?? src/map/layer-access.js
+?? src/map/offline-basemap.js
+?? src/map/overlay-labels.js
+?? src/map/semantic-bands.js
+?? src/map/view-state.js
+?? src/map/wind-field.js
+?? src/map/wind-proof.js
+?? src/moving-objects/request-coordinator.js
+?? src/orbital/
+?? src/ui/chokepoint-brief.js
+?? src/ui/evidence-detail.js
+?? src/ui/investigation-workbench.js
+?? src/ui/maritime-signals.js
+?? src/ui/watch-dock.js
+?? src/ui/watch-operator.js
+?? src/ui/watch-workspace.js
+?? src/ui/workspace-storage.js
+?? tests/audit-renderer-tests.mjs
+?? tests/audit-truth-tests.mjs
+?? tests/chokepoint-brief-tests.mjs
+?? tests/design-workspace-tests.mjs
+?? tests/direct-selection-tests.mjs
+?? tests/foundation-tests.mjs
+?? tests/investigation-workbench-tests.mjs
+?? tests/maritime-signals-tests.mjs
+?? tests/offline-network.mjs
+?? tests/operational-evidence-tests.mjs
+?? tests/portwatch-hormuz-frozen-sample-tests.mjs
+?? tests/preview-deny-tests.mjs
+?? tests/public-provider-tests.mjs
+?? tests/public-source-snapshot-tests.mjs
+?? tests/runtime-acceptance-labels-tests.mjs
+?? tests/semantic-globe-weather-tests.mjs
+?? tests/usability-dark-globe-tests.mjs
+?? tests/usgs-ingestion-tests.mjs
+?? tests/usgs-recovery-tests.mjs
+?? tests/working-watch-tests.mjs
+?? tests/zoom-density-tests.mjs
+?? vendor/cesium/
+?? vendor/gods-eye-view/

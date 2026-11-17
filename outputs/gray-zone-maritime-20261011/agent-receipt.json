@@ -1,0 +1,112 @@
+{
+  "receipt": {
+    "capability": "gray-zone-maritime.inspect/v1",
+    "operation": "inspect",
+    "targetCaseId": "gray-zone-maritime-taiwan-2026-08",
+    "inputFingerprint": "fnv1a:d007b040",
+    "safeInputSummary": {
+      "byteLength": 31381,
+      "schema": "workbench-v1",
+      "classification": "public-safe historical reporting"
+    },
+    "actor": "unauthenticated-local-process",
+    "representedUser": null,
+    "delegation": "none",
+    "authority": "read-only public-safe fixture; no approval privileges",
+    "beforeRevision": null,
+    "afterRevision": null,
+    "effect": "none",
+    "outcome": "inspected",
+    "recovery": "repeat inspection of the same immutable bytes",
+    "targetSha256": "b166013ededfc2cc02481ae5c46b8b769fc34169dad42e7f937337c776b46d69"
+  },
+  "result": {
+    "ok": true,
+    "capability": "gray-zone-maritime.inspect/v1",
+    "caseId": "gray-zone-maritime-taiwan-2026-08",
+    "acquisition": "historical-reporting",
+    "conclusions": [
+      {
+        "type": "VESSEL OBSERVED",
+        "state": "reported-sighting",
+        "attributedTo": "Apex Aviation, via Reuters",
+        "sourceUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "evidenceIds": [
+          "vessel-minfudingyu-07902",
+          "vessel-ccg-2502",
+          "vessel-xiang-yang-hong-03"
+        ],
+        "established": false,
+        "independentlyObserved": false,
+        "independentCorroboration": "unknown",
+        "limitations": [
+          "Reported sighting only; not observed independently by this app.",
+          "Co-occurrence alone does not establish intent."
+        ],
+        "reason": "Historical reporting only; not established by this app."
+      },
+      {
+        "type": "COORDINATION INFERRED",
+        "state": "attributed-inference",
+        "attributedTo": "One anonymous senior Taiwan official quoted by Reuters",
+        "sourceUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "evidenceIds": [
+          "vessel-minfudingyu-07902",
+          "vessel-ccg-2502",
+          "vessel-xiang-yang-hong-03"
+        ],
+        "established": false,
+        "independentlyObserved": false,
+        "independentCorroboration": "unknown",
+        "limitations": [
+          "Coordination alleged by that official. Apex director Honor Hung said one tracking observation could not establish coordination or missions.",
+          "Co-occurrence alone does not establish intent."
+        ],
+        "reason": "Historical reporting only; not established by this app."
+      },
+      {
+        "type": "BLOCKADE PREPARATION CLAIMED",
+        "state": "attributed-claim",
+        "attributedTo": "Taiwan officials described by Reuters; unnamed in the report",
+        "sourceUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "evidenceIds": [
+          "vessel-minfudingyu-07902",
+          "vessel-ccg-2502",
+          "vessel-xiang-yang-hong-03"
+        ],
+        "established": false,
+        "independentlyObserved": false,
+        "independentCorroboration": "unknown",
+        "limitations": [
+          "Potential blockade preparation is an attributed interpretation of wider activity, not an established mission for these three vessels.",
+          "Co-occurrence alone does not establish intent."
+        ],
+        "reason": "Historical reporting only; not established by this app."
+      }
+    ],
+    "receipt": {
+      "capability": "gray-zone-maritime.inspect/v1",
+      "operation": "inspect",
+      "targetCaseId": "gray-zone-maritime-taiwan-2026-08",
+      "inputFingerprint": "fnv1a:d007b040",
+      "safeInputSummary": {
+        "evidenceCount": 4,
+        "conclusionCount": 3,
+        "classification": "public-safe historical reporting"
+      },
+      "actor": "unauthenticated-local-reader",
+      "representedUser": null,
+      "delegation": "none",
+      "authority": "read-only; no approval privileges",
+      "beforeRevision": null,
+      "afterRevision": null,
+      "effect": "none",
+      "outcome": "inspected",
+      "recovery": "repeat inspection of the same immutable input"
+    },
+    "currentTracking": "not-run",
+    "mission": "unknown",
+    "hostileIntent": "unknown",
+    "legalBoundary": "unknown"
+  }
+}

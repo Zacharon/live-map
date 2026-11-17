@@ -1,0 +1,59 @@
+{
+  "changes": [
+    {
+      "after": "b166013ededfc2cc02481ae5c46b8b769fc34169dad42e7f937337c776b46d69",
+      "before": null,
+      "kind": "added",
+      "path": "data/development-fixtures/gray-zone-maritime-taiwan-2026-08.json"
+    },
+    {
+      "after": "d138a8b713e227a03b346381b2dbc400c66f0b95842bb02b781d80044cea43e5",
+      "before": "e37ffbac9cfd9c49110be5defcf6ad01087def50381659ce29b6949f3f4f2ff2",
+      "kind": "modified",
+      "path": "docs/LAST_30_DAYS.md"
+    },
+    {
+      "after": "8c9e291b21d9521063bca047a370170765eed927773893bbc290d832f0fe6810",
+      "before": "4e94d18708396e90bf24510f627d7337b8cb7eee5b8d1952fe9077d8ba66f4f9",
+      "kind": "modified",
+      "path": "docs/NEXT_TASK_QUEUE.md"
+    },
+    {
+      "after": "8adce383fd3beb76cd34d7b563311df832d7b6ca0b23a2384bafc9cfed22be5c",
+      "before": "a88a76534e08e5be4ab38463832149399e7e1e3a64cc1ba3bf07888529b3ba7f",
+      "kind": "modified",
+      "path": "src/app-controller.js"
+    },
+    {
+      "after": "007871e38417009c8711704e104b3435474c3800e80bcf3c197c0383268a6ee6",
+      "before": "aa8554978297dbad4109aa87362b12b4e4fd56c9507c4f30ad914bf1388717f8",
+      "kind": "modified",
+      "path": "src/intelligence/case-io.js"
+    },
+    {
+      "after": "0627d034443d61e29a01e6f9fc141f653da45431bc4a5bc7628c73395e76c477",
+      "before": null,
+      "kind": "added",
+      "path": "src/intelligence/gray-zone-maritime.js"
+    },
+    {
+      "after": "10a6d95042ba10a7d32eeefc20c2f0ff124b0d0946f3b4925d4a1f48ba877919",
+      "before": "f014fb5d549a9d3f5ea267e744e2a66da1b95c22202774b27fea153bbf63afc5",
+      "kind": "modified",
+      "path": "src/ui/evidence-detail.js"
+    },
+    {
+      "after": "d993ccf022b6ac4731b198b1129d19eb63597eed88124ee5acad2def5a2ea4fd",
+      "before": "f48c621dda7a89a407c9e33093f792b0397cc6d65f589334851bfef46f9ab289",
+      "kind": "modified",
+      "path": "src/ui/investigation-workbench.js"
+    },
+    {
+      "after": "b1e2478f637ddac94937e07534eb12d7efc6b05d52de0e5c022682a4271e4e51",
+      "before": null,
+      "kind": "added",
+      "path": "tests/gray-zone-maritime-tests.mjs"
+    }
+  ],
+  "changes_sha256": "8866507c026e8a9c613d5ca8ad1a89d211c032f72467d5754cc083bac290fc01"
+}

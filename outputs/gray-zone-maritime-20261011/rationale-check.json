@@ -1,0 +1,29 @@
+{
+  "changed_paths": [
+    "data/development-fixtures/gray-zone-maritime-taiwan-2026-08.json",
+    "docs/LAST_30_DAYS.md",
+    "docs/NEXT_TASK_QUEUE.md",
+    "src/app-controller.js",
+    "src/intelligence/case-io.js",
+    "src/intelligence/gray-zone-maritime.js",
+    "src/ui/evidence-detail.js",
+    "src/ui/investigation-workbench.js",
+    "tests/gray-zone-maritime-tests.mjs"
+  ],
+  "changes_sha256": "8866507c026e8a9c613d5ca8ad1a89d211c032f72467d5754cc083bac290fc01",
+  "h3_verdict": null,
+  "result": "coverage_passed",
+  "scope": [
+    "data/development-fixtures/gray-zone-maritime-taiwan-2026-08.json",
+    "docs/LAST_30_DAYS.md",
+    "docs/NEXT_TASK_QUEUE.md",
+    "src/app-controller.js",
+    "src/intelligence/case-io.js",
+    "src/intelligence/gray-zone-maritime.js",
+    "src/ui/evidence-detail.js",
+    "src/ui/investigation-workbench.js",
+    "tests/gray-zone-maritime-tests.mjs"
+  ],
+  "semantic_quality": "NOT_VERIFIED",
+  "task_id": "gray-zone-maritime-20261011"
+}

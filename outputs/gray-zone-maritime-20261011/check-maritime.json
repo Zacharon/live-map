@@ -1,0 +1,7 @@
+{
+  "chunk_id": "204bc4",
+  "wall_time_seconds": 2.3148531,
+  "exit_code": 0,
+  "original_token_count": 166,
+  "output": "\n> live-map-netlify-v2@2.1.0 test:maritime\n> node tests/maritime-signals-tests.mjs && node tests/operational-evidence-tests.mjs && node tests/investigation-workbench-tests.mjs && node tests/portwatch-hormuz-frozen-sample-tests.mjs && node tests/chokepoint-brief-tests.mjs\n\nmaritime-signals-tests: ok (four independent signals; absence, proxy/inference guards, time, coverage, contradictions, workbench/export and review invalidation)\nOperational evidence tests passed.\ninvestigation-workbench-tests: ok\nportwatch-hormuz-frozen-sample-tests: ok\nchokepoint-brief-tests: ok\ndirect-selection-tests: schema-bound detail, selected row, unknown and empty states passed\n"
+}

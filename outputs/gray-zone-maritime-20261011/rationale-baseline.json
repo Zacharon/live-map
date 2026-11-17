@@ -1,0 +1,29 @@
+{
+  "controls": {
+    "CODE_RATIONALE.md": "59c939a31bb9c18c82f093598f0824dd2075ef3f83785e49736f06c5f2d08d9d",
+    "code_rationale.py": "bab8ea0e41ae5e1e615ced058a60d772dac42d8bcea69eaaec7ff6558aa50110",
+    "handoff.py": "64d10bf9d412c1edd5305faaf9f6036cdc5c912f13d3c06ce3f79b8830517f26"
+  },
+  "files": {
+    "docs/LAST_30_DAYS.md": "e37ffbac9cfd9c49110be5defcf6ad01087def50381659ce29b6949f3f4f2ff2",
+    "docs/NEXT_TASK_QUEUE.md": "4e94d18708396e90bf24510f627d7337b8cb7eee5b8d1952fe9077d8ba66f4f9",
+    "src/app-controller.js": "a88a76534e08e5be4ab38463832149399e7e1e3a64cc1ba3bf07888529b3ba7f",
+    "src/intelligence/case-io.js": "aa8554978297dbad4109aa87362b12b4e4fd56c9507c4f30ad914bf1388717f8",
+    "src/ui/evidence-detail.js": "f014fb5d549a9d3f5ea267e744e2a66da1b95c22202774b27fea153bbf63afc5",
+    "src/ui/investigation-workbench.js": "f48c621dda7a89a407c9e33093f792b0397cc6d65f589334851bfef46f9ab289"
+  },
+  "root": "C:\\Users\\zacha\\Workspace\\_worktrees\\live-map-gray-zone-maritime-20261011",
+  "schema_version": "1",
+  "scopes": [
+    "data/development-fixtures/gray-zone-maritime-taiwan-2026-08.json",
+    "docs/LAST_30_DAYS.md",
+    "docs/NEXT_TASK_QUEUE.md",
+    "src/app-controller.js",
+    "src/intelligence/case-io.js",
+    "src/intelligence/gray-zone-maritime.js",
+    "src/ui/evidence-detail.js",
+    "src/ui/investigation-workbench.js",
+    "tests/gray-zone-maritime-tests.mjs"
+  ],
+  "task_id": "gray-zone-maritime-20261011"
+}

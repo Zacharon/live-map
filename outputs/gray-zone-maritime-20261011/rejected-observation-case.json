@@ -1,0 +1,683 @@
+{
+  "kind": "live-map-investigation-case",
+  "schemaVersion": "workbench-v1",
+  "exportedAt": "2026-10-11T21:48:43.038Z",
+  "handling": "synthetic-or-public-safe-local-only",
+  "case": {
+    "id": "gray-zone-maritime-taiwan-2026-08",
+    "fixtureId": "gray-zone-maritime-taiwan-2026-08",
+    "fixtureType": "gray-zone-maritime-report-v1",
+    "acquisition": "historical-reporting",
+    "genuine": true,
+    "independentlyObserved": false,
+    "independentCorroboration": "unknown",
+    "requirement": {
+      "id": "requirement-gray-zone",
+      "recordKind": "requirement",
+      "evidenceKind": "public-report",
+      "subjectDomain": "maritime",
+      "nodeType": "public-report",
+      "title": "GRAY-ZONE MARITIME ACTIVITY",
+      "summary": "Inspect the reported Taiwan east-coast sighting separately from coordination inference and a claimed blockade purpose.",
+      "sourceId": null,
+      "sourceUrl": null,
+      "canonicalUrl": null,
+      "upstreamOrganization": null,
+      "sourceOrganizationId": null,
+      "syndication": null,
+      "observedAt": null,
+      "reportedAt": null,
+      "retrievedAt": "2026-10-11T20:22:41.000Z",
+      "effectiveStart": null,
+      "effectiveEnd": null,
+      "lat": null,
+      "lon": null,
+      "geometry": null,
+      "geometryPrecision": "unknown",
+      "value": null,
+      "unit": null,
+      "coverage": null,
+      "freshnessPolicy": null,
+      "qualityLimitations": [],
+      "rightsAttribution": null,
+      "parentEvidenceIds": [],
+      "valueOrigin": "reported",
+      "claimScope": null,
+      "chokepointId": null,
+      "synthetic": false,
+      "extra": {
+        "question": "What does the reporting establish, and what remains inference or claim?",
+        "audience": "local-analyst",
+        "definitionOfDone": "Three attributed conclusions; missing day/coordinates/corroboration stay unknown; no operational verdict.",
+        "status": "historical-fixture"
+      },
+      "revision": 1,
+      "evidentialOriginId": "requirement-gray-zone",
+      "contentDigest": "fnv1a:2cb8d3de"
+    },
+    "sources": [
+      {
+        "id": "reuters-report-20261008",
+        "organization": "Reuters",
+        "url": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "availability": "read-public-report",
+        "publicationDate": "2026-10-08",
+        "retrievedAt": "2026-10-11T20:22:41.000Z",
+        "independentOrigin": "Apex encounter as reported by Reuters",
+        "directPrimaryStatus": "original Apex report unavailable"
+      },
+      {
+        "id": "cna-response-20261009",
+        "organization": "CNA",
+        "url": "https://focustaiwan.tw/politics/202610090003",
+        "availability": "read-public-report",
+        "publicationDate": "2026-10-09",
+        "retrievedAt": "2026-10-11T20:22:41.000Z",
+        "independentOrigin": "reported CGA response; not independent sighting",
+        "directPrimaryStatus": "direct CGA incident statement not located"
+      }
+    ],
+    "sourceEvaluations": [
+      {
+        "code": "F",
+        "rationale": "Underlying evidence not independently evaluated."
+      }
+    ],
+    "evidence": [
+      {
+        "id": "vessel-minfudingyu-07902",
+        "recordKind": "observation",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported sighting: Minfudingyu 07902",
+        "summary": "Reported vessel in a surveillance group east of Taiwan; no app observation.",
+        "sourceId": "reuters-report-20261008",
+        "sourceUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "canonicalUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-11T20:22:41.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "extent": "one reported surveillance encounter",
+          "completeness": "unknown",
+          "temporalPrecision": "month / mid-month wording"
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "No original imagery/AIS track inspected by this app.",
+          "Exact day withheld; coordinates, mission and independent corroboration unknown."
+        ],
+        "rightsAttribution": "Concise factual metadata attributed to Reuters / Apex Aviation; no report or imagery reproduced.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "observed",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "historicalReporting": true,
+          "sourceAccess": "Reuters syndication read; original Apex report and direct official incident statement unavailable.",
+          "independentCorroboration": "unknown",
+          "occurrencePeriod": "mid-August 2026; exact day and time withheld",
+          "publicationDate": "2026-10-08 (day precision; source article, not occurrence)",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Underlying surveillance and official identity assessment not independently evaluated."
+          },
+          "attributedTo": "Apex Aviation surveillance report reviewed by Reuters; identities also attributed to two anonymous Taiwan officials",
+          "vessel": {
+            "reportedIdentity": "Minfudingyu 07902",
+            "reportedClass": "fishing boat; maritime militia classification attributed to Apex and unnamed Taiwan officials",
+            "mmsi": null,
+            "imo": null
+          },
+          "reportedLocation": {
+            "label": "more than 30 nautical miles off Hualien, Taiwan east coast",
+            "precision": "textual region and lower-bound distance; no point",
+            "coordinates": null
+          },
+          "associatedVessels": [
+            "2502",
+            "Xiang Yang Hong 03"
+          ],
+          "method": "Apex reconnaissance aircraft report: radar screenshots, infrared imagery and AIS data; not inspected by this app"
+        },
+        "revision": 1,
+        "evidentialOriginId": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "contentDigest": "fnv1a:2e412e4d"
+      },
+      {
+        "id": "vessel-ccg-2502",
+        "recordKind": "observation",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported sighting: 2502",
+        "summary": "Reported vessel in a surveillance group east of Taiwan; no app observation.",
+        "sourceId": "reuters-report-20261008",
+        "sourceUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "canonicalUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-11T20:22:41.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "extent": "one reported surveillance encounter",
+          "completeness": "unknown",
+          "temporalPrecision": "month / mid-month wording"
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "No original imagery/AIS track inspected by this app.",
+          "Exact day withheld; coordinates, mission and independent corroboration unknown."
+        ],
+        "rightsAttribution": "Concise factual metadata attributed to Reuters / Apex Aviation; no report or imagery reproduced.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "historicalReporting": true,
+          "sourceAccess": "Reuters syndication read; original Apex report and direct official incident statement unavailable.",
+          "independentCorroboration": "unknown",
+          "occurrencePeriod": "mid-August 2026; exact day and time withheld",
+          "publicationDate": "2026-10-08 (day precision; source article, not occurrence)",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Underlying surveillance and official identity assessment not independently evaluated."
+          },
+          "attributedTo": "Apex Aviation surveillance report reviewed by Reuters; identities also attributed to two anonymous Taiwan officials",
+          "vessel": {
+            "reportedIdentity": "2502",
+            "reportedClass": "China Coast Guard cutter; exact vessel class unknown",
+            "mmsi": null,
+            "imo": null
+          },
+          "reportedLocation": {
+            "label": "more than 30 nautical miles off Hualien, Taiwan east coast",
+            "precision": "textual region and lower-bound distance; no point",
+            "coordinates": null
+          },
+          "associatedVessels": [
+            "Minfudingyu 07902",
+            "Xiang Yang Hong 03"
+          ],
+          "method": "Apex reconnaissance aircraft report: radar screenshots, infrared imagery and AIS data; not inspected by this app"
+        },
+        "revision": 1,
+        "evidentialOriginId": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "contentDigest": "fnv1a:75f99dd6"
+      },
+      {
+        "id": "vessel-xiang-yang-hong-03",
+        "recordKind": "observation",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported sighting: Xiang Yang Hong 03",
+        "summary": "Reported vessel in a surveillance group east of Taiwan; no app observation.",
+        "sourceId": "reuters-report-20261008",
+        "sourceUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "canonicalUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-11T20:22:41.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": {
+          "extent": "one reported surveillance encounter",
+          "completeness": "unknown",
+          "temporalPrecision": "month / mid-month wording"
+        },
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "No original imagery/AIS track inspected by this app.",
+          "Exact day withheld; coordinates, mission and independent corroboration unknown."
+        ],
+        "rightsAttribution": "Concise factual metadata attributed to Reuters / Apex Aviation; no report or imagery reproduced.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "historicalReporting": true,
+          "sourceAccess": "Reuters syndication read; original Apex report and direct official incident statement unavailable.",
+          "independentCorroboration": "unknown",
+          "occurrencePeriod": "mid-August 2026; exact day and time withheld",
+          "publicationDate": "2026-10-08 (day precision; source article, not occurrence)",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Underlying surveillance and official identity assessment not independently evaluated."
+          },
+          "attributedTo": "Apex Aviation surveillance report reviewed by Reuters; identities also attributed to two anonymous Taiwan officials",
+          "vessel": {
+            "reportedIdentity": "Xiang Yang Hong 03",
+            "reportedClass": "research vessel; exact vessel class unknown",
+            "mmsi": null,
+            "imo": null
+          },
+          "reportedLocation": {
+            "label": "more than 30 nautical miles off Hualien, Taiwan east coast",
+            "precision": "textual region and lower-bound distance; no point",
+            "coordinates": null
+          },
+          "associatedVessels": [
+            "Minfudingyu 07902",
+            "2502"
+          ],
+          "method": "Apex reconnaissance aircraft report: radar screenshots, infrared imagery and AIS data; not inspected by this app"
+        },
+        "revision": 1,
+        "evidentialOriginId": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "contentDigest": "fnv1a:8de1a939"
+      },
+      {
+        "id": "cga-restricted-waters-response",
+        "recordKind": "evidence",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "CGA response reported by CNA",
+        "summary": "CNA attributes an outside-restricted-waters statement to Taiwan CGA; precise legal boundary unverified.",
+        "sourceId": "cna-response-20261009",
+        "sourceUrl": "https://focustaiwan.tw/politics/202610090003",
+        "canonicalUrl": "https://focustaiwan.tw/politics/202610090003",
+        "upstreamOrganization": "CNA / Focus Taiwan",
+        "sourceOrganizationId": "cna",
+        "syndication": null,
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-11T20:22:41.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "No dated direct CGA statement located; statement time unknown.",
+          "No legal polygon, territorial-water ruling or lawful/illegal verdict derived."
+        ],
+        "rightsAttribution": "Concise factual metadata attributed to CNA / Focus Taiwan reporting of Taiwan CGA; no full report reproduced.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "historicalReporting": true,
+          "sourceAccess": "CNA report read; direct CGA incident statement not located.",
+          "independentCorroboration": "unknown",
+          "occurrencePeriod": "CGA response reported October 9, 2026; exact statement time unknown",
+          "publicationDate": "2026-10-09 (article day precision)",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Underlying surveillance and official identity assessment not independently evaluated."
+          },
+          "attributedTo": "Taiwan Coast Guard Administration, as reported by CNA",
+          "method": "Journalistic attribution of official response",
+          "legalBoundary": null
+        },
+        "revision": 1,
+        "evidentialOriginId": "https://focustaiwan.tw/politics/202610090003",
+        "contentDigest": "fnv1a:81349d88"
+      }
+    ],
+    "claims": [
+      {
+        "id": "conclusion-sighting",
+        "recordKind": "claim",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "VESSEL OBSERVED",
+        "summary": "Reported sighting only; not observed independently by this app.",
+        "sourceId": "reuters-report-20261008",
+        "sourceUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "canonicalUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-11T20:22:41.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Reported sighting only; not observed independently by this app.",
+          "Co-occurrence alone does not establish intent."
+        ],
+        "rightsAttribution": "Concise factual metadata attributed to Reuters / Apex Aviation; no report or imagery reproduced.",
+        "parentEvidenceIds": [
+          "vessel-minfudingyu-07902",
+          "vessel-ccg-2502",
+          "vessel-xiang-yang-hong-03"
+        ],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "historicalReporting": true,
+          "sourceAccess": "Reuters syndication read; original Apex report and direct official incident statement unavailable.",
+          "independentCorroboration": "unknown",
+          "occurrencePeriod": "mid-August 2026; exact day and time withheld",
+          "publicationDate": "2026-10-08 (day precision; source article, not occurrence)",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Underlying surveillance and official identity assessment not independently evaluated."
+          },
+          "conclusionType": "VESSEL OBSERVED",
+          "established": false,
+          "attributedTo": "Apex Aviation, via Reuters",
+          "credibility": {
+            "code": "6",
+            "rationale": "Reported sighting only; not observed independently by this app."
+          },
+          "reviewState": "draft"
+        },
+        "revision": 1,
+        "evidentialOriginId": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "contentDigest": "fnv1a:f42fb406"
+      },
+      {
+        "id": "conclusion-coordination",
+        "recordKind": "claim",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "COORDINATION INFERRED",
+        "summary": "Coordination alleged by that official. Apex director Honor Hung said one tracking observation could not establish coordination or missions.",
+        "sourceId": "reuters-report-20261008",
+        "sourceUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "canonicalUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-11T20:22:41.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Coordination alleged by that official. Apex director Honor Hung said one tracking observation could not establish coordination or missions.",
+          "Co-occurrence alone does not establish intent."
+        ],
+        "rightsAttribution": "Concise factual metadata attributed to Reuters / Apex Aviation; no report or imagery reproduced.",
+        "parentEvidenceIds": [
+          "vessel-minfudingyu-07902",
+          "vessel-ccg-2502",
+          "vessel-xiang-yang-hong-03"
+        ],
+        "valueOrigin": "inferred",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "historicalReporting": true,
+          "sourceAccess": "Reuters syndication read; original Apex report and direct official incident statement unavailable.",
+          "independentCorroboration": "unknown",
+          "occurrencePeriod": "mid-August 2026; exact day and time withheld",
+          "publicationDate": "2026-10-08 (day precision; source article, not occurrence)",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Underlying surveillance and official identity assessment not independently evaluated."
+          },
+          "conclusionType": "COORDINATION INFERRED",
+          "established": false,
+          "attributedTo": "One anonymous senior Taiwan official quoted by Reuters",
+          "credibility": {
+            "code": "6",
+            "rationale": "Coordination alleged by that official. Apex director Honor Hung said one tracking observation could not establish coordination or missions."
+          },
+          "reviewState": "draft"
+        },
+        "revision": 1,
+        "evidentialOriginId": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "contentDigest": "fnv1a:1180e938"
+      },
+      {
+        "id": "conclusion-blockade",
+        "recordKind": "claim",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "BLOCKADE PREPARATION CLAIMED",
+        "summary": "Potential blockade preparation is an attributed interpretation of wider activity, not an established mission for these three vessels.",
+        "sourceId": "reuters-report-20261008",
+        "sourceUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "canonicalUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-11T20:22:41.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Potential blockade preparation is an attributed interpretation of wider activity, not an established mission for these three vessels.",
+          "Co-occurrence alone does not establish intent."
+        ],
+        "rightsAttribution": "Concise factual metadata attributed to Reuters / Apex Aviation; no report or imagery reproduced.",
+        "parentEvidenceIds": [
+          "vessel-minfudingyu-07902",
+          "vessel-ccg-2502",
+          "vessel-xiang-yang-hong-03"
+        ],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "historicalReporting": true,
+          "sourceAccess": "Reuters syndication read; original Apex report and direct official incident statement unavailable.",
+          "independentCorroboration": "unknown",
+          "occurrencePeriod": "mid-August 2026; exact day and time withheld",
+          "publicationDate": "2026-10-08 (day precision; source article, not occurrence)",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Underlying surveillance and official identity assessment not independently evaluated."
+          },
+          "conclusionType": "BLOCKADE PREPARATION CLAIMED",
+          "established": false,
+          "attributedTo": "Taiwan officials described by Reuters; unnamed in the report",
+          "credibility": {
+            "code": "6",
+            "rationale": "Potential blockade preparation is an attributed interpretation of wider activity, not an established mission for these three vessels."
+          },
+          "reviewState": "draft"
+        },
+        "revision": 1,
+        "evidentialOriginId": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "contentDigest": "fnv1a:2cc4eae9"
+      }
+    ],
+    "relationships": [
+      {
+        "id": "co-occurrence-vessel-ccg-2502",
+        "recordKind": "relationship",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported co-occurrence",
+        "summary": null,
+        "sourceId": "reuters-report-20261008",
+        "sourceUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "canonicalUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-11T20:22:41.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Roughly 10-nautical-mile group radius reported; no positions or track geometry available. Co-occurrence is not coordination."
+        ],
+        "rightsAttribution": "Concise factual metadata attributed to Reuters / Apex Aviation; no report or imagery reproduced.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "historicalReporting": true,
+          "sourceAccess": "Reuters syndication read; original Apex report and direct official incident statement unavailable.",
+          "independentCorroboration": "unknown",
+          "occurrencePeriod": "mid-August 2026; exact day and time withheld",
+          "publicationDate": "2026-10-08 (day precision; source article, not occurrence)",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Underlying surveillance and official identity assessment not independently evaluated."
+          },
+          "fromId": "vessel-minfudingyu-07902",
+          "toId": "vessel-ccg-2502",
+          "edgeType": "collected_with",
+          "assertionClass": "reported",
+          "attributedTo": "Apex Aviation, via Reuters"
+        },
+        "revision": 1,
+        "evidentialOriginId": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "contentDigest": "fnv1a:4f387c18"
+      },
+      {
+        "id": "co-occurrence-vessel-xiang-yang-hong-03",
+        "recordKind": "relationship",
+        "evidenceKind": "public-report",
+        "subjectDomain": "maritime",
+        "nodeType": "public-report",
+        "title": "Reported co-occurrence",
+        "summary": null,
+        "sourceId": "reuters-report-20261008",
+        "sourceUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "canonicalUrl": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "upstreamOrganization": "Reuters",
+        "sourceOrganizationId": "reuters",
+        "syndication": "Reuters",
+        "observedAt": null,
+        "reportedAt": null,
+        "retrievedAt": "2026-10-11T20:22:41.000Z",
+        "effectiveStart": null,
+        "effectiveEnd": null,
+        "lat": null,
+        "lon": null,
+        "geometry": null,
+        "geometryPrecision": "unknown",
+        "value": null,
+        "unit": null,
+        "coverage": null,
+        "freshnessPolicy": null,
+        "qualityLimitations": [
+          "Roughly 10-nautical-mile group radius reported; no positions or track geometry available. Co-occurrence is not coordination."
+        ],
+        "rightsAttribution": "Concise factual metadata attributed to Reuters / Apex Aviation; no report or imagery reproduced.",
+        "parentEvidenceIds": [],
+        "valueOrigin": "reported",
+        "claimScope": null,
+        "chokepointId": null,
+        "synthetic": false,
+        "extra": {
+          "historicalReporting": true,
+          "sourceAccess": "Reuters syndication read; original Apex report and direct official incident statement unavailable.",
+          "independentCorroboration": "unknown",
+          "occurrencePeriod": "mid-August 2026; exact day and time withheld",
+          "publicationDate": "2026-10-08 (day precision; source article, not occurrence)",
+          "analyticalConfidence": {
+            "level": "unknown",
+            "rationale": "Underlying surveillance and official identity assessment not independently evaluated."
+          },
+          "fromId": "vessel-minfudingyu-07902",
+          "toId": "vessel-xiang-yang-hong-03",
+          "edgeType": "collected_with",
+          "assertionClass": "reported",
+          "attributedTo": "Apex Aviation, via Reuters"
+        },
+        "revision": 1,
+        "evidentialOriginId": "https://uk.marketscreener.com/news/china-militia-boat-spotted-for-first-time-off-taiwan-s-east-coast-patrol-finds-ce785dded189f02c",
+        "contentDigest": "fnv1a:e002e033"
+      }
+    ],
+    "assessments": [],
+    "collections": [],
+    "products": [],
+    "parked": [],
+    "feedback": [],
+    "history": [
+      {
+        "type": "fixture-prepared",
+        "at": "2026-10-11T20:22:41.000Z",
+        "note": "Historical public reporting metadata; exact occurrence date withheld."
+      }
+    ]
+  }
+}
