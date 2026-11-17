@@ -1,3 +1,15 @@
+## 2026-10-31 - Event-to-original-source journey (same isolated candidate)
+
+Extended the existing refresh candidate within the selected journey: Clear report filters resets verification too; the inspector places source revision and supplied retrieval time beside Open original source; NWS keeps a supplied alert-specific web/GeoJSON identity instead of substituting the active-feed collection or homepage. Missing original links and clocks remain unavailable. Invalid supplied web links still fail validation. No URL is invented from a URN.
+
+An unrelated render keeps the in-flight refresh label, and a delayed manual feedback reset leaves demo mode's reload label intact. The original refresh patch/evidence remains separate. Local synthetic regressions cover the source/filter/detail path and failure/retry; browser/keyboard/mobile acceptance and independent coordinator review remain separate. No providers, globe layers, deployment or canonical installation changed.
+
+## 2026-10-31 - Truthful manual refresh feedback (isolated local fix)
+
+Manual refresh now reserves success copy for an accepted response, qualifies partial/empty/saved-read results, and reports failure after timeout, network or malformed responses. Intentional offline previews retain their Public snapshots outcome. Generation guards prevent an old completion timer from replacing feedback during a newer request. Existing source timestamps, cached reports, request scheduling and provider settings remain unchanged.
+
+Local regression checks execute the actual controller request lifecycle and error renderer with synthetic responses, including failed refresh followed by successful retry. This isolated branch is not installed into the canonical checkout or deployed; browser/screen-reader acceptance and independent H3 are separate evidence. See the task's refresh verification report for commands, results and limits.
+
 ## 2026-10-17 - Candidate committed, main merged, globe visual pass
 
 The 53-path candidate and inherited foundation are committed on `feature/evidence-semantic-globe` (draft PR #75 to `main`). Current `main` (33d426f) is merged in. Main's audit-repair suite is reconciled with candidate semantics: undated records stay visible as "Time unknown", unknown exact clocks read "Not supplied", the browser direct-USGS fallback stays removed, and source URLs use the shared `safeSourceUrl` helper. The inherited registry cache-policy assertion is fixed. The validator now skips gitignored root evidence folders. The 3D globe gained a night-atlas restyle, atmosphere/terminator, stars, graticule, optional local borders, severity-styled clustered markers and smooth fly-to ([record and CSP implications](GLOBE_VISUAL_2026-10-17.md)). The repository ruleset requires PRs for updates to every branch, so follow-ups go out as a new stacked branch and PR. No deployment.

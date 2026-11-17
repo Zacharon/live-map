@@ -1,3 +1,13 @@
+## 2026-10-31 - Bounded event-source journey continuation
+
+- Review the cumulative isolated candidate for find/filter/inspect/original-source behavior, NWS identity fallback and adjacent source/retrieval clocks. Preserve unavailable links/times; do not activate new providers or infer source freshness from retrieval.
+- Current desktop/narrow keyboard, loading/error/empty-state and globe acceptance remain queued for the GUI owner. Coordinator review must use the cumulative journey patch, not the older refresh-only patch. Netlify publication is paused; no candidate combination or release follows from this record.
+
+## 2026-10-31 - Refresh feedback local candidate
+
+- The isolated refresh-feedback fix preserves cached report clocks and makes failed attempts distinct from successful, partial, empty and saved-read responses. Regression coverage includes failure/retry and superseded-request feedback.
+- Keep full browser/assistive-technology acceptance and any canonical installation separate. No provider, hosting or deployment change accompanies this fix; existing queue priorities and gates remain unchanged.
+
 ## 2026-10-17 - Globe visual pass awaiting owner review
 
 - Owner visual acceptance of the globe pass (`docs/GLOBE_VISUAL_2026-10-17.md`, screenshots in `artifacts/globe-visual-2026-10-17/`).

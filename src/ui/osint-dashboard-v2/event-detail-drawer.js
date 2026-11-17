@@ -1,4 +1,4 @@
-import { sourceLink } from "../../sources/source-url.js";
+import { sourceLink, safeSourceUrl } from "../../sources/source-url.js";
 import { confidenceText, timestampMs } from "../../events/event-values.js";
 import { CATEGORIES, SEVERITIES } from "../../config.js";
 import { escapeHtml, exactTime, relativeTime } from "../../events/event-normalizer.js";
@@ -110,7 +110,10 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
   const location = event.geographic === false ? "No map location" : event.place || event.country || "Location pending";
   const confidence = confidenceText(event.confidence);
   const sourceBadge = event.sourceName || event.provider || "Unknown source";
-  const sourceAction = sourceLink(event.sourceUrl, "Open source", "v2-detail-link");
+  const sourceUrl = safeSourceUrl(event.sourceUrl);
+  // Older cached NWS records may still contain the collection/homepage fallback.
+  const nwsCollection = event.provider === "nws-alerts" && sourceUrl && ["/", "/alerts", "/alerts/active"].includes(new URL(sourceUrl).pathname.replace(/\/$/, "") || "/");
+  const sourceAction = sourceLink(nwsCollection ? null : sourceUrl, "Open original source", "v2-detail-link");
   const providerLink = sourceLink(event.providerUrl, "Provider info", "v2-detail-link secondary");
   const mapLink = Number.isFinite(event.lat) && Number.isFinite(event.lon)
     ? `<a class="v2-detail-link secondary" href="https://www.openstreetmap.org/?mlat=${event.lat}&mlon=${event.lon}#map=7/${event.lat}/${event.lon}" target="_blank" rel="noopener noreferrer">Coordinates</a>`
@@ -138,7 +141,7 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
       <h2 class="v2-detail-title">${escapeHtml(event.title)}</h2>
     </div>
     <p class="v2-detail-summary">${escapeHtml(event.summary || "No summary available.")}</p>
-    <section class="detail-source-evidence" aria-label="Supporting source"><h3>Supporting source</h3><p>${escapeHtml(event.sourceName || 'Unknown source')} · ${escapeHtml(event.verificationStatus || 'unverified')}</p><div class="v2-detail-actions">${sourceAction}${providerLink}</div><p>Occurrence: ${escapeHtml(exactTime(event.occurredAt))}<br>Source revision: ${escapeHtml(exactTime(event.updatedAt))}</p></section>
+    <section class="detail-source-evidence" aria-label="Supporting source"><h3>Supporting source</h3><p>${escapeHtml(event.sourceName || 'Unknown source')} · ${escapeHtml(event.verificationStatus || 'unverified')}</p><div class="v2-detail-actions">${sourceAction}${providerLink}</div><p>Occurrence: ${escapeHtml(exactTime(event.occurredAt))}<br>Source revision: ${escapeHtml(exactTime(event.updatedAt))}<br>Retrieved: ${escapeHtml(exactTime(event.fetchedAt ?? event.retrievedAt ?? event.metadata?.retrievedAt))}</p><p>Retrieval time does not establish when the event occurred. Missing source times remain unknown.</p></section>
     <dl class="v2-detail-facts">
       <div><dt>Source coverage</dt><dd>${escapeHtml(event.coverage || event.metadata?.coverage || "Not supplied; do not infer complete coverage")} </dd></div>
       <div><dt>Limits of this evidence</dt><dd>${escapeHtml(limitationText)}</dd></div>
