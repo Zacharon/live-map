@@ -4,6 +4,17 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 
 ## Context Updates
 
+- 2026-10-21: frozen multi-site schema v2 now has an offline Ukraine grid-region
+  case and report-time family impact query. Do not promote it into live ingestion;
+  exact assets, outage/restoration clocks, independent damage and ceasefire
+  verification need new source evidence. See `MULTI_SITE_INCIDENT_EVALUATION.md`.
+
+- 2026-10-19: foundation is merged in remote main `5aabf0f`; prioritize existing
+  hosted acceptance, not a globe rewrite. `HOSTED_ACCEPTANCE_2026-10-19.md` records
+  working Cloudflare 2D/3D/public-USGS snapshots and remaining version binding,
+  USGS-to-case handoff, mobile selection and failure/semantic presentation gaps.
+  Netlify `/globe.html` returned 404, serving SHA unknown. No deployment authorized.
+
 - Completed locally (2026-10-18): frozen multi-site incident evaluation and offline
   semantic regression tests. See `MULTI_SITE_INCIDENT_EVALUATION.md`. Follow-up:
   retrieve complete reporting/primary statements and reconcile regional casualty

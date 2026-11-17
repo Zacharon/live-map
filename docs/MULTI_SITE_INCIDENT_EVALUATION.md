@@ -1,6 +1,6 @@
-# Frozen St. Petersburg multi-site evaluation
+# Frozen multi-site incident evaluations
 
-This is one **frozen evaluation fixture**, dated 2026-10-18, with partial source
+The original St. Petersburg case is a **frozen evaluation fixture**, dated 2026-10-18, with partial source
 retrieval and unverified claims. It is not live data, an operational assessment,
 or a public feed feature. No provider, UI, or API imports it.
 
@@ -96,3 +96,76 @@ Product UI, hosted operation, live provider and real-user gates are NOT RUN.
 - `git diff --check`: PASS.
 
 No push, PR, merge, production smoke or deployment performed.
+
+## 2026-10-21 grid-region extension (schema v2, offline)
+
+`tests/fixtures/ukraine-grid-20261020.mjs` extends the same multi-site
+evaluation container (`sources`, `sites`, `nonSiteRecords`) and the same per-field
+evidence envelope and separate assessment dimensions. The one validator
+dispatches on `schemaVersion`. `sites` holds seven **regional reports**, not seven identified facilities
+or map points. Five western regions are marked as newly targeted **according to
+the reported statement**; Kirovohrad and Odesa are central/southern reports.
+The Odesa regional record says DTEK reported **three facilities hit**. It does
+not name any of them or allocate the 32,700 families among them.
+
+Each regional record stores `reportedTargetRegion`, `specificAsset`,
+`physicalDamage`, `outageStart`, `customersAffected`, `restorationUpdate`,
+`source`, and `observationTime` separately. Unknown asset, physical damage,
+outage start, and restoration are explicit `null` evidence values. The Odesa
+32,700 unit is **families**, with `point-in-time-at-report`,
+`permanence: not-established`, and no per-incident or per-facility allocation.
+The six regions without a count carry `null`, including no invented unit. The exact DTEK
+observation clock is unavailable; `2026-10-20` is report-day precision, separate
+from publication and retrieval. Ukrainian energy ministry officials and local
+authorities reported the aggregate western expansion. Nekrasov named the
+regions and central/western/southern labels; DTEK supplied the Odesa facility
+count and family figure. The announced halt is context with Trump as announcer,
+Zelenskiy as the speaker reporting it, unknown announcement date, an inferred
+Sunday statement date (2026-10-18), and `cessationVerified: false`. It is not
+a ceasefire finding. The earlier St. Petersburg fixture's October 11 halt
+context is cross-referenced without treating it as a second independent source.
+The Sunday Zelenskiy statement may also be the original fixture's weekly
+attack-count statement; that possible match is referenced but not counted as
+independent evidence.
+
+The [Reuters article](https://www.reuters.com/business/energy/russia-expands-attacks-energy-facilities-western-ukraine-2026-10-20/)
+could not be opened directly in this environment. A
+[Reuters syndication snapshot](https://uk.marketscreener.com/news/russia-expands-attacks-on-energy-facilities-to-western-ukraine-ce785cd8d88dfe2c)
+was read on 2026-10-21. Its displayed publication/update times are 2026-10-20
+12:50/12:55 BST (11:50/11:55 UTC); the fixture stores a short factual snapshot,
+not article text. This is one Reuters origin, not independent corroboration.
+
+Read-only capability `queryGridIncidentFixture/v2` takes the frozen fixture and
+returns an allowlisted regional expansion, Odesa record and halt context after
+`validateMultiSiteIncidentFixture` dispatches to the v2 validation branch and
+rejects unsupported promotions and extra keys. Human and agent
+use the same local command and validation:
+
+```sh
+node tests/ukraine-grid-incident-evaluation-tests.mjs
+```
+
+Feature-standard gates 1–4 (local test environment):
+
+| Gate | Status | Evidence and limit |
+| --- | --- | --- |
+| 1 Shared capabilities | PASS for this read-only evaluation | The documented command calls the same `queryGridIncidentFixture/v2` and validator for a person or an agent. No product adapter was added. |
+| 2 Shared state | NOT APPLICABLE | Query reads a versioned frozen fixture; it writes no application or user state. |
+| 3 Scoped authority | NOT APPLICABLE | No user, role, grant, or external effect is involved; the fixture is local test data. This grants no ingestion permission. |
+| 4 Human usability | PASS for this evaluation | A person can run the command without AI and read the JSON projection and explicit validation errors. Product UI and keyboard use are NOT RUN. |
+
+Gates 5–7 are NOT APPLICABLE because the capability writes no user data and
+causes no external effect. This is candidate evaluation evidence only; live
+provider, public API/UI, OSINT Forge storage, independently verified damage,
+outage duration, and restoration remain NOT RUN or unknown.
+
+Local verification on 2026-10-21: `node tests/ukraine-grid-incident-evaluation-tests.mjs`
+exited 0 and reported `7 regional reports, 32,700 families at report time,
+25 rejected unsafe mutations`. The query JSON includes the five western names,
+Odesa count 3, family count 32,700 with point-in-time and permanence caveats,
+`null` asset/damage/outage/restoration values, and `cessationVerified: false`.
+`npm.cmd run check:syntax` exited 0 (`Cloudflare exports are valid.`).
+`npm.cmd test` exited 0: platform suite `All tests passed`; nested validator
+`Result: PASS (10 checks, 0 failed)` with one `mode=partial-netlify-function`
+warning; E2E and Source Explorer smoke tests passed. These are local tests,
+not proof of live case data or hosted UI.

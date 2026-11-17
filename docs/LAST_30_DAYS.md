@@ -1,6 +1,28 @@
 # Last 30 Days
 
-Last updated: 2026-10-18.
+Last updated: 2026-10-21.
+
+## 2026-10-21 - Frozen grid-region incident extension
+
+- Extended the existing offline multi-site evaluation container to schema v2 for
+  Reuters-attributed Ukrainian grid-region reports. Kept exact assets, physical
+  damage, outage start, restoration, and cessation verification unknown or false;
+  Odesa's 32,700 families is explicitly a report-time regional observation.
+- Focused query/negative tests and feature-standard gates are documented in
+  `MULTI_SITE_INCIDENT_EVALUATION.md`. No provider, public API, or UI change.
+
+## 2026-10-19 - Hosted acceptance probe (PARTIAL)
+
+- Fetched remote main `5aabf0f` read-only; globe/workbench foundation is merged.
+  Older local-only/open-PR statements below remain historical.
+- Cloudflare 2D/globe and real USGS source-snapshot journey worked; five frontend
+  assets match main. Serving Worker version remains unbound. Netlify globe 404
+  was reproduced without a serving SHA.
+- Mobile Map cleared selection; USGS Evidence ledger navigation opened Hormuz;
+  export source-count terminology differs from inspector independent evidence;
+  one API 503 exposed an incorrect future retry label before manual recovery.
+- Details and locally retained receipts: `HOSTED_ACCEPTANCE_2026-10-19.md`.
+  No deployment or runtime edits. Hosted acceptance and owner review remain open.
 
 ## 2026-10-18 - Frozen multi-site incident evaluation
 
