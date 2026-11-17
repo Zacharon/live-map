@@ -1,0 +1,23 @@
+import {normalizeMovingObject} from '../../moving-objects/schema.js';
+import {providerActivation} from './provider-activation.js';
+import {fetchBoundedPublicJson,viewportCircle,withinBbox} from './public-tracking-fetch.js';
+export const ADSB_LOL_POLICY={id:'adsb-lol',activation:{billingClass:'free',enableEnvVar:'ADSB_LOL_ENABLED',termsEnvVar:'ADSB_LOL_TERMS_REVIEWED'}};
+export function adsbLolStatus(message='Optional ADSB.lol adapter disabled pending production/ODbL review.',status='disabled'){return {providerId:'adsb-lol',status,ok:false,message,coverage:'Volunteer receiver network; incomplete, viewport-limited',nextRefreshAfterMs:60000,attribution:'ADSB.lol contributors',licenseUrl:'https://opendatacommons.org/licenses/odbl/1-0/'};}
+export function normalizeAdsbLolAircraft(row,sourceNow,now=Date.now()) {
+  if(!/^[0-9a-f]{6}$/i.test(row?.hex || '')||typeof sourceNow!=='number'||!Number.isFinite(sourceNow)||typeof row.seen_pos!=='number'||!Number.isFinite(row.seen_pos)||row.seen_pos<0)return {object:null,errors:['Identity or position age missing']};
+  // This API's `now` is milliseconds; seen_pos is seconds (verified public response).
+  const observedAt=sourceNow-row.seen_pos*1000;if(observedAt<=0||observedAt>now+300000||![row.lat,row.lon].every(v=>typeof v==='number'&&Number.isFinite(v)))return {object:null,errors:['Invalid position time or coordinates']};
+  const numeric=value=>typeof value==='number'&&Number.isFinite(value)?value:null;
+  return normalizeMovingObject({id:'aircraft:'+row.hex.toLowerCase(),objectType:'aircraft',providerId:'adsb-lol',observedAt,receivedAt:now,dataAgeSeconds:Math.max(0,Math.round((now-observedAt)/1000)),stale:observedAt>now,latitude:row.lat,longitude:row.lon,altitude:numeric(row.alt_geom)==null?null:row.alt_geom*0.3048,speed:numeric(row.gs)==null?null:row.gs*0.514444,heading:numeric(row.track),identifiers:{icao24:row.hex.toLowerCase(),callsign:String(row.flight||'').trim()},displayName:String(row.flight||'').trim()||row.hex,status:row.alt_baro==='ground'?'on-ground':'position reported',sourceName:'ADSB.lol contributors',sourceUrl:'https://www.adsb.lol/docs/open-data/api/',providerMetadata:{public:{licenseId:'ODbL-1.0',licenseUrl:'https://opendatacommons.org/licenses/odbl/1-0/',attribution:'ADSB.lol contributors',changes:'Filtered to viewport; units normalized.',coverage:'Volunteer receivers; incomplete worldwide coverage',positionMethod:row.type || 'unknown',barometricAltitudeFeet:numeric(row.alt_baro),geometricAltitudeFeet:numeric(row.alt_geom),speedUnit:'m/s',altitudeUnit:'m',clockSkewSeconds:Math.max(0,(observedAt-now)/1000),timestampBasis:'Source now (milliseconds) minus seen_pos (seconds); not retrieval time'}}});
+}
+export async function fetchAdsbLolAircraft({bbox,limit=500,now=Date.now(),env,fetchImpl=fetch}={}) {
+  const gate=providerActivation(ADSB_LOL_POLICY,env);if(!gate.allowed)return {objects:[],status:adsbLolStatus(gate.reason,gate.status),warnings:[],truncated:false};
+  const circle=viewportCircle(bbox),radius=circle?Math.ceil(circle.radiusKm/1.852):0;
+  if(!circle||radius>250)return {objects:[],status:adsbLolStatus('Choose a local viewport within the 250 NM query cap.','viewport-required'),warnings:[],truncated:false};
+  try{const url=`https://api.adsb.lol/v2/point/${circle.latitude}/${circle.longitude}/${Math.max(1,radius)}`;const result=await fetchBoundedPublicJson(url,{providerId:'adsb-lol',fetchImpl,now});
+    const rows=result.data.ac || result.data.aircraft;if(!Array.isArray(rows)||rows.length>10000)throw Error('Invalid aircraft collection');
+    const parsed=rows.map(row=>normalizeAdsbLolAircraft(row,result.data.now,now));const objects=parsed.map(r=>r.object).filter(o=>o&&withinBbox(o,bbox));const cap=Math.min(1000,Math.max(1,Number(limit)||500)),rejected=parsed.filter(r=>!r.object).length;
+    const skew=objects.some(o=>o.providerMetadata.public.clockSkewSeconds>0);
+    return {objects:objects.slice(0,cap),status:{...adsbLolStatus('Bounded reported positions; no completeness guarantee.',rejected||skew?'degraded':'live'),ok:true,count:Math.min(objects.length,cap),rejectedCount:rejected,fetchedAt:result.fetchedAt,cached:result.cached},warnings:['ODbL data namespace retained; receiver gaps remain unknown.',...(skew?['Source/host clock skew: future-dated positions are marked stale; do not interpret them as current.']:[])],truncated:objects.length>cap};
+  }catch(error){return {objects:[],status:adsbLolStatus(/budget|429/.test(error.message)?'Request budget exhausted; wait before retry.':'Aircraft source unavailable or rejected.',/budget|429/.test(error.message)?'rate-limited':'provider-unavailable'),warnings:['No positions inferred from missing coverage.'],truncated:false};}
+}

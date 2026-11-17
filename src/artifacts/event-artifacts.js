@@ -1,9 +1,12 @@
+import { projectUsgsEvidence } from '../intelligence/event-evidence.js';
+import { confidenceValue } from "../events/event-values.js";
 /**
  * Event Artifacts v1 — pure client-side OSINT artifact builders.
  * No DOM, fetch, localStorage, or mutation of input events/clusters.
  */
 
 import { clusterKeyForEvent, findClusterById } from "../events/clustering.js";
+import { finiteNumber, timestampMs } from "../events/value-semantics.js";
 
 export const ARTIFACT_SCHEMA_VERSION = "v1";
 export const RELATED_EVENTS_MAX = 8;
@@ -37,13 +40,11 @@ function asNullableString(value) {
 }
 
 function asTimestamp(value) {
-  const n = Number(value);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  return timestampMs(value);
 }
 
 function asCoord(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
+  return finiteNumber(value);
 }
 
 function eventIdOf(event) {
@@ -115,8 +116,8 @@ export function resolveConfidence(entity) {
       note: "Confidence is a record-quality label, not a danger rating.",
     };
   }
-  const n = Number(entity.confidence);
-  if (Number.isFinite(n)) {
+  const n = finiteNumber(entity.confidence);
+  if (n !== null) {
     const score = Math.max(0, Math.min(100, n));
     return {
       mode: "numeric",
@@ -267,7 +268,7 @@ export function mapEventNormalizedFields(event) {
     fieldEntry("title", "Title", asString(event.title, "Untitled event")),
     fieldEntry("summary", "Summary", asNullableString(event.summary || event.description)),
     fieldEntry("occurred_at", "Occurred At", asTimestamp(event.occurredAt), "timestamp"),
-    fieldEntry("updated_at", "Updated At", asTimestamp(event.updatedAt ?? event.occurredAt), "timestamp"),
+    fieldEntry("updated_at", "Updated At", asTimestamp(event.updatedAt), "timestamp"),
     fieldEntry("lat", "Latitude", lat, "coord"),
     fieldEntry("lon", "Longitude", lon, "coord"),
     fieldEntry("geographic", "Geographic", event.geographic === false ? false : lat != null && lon != null, "boolean"),
@@ -377,6 +378,7 @@ export function buildEventArtifact(event, opts = {}) {
     schemaVersion: ARTIFACT_SCHEMA_VERSION,
     artifactType: "event",
     artifactId: `event-artifact:${eventId}`,
+    evidenceRecord: projectUsgsEvidence(event, { sourceStatus: opts.sourceStatus, now }),
     generatedAt,
     title: asString(event.title, "Untitled event"),
     eventId,
@@ -386,7 +388,7 @@ export function buildEventArtifact(event, opts = {}) {
     sourceUrl: asNullableString(event.sourceUrl),
     providerName: providerOf(event),
     occurredAt: asTimestamp(event.occurredAt),
-    updatedAt: asTimestamp(event.updatedAt ?? event.occurredAt),
+    updatedAt: asTimestamp(event.updatedAt),
     locationLabel,
     country,
     latitude: lat,
@@ -527,8 +529,8 @@ export function buildClusterArtifact(cluster, opts = {}) {
 
 function resolveClusterConfidence(members) {
   const scores = members
-    .map((event) => Number(event?.confidence))
-    .filter((n) => Number.isFinite(n));
+    .map((event) => confidenceValue(event?.confidence))
+    .filter((n) => n !== null);
   if (!scores.length) return resolveConfidence(null);
   const min = Math.min(...scores);
   const max = Math.max(...scores);

@@ -69,8 +69,8 @@ export function normalizeEiaRecord(dataset, record, previousRecord = null, now =
     geographic: false,
     mapDisplayStatus: "not-mapped",
     nonGeographicReason: "EIA series observations are official time-series records; only facility or regional grid records should be mapped.",
-    startedAt: signal.period || now,
-    updatedAt: signal.revisedAt || signal.publishedAt || now,
+    startedAt: signal.period || null,
+    updatedAt: signal.revisedAt || signal.publishedAt || null,
     ingestedAt: now,
     severity: signal.type === "production-level-revised" ? 45 : 58,
     confidence: 90,
@@ -102,7 +102,7 @@ export function normalizeEiaRecord(dataset, record, previousRecord = null, now =
 }
 
 export async function fetchEiaEvents(context = {}) {
-  const apiKey = globalThis?.process?.env?.EIA_API_KEY;
+  const apiKey = (context.env ?? globalThis?.process?.env ?? {}).EIA_API_KEY;
   if (!apiKey) {
     return {
       events: [],

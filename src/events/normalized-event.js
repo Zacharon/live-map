@@ -1,7 +1,10 @@
+import { severityScore, severityBand } from "./severity.js";
+import { safeSourceUrl } from "../sources/source-url.js";
 import { computeQualityDimensions } from "./event-quality.js";
 import { classifyEvent } from "./taxonomy.js";
+import { finiteNumber, nullableScore, timestampMs, validCoordinates } from "./value-semantics.js";
 
-const SEVERITY_LABELS = ["low", "moderate", "high", "critical"];
+const SEVERITY_LABELS = ["unknown", "low", "moderate", "high", "critical"];
 const VALID_STATUS = new Set(["active", "monitoring", "resolved", "unknown"]);
 export const RECORD_KINDS = ["event", "observation", "discovery-lead", "moving-object"];
 
@@ -12,11 +15,8 @@ export function clamp(value, min, max) {
 }
 
 export function severityLabelFromScore(score) {
-  const value = clamp(score, 0, 100);
-  if (value >= 85) return "critical";
-  if (value >= 65) return "high";
-  if (value >= 35) return "moderate";
-  return "low";
+  const band = severityBand(score);
+  return band === "medium" ? "moderate" : band;
 }
 
 export function uiSeverityFromScore(score) {
@@ -36,25 +36,17 @@ export function scoreFromLegacySeverity(severity) {
     case "low":
       return 20;
     default:
-      return 25;
+      return null;
   }
 }
 
 export function toIsoString(value, fallback = null) {
-  if (value === null || value === undefined || value === "") return fallback;
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isFinite(date.getTime()) ? date.toISOString() : fallback;
+  const timestamp = timestampMs(value);
+  return timestamp === null ? fallback : new Date(timestamp).toISOString();
 }
 
 export function isValidCoordinate(latitude, longitude) {
-  return (
-    Number.isFinite(Number(latitude)) &&
-    Number.isFinite(Number(longitude)) &&
-    Number(latitude) >= -90 &&
-    Number(latitude) <= 90 &&
-    Number(longitude) >= -180 &&
-    Number(longitude) <= 180
-  );
+  return validCoordinates(latitude, longitude);
 }
 
 export function stableStringHash(value) {
@@ -78,36 +70,29 @@ export function validateNormalizedEvent(event) {
   if (!event?.title) errors.push("title is required");
   if (!event?.category) errors.push("category is required");
   if (event?.geographic !== false && !isValidCoordinate(event?.latitude, event?.longitude)) errors.push("latitude/longitude must be valid");
-  if (!toIsoString(event?.startedAt)) errors.push("startedAt must be a valid timestamp");
+  if (event?.startedAt != null && !toIsoString(event.startedAt)) errors.push("startedAt must be a valid timestamp or null");
   if (!toIsoString(event?.ingestedAt)) errors.push("ingestedAt must be a valid timestamp");
   if (!SEVERITY_LABELS.includes(event?.severityLabel)) errors.push("severityLabel is invalid");
   if (!VALID_STATUS.has(event?.status)) errors.push("status is invalid");
   if (!RECORD_KINDS.includes(event?.recordKind)) errors.push("recordKind is invalid");
-  try {
-    new URL(event?.sourceUrl || "");
-  } catch {
-    errors.push("sourceUrl must be a valid URL");
-  }
+  if (event?.sourceUrl != null && !safeSourceUrl(event.sourceUrl)) errors.push("sourceUrl must be an absolute HTTP(S) URL without credentials or null");
   return { valid: errors.length === 0, errors };
 }
 
 export function createNormalizedEvent(input) {
   const nowIso = toIsoString(input.ingestedAt, new Date().toISOString());
-  const startedAt = toIsoString(input.startedAt ?? input.occurredAt ?? input.sourcePublishedAt, nowIso);
-  const updatedAt = toIsoString(input.updatedAt, startedAt);
-  const sourcePublishedAt = toIsoString(input.sourcePublishedAt, startedAt);
-  const lastVerifiedAt = toIsoString(input.lastVerifiedAt, updatedAt);
-  const severity =
-    typeof input.severity === "number"
-      ? clamp(input.severity, 0, 100)
-      : clamp(input.severityScore ?? scoreFromLegacySeverity(input.severityLabel || input.severity), 0, 100);
-  const severityLabel = SEVERITY_LABELS.includes(input.severityLabel)
-    ? input.severityLabel
-    : severityLabelFromScore(severity);
+  const startedAt = toIsoString(input.startedAt ?? input.occurredAt);
+  const updatedAt = toIsoString(input.updatedAt);
+  const sourcePublishedAt = toIsoString(input.sourcePublishedAt);
+  const lastVerifiedAt = toIsoString(input.lastVerifiedAt);
+  const severity = severityScore(input);
+  const severityLabel = severityLabelFromScore(severity);
   const providerEventId = input.providerEventId ?? input.providerId ?? null;
   const stableId = input.id || `${input.provider}:${providerEventId || stableStringHash(`${input.title}:${startedAt}:${input.latitude}:${input.longitude}`)}`;
   const taxonomy = classifyEvent(input);
-  const isExplicitlyNonGeographic = input.geographic === false;
+  const latitude = finiteNumber(input.latitude ?? input.lat);
+  const longitude = finiteNumber(input.longitude ?? input.lon);
+  const isExplicitlyNonGeographic = input.geographic === false || latitude === null || longitude === null;
   const event = {
     id: stableId,
     provider: input.provider,
@@ -125,11 +110,11 @@ export function createNormalizedEvent(input) {
     typeLabel: taxonomy.typeLabel,
     taxonomyColor: taxonomy.color,
     subcategory: input.subcategory ?? null,
-    latitude: Number(input.latitude ?? input.lat),
-    longitude: Number(input.longitude ?? input.lon),
+    latitude,
+    longitude,
     geographic: isExplicitlyNonGeographic ? false : true,
-    mapDisplayStatus: input.mapDisplayStatus || (isExplicitlyNonGeographic ? "not-mapped" : "mapped"),
-    nonGeographicReason: input.nonGeographicReason || null,
+    mapDisplayStatus: isExplicitlyNonGeographic ? "not-mapped" : input.mapDisplayStatus || "mapped",
+    nonGeographicReason: input.nonGeographicReason || (isExplicitlyNonGeographic ? "Geography not supplied" : null),
     countryCode: input.countryCode ?? null,
     countryName: input.countryName ?? input.country ?? null,
     region: input.region ?? null,
@@ -139,11 +124,14 @@ export function createNormalizedEvent(input) {
     ingestedAt: nowIso,
     severity,
     severityLabel,
-    confidence: clamp(input.confidence ?? 70, 0, 100),
+    confidence: nullableScore(input.confidence),
+    impactScore: nullableScore(input.impactScore),
+    independentSourceCount: input.independentSourceCount ?? null,
+    verificationStatus: input.verificationStatus ?? null,
     status: normalizeStatus(input.status),
     sourceName: input.sourceName || input.source || input.providerName || input.provider,
-    sourceUrl: input.sourceUrl || input.providerUrl,
-    sourceType: input.sourceType || "Official",
+    sourceUrl: safeSourceUrl(input.sourceUrl ?? input.providerUrl),
+    sourceType: input.sourceType || "Unknown",
     sourceTier: input.sourceTier || input.metadata?.sourceTier || null,
     publisher: input.publisher || input.sourceName || input.provider,
     language: input.language || null,
@@ -162,12 +150,15 @@ export function createNormalizedEvent(input) {
   };
   Object.assign(event, computeQualityDimensions(event));
   const validation = validateNormalizedEvent(event);
+  const suppliedUrl = input.sourceUrl ?? input.providerUrl;
+  if (suppliedUrl != null && suppliedUrl !== "" && !safeSourceUrl(suppliedUrl)) validation.errors.push("sourceUrl rejected: absolute HTTP(S) URL without credentials required");
+  validation.valid = validation.errors.length === 0;
   return { event, errors: validation.errors, valid: validation.valid };
 }
 
 export function toLegacyEvent(event) {
-  const occurredAt = new Date(event.startedAt).getTime();
-  const updatedAt = event.updatedAt ? new Date(event.updatedAt).getTime() : occurredAt;
+  const occurredAt = timestampMs(event.startedAt);
+  const updatedAt = timestampMs(event.updatedAt);
   const uiSeverity = uiSeverityFromScore(event.severity);
   return {
     ...event,
@@ -186,13 +177,13 @@ export function toLegacyEvent(event) {
     location: event.locationName || event.countryName || "Unknown location",
     occurredAt,
     updatedAt,
-    firstReportedAt: event.sourcePublishedAt ? new Date(event.sourcePublishedAt).getTime() : occurredAt,
-    ingestedAt: event.ingestedAt ? new Date(event.ingestedAt).getTime() : updatedAt,
-    lastVerifiedAt: event.lastVerifiedAt ? new Date(event.lastVerifiedAt).getTime() : updatedAt,
+    firstReportedAt: timestampMs(event.sourcePublishedAt),
+    ingestedAt: timestampMs(event.ingestedAt),
+    lastVerifiedAt: timestampMs(event.lastVerifiedAt),
     summary: event.description || "",
     source: event.sourceName,
     providerName: event.sourceName,
-    verificationStatus: event.metadata?.verificationStatus || "single-source",
+    verificationStatus: event.verificationStatus,
     recordKind: event.recordKind,
     sourceTier: event.sourceTier,
     publisher: event.publisher,
@@ -200,7 +191,7 @@ export function toLegacyEvent(event) {
     publicationPolicy: event.publicationPolicy,
     clusterId: event.clusterId,
     severityReason: event.metadata?.severityReason || "Severity is platform-derived from provider data.",
-    coordinateMethod: event.metadata?.coordinateMethod || "provider coordinates",
+    coordinateMethod: event.metadata?.coordinateMethod || "Precision not supplied",
     details: event.metadata?.details || {},
     impactScore: event.impactScore,
     freshnessScore: event.freshnessScore,

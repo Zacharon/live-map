@@ -1,4 +1,6 @@
+import { safeSourceUrl } from "../../src/sources/source-url.js";
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -14,6 +16,9 @@ export const DEFAULT_PRODUCTION_URLS = [
 const JAVASCRIPT_EXTENSIONS = new Set([".js", ".mjs", ".cjs"]);
 const BROWSER_FILE_EXTENSIONS = new Set([".html", ".js", ".mjs"]);
 const IGNORED_DIRS = new Set([".git", "node_modules", ".netlify"]);
+// Gitignored local evidence folders hold backup copies (including vendored Cesium); they never ship.
+const ROOT_IGNORED_DIRS = new Set(["artifacts", "qa-artifacts", ".wrangler", ".gstack"]);
+const CESIUM_PUBLIC_DEFAULT_TOKEN_SHA256 = "cd471a429327b7c79a70b0c7da0af876c4790908a3c3d58fa3c925c501a5c356";
 const SECRET_PATTERNS = [
   { name: "AWS access key", pattern: /AKIA[0-9A-Z]{16}/g },
   { name: "GitHub token", pattern: /gh[pousr]_[A-Za-z0-9_]{30,}/g },
@@ -60,6 +65,7 @@ export async function findFiles(root, predicate) {
     const entries = await fs.readdir(directory, { withFileTypes: true });
     for (const entry of entries) {
       if (IGNORED_DIRS.has(entry.name)) continue;
+      if (directory === root && ROOT_IGNORED_DIRS.has(entry.name)) continue;
       const fullPath = path.join(directory, entry.name);
       if (entry.isDirectory()) {
         await walk(fullPath);
@@ -98,10 +104,15 @@ export async function scanBrowserSecrets(root, reporter) {
   const findings = [];
   for (const file of files) {
     const text = await fs.readFile(file, "utf8");
+    const relative = path.relative(root, file).replace(/\\/g, "/");
     for (const { name, pattern } of SECRET_PATTERNS) {
       pattern.lastIndex = 0;
       let match;
       while ((match = pattern.exec(text))) {
+        // Cesium 1.145 ships this public default ion token in both distribution bundles.
+        // Match its exact digest, so any added or replaced JWT is still reported.
+        if (name === "JWT" && (relative === "vendor/cesium/index.js" || relative === "vendor/cesium/Cesium.js") &&
+            createHash("sha256").update(match[0]).digest("hex") === CESIUM_PUBLIC_DEFAULT_TOKEN_SHA256) continue;
         const line = text.slice(0, match.index).split(/\r?\n/).length;
         findings.push(`${path.relative(root, file)}:${line} ${name}`);
       }
@@ -116,13 +127,7 @@ export async function scanBrowserSecrets(root, reporter) {
 }
 
 export function assertValidUrl(value) {
-  if (!value || typeof value !== "string") return false;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:";
-  } catch {
-    return false;
-  }
+  return safeSourceUrl(value) !== null;
 }
 
 export function validateEventPayload(payload, reporter, options = {}) {
@@ -256,27 +261,46 @@ export function collectSourceUrls(payload, limit = 20) {
   return [...urls].slice(0, limit);
 }
 
-export async function checkUrls(urls, reporter, label = "source URLs") {
+export async function checkUrls(urls, reporter, label = "source URLs", { retryDelayMs = 2000 } = {}) {
   const failures = [];
+  const timeouts = [];
   for (const url of urls) {
-    try {
-      const response = await fetchWithTimeout(url, { method: "HEAD", redirect: "follow" }, 10000);
-      if (response.status === 405 || response.status === 403) {
-        const getResponse = await fetchWithTimeout(url, { method: "GET", redirect: "follow" }, 10000);
-        if (!getResponse.ok) failures.push(`${url} -> ${getResponse.status}`);
-      } else if (!response.ok) {
-        failures.push(`${url} -> ${response.status}`);
-      }
-    } catch (error) {
-      failures.push(`${url} -> ${error.message}`);
+    let result = await checkUrlOnce(url);
+    // A timeout, network error or 5xx/429 from an outside site is often transient; retry once before failing.
+    if (result.retryable) {
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+      result = await checkUrlOnce(url);
     }
+    // An outside site that is only slow says nothing about Live Map, so a second timeout warns instead of failing.
+    if (result.timedOut) timeouts.push(url);
+    else if (result.failure) failures.push(`${url} -> ${result.failure}`);
   }
 
   if (failures.length) {
     reporter.fail(label, failures.join("; "));
-  } else {
+  } else if (!timeouts.length) {
     reporter.pass(label, `${urls.length} URLs reachable`);
   }
+  if (timeouts.length) {
+    reporter.warn(`${label} timeouts`, `Timed out twice, not counted as a failure: ${timeouts.join("; ")}`);
+  }
+}
+
+async function checkUrlOnce(url) {
+  try {
+    let response = await fetchWithTimeout(url, { method: "HEAD", redirect: "follow" }, 10000);
+    if (response.status === 405 || response.status === 403) {
+      response = await fetchWithTimeout(url, { method: "GET", redirect: "follow" }, 10000);
+    }
+    if (response.ok) return { failure: null, retryable: false, timedOut: false };
+    return { failure: String(response.status), retryable: response.status >= 500 || response.status === 429, timedOut: false };
+  } catch (error) {
+    return { failure: error.message, retryable: true, timedOut: isTimeout(error) };
+  }
+}
+
+function isTimeout(error) {
+  return error?.name === "AbortError" || error?.name === "TimeoutError";
 }
 
 export async function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {

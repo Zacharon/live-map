@@ -1,3 +1,10 @@
+import { timestampMs, confidenceValue } from "../../events/event-values.js";
+import { safeSourceUrl } from "../../sources/source-url.js";
+
+function sourceTime(value) {
+  return timestampMs(value) === null ? null : value;
+}
+
 export function createSeriesObservation(input = {}) {
   return {
     recordKind: "observation",
@@ -7,18 +14,18 @@ export function createSeriesObservation(input = {}) {
     entityIds: input.entityIds || [],
     instrumentIds: input.instrumentIds || [],
     seriesId: input.seriesId,
-    occurredAt: input.occurredAt,
-    publishedAt: input.publishedAt,
-    updatedAt: input.updatedAt || input.publishedAt || input.occurredAt,
+    occurredAt: sourceTime(input.occurredAt),
+    publishedAt: sourceTime(input.publishedAt),
+    updatedAt: sourceTime(input.updatedAt),
     value: input.value,
     previousValue: input.previousValue ?? null,
     change: input.change ?? null,
     changePercent: input.changePercent ?? null,
     units: input.units || null,
     sourceName: input.sourceName,
-    sourceUrl: input.sourceUrl,
+    sourceUrl: safeSourceUrl(input.sourceUrl),
     verificationStatus: input.verificationStatus || "primary-confirmed",
-    confidence: input.confidence ?? 90,
+    confidence: confidenceValue(input.confidence),
     geographic: input.geographic === true,
     geometry: input.geometry || null,
     metadata: input.metadata || {},

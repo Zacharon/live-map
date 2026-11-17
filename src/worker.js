@@ -1,3 +1,4 @@
+import { withSecurityHeaders } from "./security-headers.js";
 import { apiBodyLimitBytes, apiContentLength, checkApiRateLimit, jsonPayloadTooLargeResponse, jsonRateLimitResponse } from "./api/rate-limit.js";
 
 function installCloudflareEnv(env) {
@@ -52,6 +53,14 @@ function assetAliasRequest(request, pathname) {
 }
 
 export default {
+  async scheduled(controller, env) {
+    const { enqueueDueUsgs } = await import("./ingestion/worker-handlers.js");
+    return enqueueDueUsgs(controller, env);
+  },
+  async queue(batch, env) {
+    const { consumeUsgsJobs } = await import("./ingestion/worker-handlers.js");
+    return consumeUsgsJobs(batch, env);
+  },
   async fetch(request, env) {
     const url = new URL(request.url);
 
@@ -67,6 +76,11 @@ export default {
 
     if (url.pathname === "/api/events") {
       return eventsResponse(request, env);
+    }
+
+    if (url.pathname === "/api/changes") {
+      const { createChangesResponse } = await import("./api/changes-response.js");
+      return createChangesResponse(request, { env });
     }
 
     if (url.pathname === "/api/sources") {
@@ -88,9 +102,9 @@ export default {
     }
 
     if (url.pathname === "/sources") {
-      return env.ASSETS.fetch(assetAliasRequest(request, "/source-explorer.html"));
+      return withSecurityHeaders(await env.ASSETS.fetch(assetAliasRequest(request, "/source-explorer.html")), url.pathname);
     }
 
-    return env.ASSETS.fetch(request);
+    return withSecurityHeaders(await env.ASSETS.fetch(request), url.pathname);
   },
 };

@@ -1,3 +1,4 @@
+import { safeSourceUrl } from "../sources/source-url.js";
 import { stableStringHash, toIsoString } from "../events/normalized-event.js";
 
 const TRACKING_PARAMS = new Set(["fbclid", "gclid", "mc_cid", "mc_eid", "ref", "source"]);
@@ -7,7 +8,9 @@ export const OBSERVATION_TYPES = ["news", "feed", "social", "video", "forum", "r
 
 export function canonicalizeObservationUrl(value = "") {
   try {
-    const url = new URL(value);
+    const safe = safeSourceUrl(value);
+    if (!safe) return "";
+    const url = new URL(safe);
     url.hash = "";
     for (const key of [...url.searchParams.keys()]) {
       if (key.startsWith("utm_") || TRACKING_PARAMS.has(key.toLowerCase())) url.searchParams.delete(key);
@@ -28,7 +31,7 @@ export function normalizeSourceOrganization(value = "") {
 
 export function createSourceObservation(input = {}, now = new Date()) {
   const canonicalUrl = canonicalizeObservationUrl(input.url || input.canonicalUrl || input.sourceUrl);
-  const observedAt = toIsoString(input.observedAt || input.publishedAt || input.updatedAt, now.toISOString());
+  const observedAt = toIsoString(input.observedAt ?? input.publishedAt ?? input.updatedAt);
   const sourceOrganizationId = normalizeSourceOrganization(input.sourceOrganizationId || input.organization || input.publisher || input.sourceName || input.provider);
   const provider = String(input.provider || "unknown");
   const externalId = String(input.externalId || input.id || canonicalUrl || input.title || observedAt);
@@ -61,10 +64,11 @@ export function createSourceObservation(input = {}, now = new Date()) {
 
 export function validateSourceObservation(observation) {
   const errors = [];
-  for (const key of ["id", "provider", "sourceOrganizationId", "title", "observedAt", "ingestedAt", "sourceTier", "verificationState"]) {
+  for (const key of ["id", "provider", "sourceOrganizationId", "title", "ingestedAt", "sourceTier", "verificationState"]) {
     if (!observation?.[key]) errors.push(`missing ${key}`);
   }
-  if (observation?.canonicalUrl && !/^https:\/\//.test(observation.canonicalUrl)) errors.push("canonicalUrl must use HTTPS");
+  if (observation?.canonicalUrl && !safeSourceUrl(observation.canonicalUrl)) errors.push("canonicalUrl must use absolute HTTP(S) without credentials");
+  if (observation?.observedAt != null && !toIsoString(observation.observedAt)) errors.push("observedAt must be a valid timestamp or null");
   if (observation?.excerpt?.length > MAX_EXCERPT_LENGTH) errors.push("excerpt exceeds retention-safe maximum");
   return { valid: errors.length === 0, errors };
 }

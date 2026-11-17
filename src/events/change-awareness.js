@@ -2,7 +2,7 @@ import { roundCoordinate } from "./clustering.js";
 import { stableStringHash } from "./normalized-event.js";
 
 export const CHANGE_AWARENESS_STORAGE_KEY = "live-map:change-awareness:v1";
-export const CHANGE_AWARENESS_SCHEMA_VERSION = 1;
+export const CHANGE_AWARENESS_SCHEMA_VERSION = 2;
 
 export function getStorage(storageOverride = undefined) {
   if (storageOverride !== undefined) return storageOverride;
@@ -38,12 +38,17 @@ export function eventSignature(event) {
     title: String(event.title || ""),
     occurredAt: Number.isFinite(occurredAt) ? occurredAt : 0,
     updatedAt: Number.isFinite(updatedAt) ? updatedAt : 0,
-    severity: String(event.severity || "low"),
+    severity: String(event.severity ?? "unknown"),
     domain: String(event.domain || ""),
     category: String(event.category || event.type || "other"),
     source: String(event.sourceName || event.provider || event.source || ""),
     lat: roundCoordinate(event.lat),
     lon: roundCoordinate(event.lon),
+    summary: String(event.summary || ''),
+    verification: String(event.verificationStatus || ''),
+    sourceUrl: String(event.sourceUrl || ''),
+    coverage: event.coverage || event.metadata?.coverage || null,
+    limitations: event.qualityLimitations || event.metadata?.qualityLimitations || [],
     place: String(event.place || ""),
     country: String(event.country || ""),
   };

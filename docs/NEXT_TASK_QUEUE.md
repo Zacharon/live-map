@@ -1,6 +1,133 @@
+## 2026-11-16 - USGS inspection and export candidate
+
+USGS evidence and response-clock scores now share the inspection/export path.
+Fixed Filters reopening after timeline selection/reload and globe Back losing its
+return target. The isolated synthetic Edge journey passed 21 checks including
+keyboard, downloads, 320px layout and camera continuity; no upstream reads.
+See [contract and reproduction](USGS_SPINE_CONTRACT.md). Draft review and owner
+acceptance remain separate from source activation, hosted verification and release.
+
+## 2026-11-12 - Review local RSS redirect boundary repair
+
+- Independent H3 should challenge the exact local change and mocked regressions in
+  [the repair record](security-regression-2026-11-12.md). No hosted safety or release
+  closure is claimed.
+- Keep configured feed DNS and deployment egress validation separate. Real feed
+  moves to another origin require registry review; do not widen the guard from an
+  untrusted Location header. RSS streamed byte limits are now locally repaired;
+  other provider body-limit work remains separate.
+
+## 2026-11-02 - Unknown severity local trial
+
+Local candidate preserves unknown versus zero severity across normalization, filters and risk consumers. See [trial report](tstack-20261102/live-map/REPORT.md). Review and validation results are recorded there; existing owner, H3 and hosted gates remain open.
+
+## 2026-10-31 - Bounded event-source journey continuation
+
+- Review the cumulative isolated candidate for find/filter/inspect/original-source behavior, NWS identity fallback and adjacent source/retrieval clocks. Preserve unavailable links/times; do not activate new providers or infer source freshness from retrieval.
+- Current desktop/narrow keyboard, loading/error/empty-state and globe acceptance remain queued for the GUI owner. Coordinator review must use the cumulative journey patch, not the older refresh-only patch. Netlify publication is paused; no candidate combination or release follows from this record.
+
+## 2026-10-31 - Refresh feedback local candidate
+
+- The isolated refresh-feedback fix preserves cached report clocks and makes failed attempts distinct from successful, partial, empty and saved-read responses. Regression coverage includes failure/retry and superseded-request feedback.
+- Keep full browser/assistive-technology acceptance and any canonical installation separate. No provider, hosting or deployment change accompanies this fix; existing queue priorities and gates remain unchanged.
+
+## 2026-10-27 - Events API timeout fix is ready for review
+
+- Review and merge the events deadline pull request, then deploy it separately. Production keeps the current hang until that deploy. Do not deploy from an agent session.
+- No new Netlify environment variable. Existing `LIVE_MAP_STORED_USGS` reads now fail visibly after 2 seconds instead of waiting on a database connect. `RELIEFWEB_APPNAME` remains optional and, when set, can no longer hang the function.
+- Confirm `GET /api/events` returns JSON with `sourceStatus` in under 10 seconds after deploy. A provider timeout should be `degraded` or `unavailable`, and other providers should still be present.
+
+## 2026-10-27 - Install-check follow-up includes current main
+
+- PR #87 now contains main, including the Forge staging job and the locked PGlite 0.5.11 / PostGIS 0.2.11 pair. Keep the Validate `npm ci` gate and the Electric SQL grouping comment. Require a successful locked install before merge. No deployment.
+
+## 2026-10-21 — Review Forge staging integration
+
+Review the [fixture-only integration harness](FORGE_STAGING_INTEGRATION_2026-10-21.md) and pinned cross-repository CI job. Keep hosted connectivity and source/hosting/deployment authorization separate. Before additive Forge events enter stored mode, decide a compatible cursor/change model or explicitly approved full-snapshot polling; the current test deliberately keeps stored mode shadow-only. Existing hosted ingestion and owner acceptance gates remain open.
+
+## 2026-10-27 — Globe load, measured locally
+
+The in-memory Natural Earth pyramid and screen-space error 4 are on the globe-loading branch. Local headless Edge still takes about 6.1 s for the tile queue to reach 0 (6.9 s on current main). Error 8 and a Cesium modulepreload did not shorten that wait. Hosted timing and owner visual acceptance stay separate. No deploy.
+
+## 2026-10-21 - Review Dependabot install-check follow-up
+
+- Review the follow-up stacked on PR #86: keep the Electric SQL group and add the clean-install compatibility gate to Validate. Merge through the existing PR process after checks pass.
+- For future Electric SQL PRs, require successful locked installation. Do not require both manifest entries to change or matching package version numbers; inspect the resolved PostGIS peer requirement. If no compatible peer release exists, leave the update unmerged until it can resolve. Deployment previews remain separate evidence.
+
+## 2026-10-19 — Homepage 2D / dedicated globe routing correction
+
+Homepage HTML and URL-state defaults now select 2D; /globe and /globe.html default to 3D. Explicit 3D choices, legacy map=3d links and restored 3D saved views serialize current workspace state before navigating to /globe.html. The origin history entry is normalized to 2D so Back stays usable. Auto remains 2D under the homepage's strict CSP; Auto on the globe page retains adaptive rendering. Saved preferences do not silently choose a renderer on a fresh homepage; saved views remain explicit user actions. Globe-page generation independently selects 3D. netlify.toml is unchanged.
+
+Local syntax, platform suite (including page-mode regression tests), generated-page consistency and browser-secret checks pass. Local controller/state execution checks cover defaults, serialization and navigation; no local interactive browser result is claimed because the connected browser is on a separate machine from this checkout. Regression payload is synthetic.
+
+Read-only hosted checks at https://liveworldmap.netlify.app on October 19 UTC: / returns HTTP 200 with strict script-src 'self'; /globe.html returns HTTP 404 with the same strict policy, independently confirmed in the browser as Netlify's Page not found screen. This does not establish which commit is deployed. Hosted globe startup and candidate behavior remain unverified. No deployment or merge performed.
+
+## 2026-10-19 - Globe follow-ups and hosted ingestion gaps
+
+- PR #80 conflict reconciliation preserves main's state-safe routing; confirm strict homepage and globe-specific CSP headers on a deploy preview after owner authorization. Local offline checks do not close hosted acceptance.
+- Owner visual acceptance (#61) of `/globe.html` and the 2D main page on a deploy preview, including real basemap tiles (the cloud container cannot load them).
+- Hosted durable ingestion is not wired: `wrangler.toml` declares no cron trigger, queue or Hyperdrive binding, so the Worker's `scheduled()`/`queue()` handlers never run, and Netlify has no scheduled function. Needs owner approval (Cloudflare Queues may need a paid plan), then the bindings, `LIVE_MAP_INGEST_USGS`/`LIVE_MAP_STORED_USGS`, and `collection_enabled` in `lm_source_policies`.
+- `src/ingestion/worker-handlers.js` retries messages when the database or policy is off, which only burns retries; ack with a logged reason instead, and add a unit test for the handlers.
+- Current-feed activation (NHC, Digitraffic, ADSB.lol) stays off pending owner approval and the licence reviews below; confirm a real dated `/api/events` response on the host.
+
+## 2026-10-12 - Aviation installation decision pending
+
+- Review the exact-file installation map, full hashes, ownership, dependencies and rollback card before any canonical writes. [Aviation scope and use](AVIATION_LOCAL_INTEGRATION_2026-10-12.md) describes the proposed local capability; installation remains NOT RUN pending a separate authorization and verified receipt.
+- Preserve October 5 installed functionality/history and October 2 dated cache-only replay. Validate the aviation negative suite and existing maritime/selection/Watch behavior after any authorized installation; then request independent installed H3. Keep owner visual acceptance, source activation and deployment separate.
+- Existing queue items and gates below remain unchanged; this entry records a proposal, not a priority override or accepted operational assessment.
+
+## 2026-10-12 — Review the reproducible USGS spine
+
+The isolated candidate `824d6aea6a34a00933922f6ca8ac09472778034d` now has genuine USGS/API/map/inspector/evidence/export identity, exact camera/filter/time continuity, source clocks and injected-failure browser proof. [Review evidence and limits](../artifacts/usgs-milestone-20261012/REVIEW.md). It is not installed in this checkout.
+
+Next bounded work: reconcile the inherited platform cache-policy assertion, obtain independent H3 and owner review of this exact candidate, then decide integration. Keep #61 human acceptance and assessment/review/hosted-ingestion gates explicit. Additional live layers remain deferred. PR #73 is open separately; old PR-state and pending October 5 installation entries below are historical.
+
+## 2026-10-05 - Local integration complete; remaining bounded work
+
+- Approved 53-path integration is installed and checked; [installation proof](LOCAL_INTEGRATION_2026-10-05.md) supersedes prior pending-installation entries below. Preserve unrelated dirty work and frozen candidate packages.
+- Obtain owner visual acceptance of actual Reports/search/inspector/mobile and the existing Evidence ledger flows; local integration does not close #61.
+- Keep provider activation and hosted publication separate. The verification preview is cache-only October 2 replay; current public feeds, global AIS/cargo/security coverage and live corporate evidence are not demonstrated. Keep paid BYO disabled by default and zero paid budget.
+- Continue existing owned-API/native PostgreSQL recovery work only within its separately authorized scope. Production Cesium CSP and native/hosted restore/concurrency gates remain open.
+
+## 2026-10-02 · Owner decision after local selection/source review
+
+1. Review isolated direct-selection/source candidate and H3 evidence; reconcile exact current file hashes before any application. Original maritime candidate/package remains historical.
+2. Decide local installation separately from source/hosting activation. New source flags stay off; ADSB.lol production contact/ODbL review, OpenSky operational license and host clock synchronization remain explicit conditions.
+3. Execute OWNED_API_INGESTION_PLAN.md incrementally through existing collector/read-model interfaces after native/hosted concurrency, budget and restore proof. Do not create duplicate dashboard or broad global tracking poller.
+4. Prioritize AWC, CelesTrak, GIBS, regional Norway AIS/selected district/approved historical data only after per-source terms, geometry and chronology proof; 34 research leads are not working feeds.
+
 # Next Task Queue
 
+Local performance candidate: review [globe measurements](GLOBE_PERFORMANCE_LOCAL_2026-10-30.md), then collect controlled startup parse/long-task and physical-device evidence separately. Do not infer hosted readiness or latency benefit from the removed repeat probes.
+
 Small, agent-ready tasks only. Do not turn these into broad refactors.
+
+## Maritime signal candidate (2026-10-02) — owner decision pending
+
+- Review [the isolated maritime evidence slice](MARITIME_SIGNALS_LOCAL.md), independent review and actual browser/check artifacts. Reconcile baseline hashes with current canonical dirty source before deciding installation; this queue addition exists only in the candidate.
+- Keep cargo confirmation separate from published estimates, AIS/dark visibility and security. Verified current-news examples may be attached only with actual source URL, publication/observation/retrieval clocks, method, units and coverage. Conditional forecasts remain context. No source activation or release is authorized here.
+
+## Watch design/build reviewed locally (2026-09-30)
+
+- Review the running interface and [editable design/evidence record](DESIGN_BUILD_2026-09-30.md) for owner visual acceptance. The local candidate implements mobile map/feed/source flows, loaded-data historical browsing and source-aware lens guides; it does not close #61 or release gates.
+- The WebGL capability probe lifetime, saved-view renderer, inspector teardown/reset and hidden-pane keyboard repairs are locally verified. Keep source activation and continuous weather/radar/wind/space feeds as separate bounded tasks with provider policy and dated data contracts. The current wind is explicitly synthetic; current source maps are links.
+- Repository validation still flags the known public Cesium token in unrelated generated backup copies. Reconcile scanner ownership without altering those concurrent artifacts or weakening token checks. Production globe CSP and native PostgreSQL/restore proof remain open.
+
+## Audit repairs completed locally (2026-09-30)
+
+- The authorized selective refactor is documented in [AUDIT_REFACTOR_2026-09-30.md](AUDIT_REFACTOR_2026-09-30.md). Existing queues and release gates continue to apply.
+- Remaining bounded engineering candidates: explicit unknown severity across taxonomy/filter/risk consumers; Cesium screen-space decluttering; finer controller ownership and retirement of legacy CSS/compatibility routes after measured acceptance. No framework migration is required by these repairs.
+- Review the Watch workspace visually against #61 human acceptance. Production Cesium CSP and native PostgreSQL/restore evidence remain open; local audit repair evidence does not close those gates.
+
+## Durable ingestion candidate — local only
+
+- Review [the USGS local slice](DURABLE_INGESTION_LOCAL.md). Next bounded validation is running the prepared native PostgreSQL/PostGIS concurrency and restore harness against two empty, disposable loopback `live_map_test_*` databases. The server and CLI tools are absent on this host, so this is NOT RUN. Then verify connection/role limits and exact Worker/Netlify route behavior. The migration and flags remain off; no collection or hosted switch is authorized by this queue entry.
+- Before enabling a recurring USGS job, settle source policy and legal retention review, configure Cron/Queue/Hyperdrive with retry and dead-letter behavior, and complete H3 after native concurrency/restore evidence. Current independent H3 is PARTIAL for that missing native proof. Identity, R2, other providers, and notification delivery remain separate follow-ons.
+
+## Current local Watch Desk follow-on (2026-09-29)
+
+- Screen-space decluttering and bounded aircraft/vessel inspection on the existing 3D globe. Start from [the Watch Desk run](WATCH_DESK_2026-09-29.md), preserving the current feed-to-globe selection, camera, URL, and evidence state. Use only already fetched or approved observations; verify world/regional/local density, mobile layout, source/time labels, and repeated mode switches. #61 owner acceptance and production globe productization remain separate.
+- #59 is a recorded product decision, not completed code. After the visual follow-on, implement versioned meaningful-change snapshots and source-organization-aware suppression in the operator UI. No browser push or public-map promotion.
 
 ## Context Updates
 
@@ -21,11 +148,48 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
   scopes before any new fixture revision; integrate with a workbench only after
   its absent model is available. No live activation or independent fact claim.
 
+- Completed locally (2026-09-13): progressive event severity thresholds on the shared attention selector; see `PROGRESSIVE_ZOOM_DETAIL.md`. Next bounded density candidate: screen-space decluttering for overlapping high-severity markers while retaining inspectability and the current provider contracts. Not implemented in this slice.
+
 - In review: Strategic chokepoints v1 on `feature/strategic-chokepoints-event-intelligence-v1`. Keep follow-on provider work separate from the local registry and do not label a source live without the source-registry contract.
 - Completed: PR #37 created the ICM memory pack and made `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/LAST_30_DAYS.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY_INVARIANTS.md`, and this queue the first-read context for future agents.
 - In progress: Future feature structure and feature-flag documentation on branch `feature/future-feature-structure`. Keep it docs/structure-only: no runtime imports, no fake UI, no unfinished feature activation.
 
+## Upstream feature transfer
+
+- Contact interactions and heading helper integrated from/inspired by God's Eye View; see `GODS_EYE_VIEW_REUSE.md`. Next bounded candidates are dated satellite orbital elements and launch timelines, each with source review and an explicit separate implementation task. Keep current Leaflet and provider-access boundaries.
+
 ## P0
+
+### Human review of the genuine Hormuz draft (unchanged)
+
+- Goal: owner reviews `artifacts/hormuz-portwatch-2025-01/drafts/genuine-assessment.md` (regenerate with `node scripts/replay-hormuz-frozen-sample.mjs`). Do not treat test-only approvals as human review. Provider stays off.
+- Touch first: `docs/EVIDENCE_TO_ASSESSMENT_WORKBENCH.md`, frozen extract provenance.
+- Test: none until the owner records an explicit review.
+
+### Re-run isolated browser acceptance of 2D/3D inspector + Investigate
+
+- 2026-09-25: local Cesium 1.145 renders on the preview (`artifacts/watchdesk-3d-2026-09-25/result.json`). Production `netlify.toml` still omits `'unsafe-eval'`, so deployed 3D is not claimed. The 2026-09-15 full-globe rows for density, wind, and recovery steps were not re-closed.
+- Next: approved feed activation and one energy-context series. Do not enable providers from this note. Do not overwrite `artifacts/evidence-globe-runtime/2026-09-15T-runtime`.
+
+
+### Vendor Cesium 1.145 locally and capture globe screenshots
+
+- Goal: copy Apache-2.0 Cesium Build (workers, widgets, Natural Earth II) into `vendor/cesium/` without an ion token, then verify imagery in the local preview.
+- Touch first: `src/map/cesium-adapter.js`, `scripts/preview-foundation.mjs`, `docs/EVIDENCE_SEMANTIC_GLOBE.md`.
+- Test: `node tests/semantic-globe-weather-tests.mjs`; browser 2D/3D/Auto + WebGL-loss fallback.
+
+### Bounded GFS subset once wgrib2 or a Windows-safe decoder exists
+
+- Goal: replace the compact-field decoder fixture with a real recorded 10 m U/V subset.
+- Touch first: `scripts/prepare-gfs-wind-sample.mjs`.
+- Test: recorded field separate from synthetic; no full-archive download.
+
+### Complete hosting parity for the redesigned map
+
+- Local foundation implemented on `codex/zoom-aware-map-foundation`; see `docs/ZOOM_AWARE_MAP_FOUNDATION.md`.
+- Next: fixture-test Cloudflare country, risk and bounded moving-object routes plus `/countries` and `/diagnostics` aliases; preserve structured unknown-API 404 and Netlify direct routes. Add equivalent asset security headers and public asset allowlisting.
+- Measure Worker CPU/subrequests and durable provider quota strategy before a migration. Do not deploy or activate sources without an explicit next instruction.
+- Finish browser stress/frame/heap and keyboard focus testing before claiming the entire attached milestone complete.
 
 ### Add governed official chokepoint notice adapters
 
@@ -39,19 +203,13 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 - Touch first: GitHub PR #32, `src/api/events-response.js`, `src/api/sources-response.js`, `src/api/provider-health-response.js`, frontend query parsing files.
 - Test: `npm run check:syntax`, `npm run test:platform`.
 
-### Add source URL scheme allowlist
+### Review source URL boundary repair candidate
 
-- Goal: prevent provider-controlled event links from rendering non-web schemes.
+- Candidate: `fix/audit-20261012-live-map` enforces absolute HTTP(S) and no embedded credentials at ingestion and every external source-link renderer. Review [candidate guide](AUDIT_REPAIR_2026-10-12.md); independent review, hosted CI and release are separate gates.
 - Touch first: `src/events/normalized-event.js`, `src/app-controller.js`, `src/ui/dialogs.js`, provider normalizers that set `sourceUrl`.
 - Test: add cases for `javascript:`, `data:`, `mailto:`, relative URLs, `http:`, and `https:`.
 
 ## P1
-
-### Add Cloudflare asset security headers
-
-- Goal: match Netlify CSP/security headers for Cloudflare static asset responses.
-- Touch first: `src/worker.js`, `netlify.toml`, `tests/run-tests.mjs`.
-- Test: Worker responses for `/`, `/app.js`, `/sources` include CSP, `X-Content-Type-Options`, and `Referrer-Policy`.
 
 ### Add bounded provider JSON helper
 
@@ -61,17 +219,24 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 
 ### Stream RSS feed size cap
 
-- Goal: stop reading RSS/Atom bodies after the configured byte cap.
-- Touch first: `src/data/providers/rss-feed.js`.
-- Test: fake over-cap feed response must not fully materialize.
+- Locally repaired 2026-11-12 in `src/data/providers/rss-feed.js`: the existing
+  1 MiB default is enforced before buffering/decoding each streamed chunk, with
+  cancellation on overflow and reader-lock cleanup.
+- Mocked ReadableStream RED/GREEN covers missing/false Content-Length, early
+  declared oversize refusal, exact-limit/split-multibyte success and UTF-8 byte
+  overflow. See [the combined repair record](security-regression-2026-11-12.md).
+- Independent H3 and hosted-runtime acceptance remain separate, not implied.
 
 ## P2
 
 ### Harden RSS redirect policy
 
-- Goal: disallow or tightly restrict redirects outside the feed registry.
-- Touch first: `src/data/providers/rss-feed.js`, `src/data/providers/ssrf-protection.js`.
-- Test: private host literals, link-local hosts, non-allowlisted redirect destinations.
+- Locally repaired 2026-11-12: the shared URL guard refuses redirects outside the
+  configured origin, credentials, empty destinations and IPv6 literals. Relative
+  same-origin redirects remain supported; request-budget behavior is unchanged.
+- Evidence: [RED/GREEN, offline checks and residual assumptions](security-regression-2026-11-12.md).
+- Pending: independent H3 and separate DNS/egress/provider validation before any
+  hosted closure. Do not merge this item with streaming response byte limits.
 
 ### Draft evidence record model
 
@@ -87,3 +252,8 @@ Small, agent-ready tasks only. Do not turn these into broad refactors.
 # Next: Review and activate approved open-news/social watchlists
 
 Before enabling any new social/video provider, document official access, terms, attribution, quota budget, cache/retention policy, approved watchlists, and provider-specific test fixtures. Do not add scraping or browser credentials.
+## 2026-10-02 — Working local Watch candidate owner decision
+
+1. Review the running actual-public-data Reports workflow and independent evidence in WORKING_WATCH_LOCAL.md; accept or adjust the exact cumulative candidate after fresh canonical hash reconciliation.
+2. Coordinate with the existing hosting/live-feed owner before canonical integration. Preserve inherited dirty work and immutable 16/41-path deliveries.
+3. After explicit approval, use WORKING_WATCH_HOSTED_PLAN.md for a draft on the existing site. Resolve actual hosted source coverage, Cesium policy and durable-ingestion/recovery gates before publication; keep paid source budget zero.

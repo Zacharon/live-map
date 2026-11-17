@@ -1,5 +1,7 @@
 import { mergeDuplicateEvents } from "../../events/event-deduplication.js";
+import { withReadTimeQuality } from "../../events/event-quality.js";
 import { toLegacyEvent } from "../../events/normalized-event.js";
+import { timestampMs } from "../../events/value-semantics.js";
 import { EVENT_PROVIDERS } from "./registry.js";
 import { createProviderCache } from "./cache.js";
 import { fetchUsgsEvents } from "./usgs.js";
@@ -24,7 +26,15 @@ import { scheduleForProvider } from "./scheduling.js";
 import { createRequestBudgetStore } from "./request-budget.js";
 import { createProviderStateStore } from "./provider-state.js";
 
+import { fetchNhcEvents } from './nhc.js';
+import { providerActivation } from './provider-activation.js';
+import { abortError, createLinkedSignal } from "./fetch-timeout.js";
+
+// Stay under Netlify's synchronous function limit (~10s) and the browser events timeout (15s).
+export const EVENTS_ORCHESTRATION_DEADLINE_MS = 8000;
+
 const ADAPTERS = {
+  'nhc-current-storms': fetchNhcEvents,
   usgs: fetchUsgsEvents,
   eonet: fetchEonetEvents,
   "nws-alerts": fetchNwsAlerts,
@@ -62,7 +72,7 @@ function sleep(ms) {
 
 function envValue(context, name) {
   if (!name) return "";
-  return context.env?.[name] || globalThis?.process?.env?.[name] || "";
+  return (context.env ?? globalThis?.process?.env ?? {})[name] || "";
 }
 
 function providerUserAgent(provider, context) {
@@ -78,11 +88,11 @@ export async function fetchJsonWithTimeout(url, sourceName, options = {}) {
   const timeoutMs = options.timeoutMs ?? 12000;
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    if (options.signal?.aborted) throw abortError(`${sourceName} timed out.`);
+    const linked = createLinkedSignal(options.signal, timeoutMs);
     try {
       const response = await fetch(url, {
-        signal: controller.signal,
+        signal: linked.signal,
         headers: {
           accept: "application/json",
           "user-agent": options.userAgent || "LiveWorldMap/1.0 (+https://liveworldmap.netlify.app/)",
@@ -92,10 +102,11 @@ export async function fetchJsonWithTimeout(url, sourceName, options = {}) {
       if (!response.ok) throw new Error(`${sourceName} returned ${response.status}`);
       return await response.json();
     } catch (error) {
-      lastError = error;
-      if (attempt < attempts) await sleep(300 * attempt + Math.round(Math.random() * 150));
+      lastError = error?.name === "AbortError" ? abortError(`${sourceName} timed out.`) : error;
+      if (lastError.name === "AbortError" || options.signal?.aborted || attempt >= attempts) break;
+      await sleep(300 * attempt + Math.round(Math.random() * 150));
     } finally {
-      clearTimeout(timeout);
+      linked.clear();
     }
   }
   throw lastError;
@@ -109,7 +120,7 @@ function providerStatus(provider, result, now) {
     count: result.events.length,
     acceptedCount: result.events.length,
     rejectedCount: result.rejectedCount,
-    message: result.errorMessage || result.safeError || result.warnings?.[0] || (result.stale ? "Showing stale provider data" : ok ? "Live" : result.status === "configuration-required" ? "Configuration required" : "Unavailable"),
+    message: result.statusMessage || result.errorMessage || result.safeError || result.warnings?.[0] || (result.stale ? "Showing stale provider data" : ok ? "Live" : result.status === "configuration-required" ? "Configuration required" : "Unavailable"),
     lastAttemptedAt: result.fetchedAt,
     lastSuccessfulAt: result.lastSuccessfulAt || null,
     durationMs: result.durationMs,
@@ -134,6 +145,8 @@ export async function runProvider(provider, context) {
   const started = Date.now();
   const fetchedAt = new Date(started).toISOString();
   const adapter = ADAPTERS[provider.id];
+  const activation = providerActivation(provider, context.env);
+  if (!activation.allowed) return {providerId:provider.id,status:activation.status,events:[],fetchedAt,durationMs:Date.now()-started,recordCount:0,rejectedCount:0,cached:false,stale:false,statusMessage:activation.reason};
   if (!adapter || provider.enabled === false) {
     return {
       providerId: provider.id,
@@ -161,9 +174,10 @@ export async function runProvider(provider, context) {
       requestBudget,
       fetchJson: (url, sourceName) =>
         fetchJsonWithTimeout(url, sourceName, {
-          timeoutMs: provider.timeoutMs || schedule.requestTimeoutMs,
+          timeoutMs: Math.min(provider.timeoutMs || schedule.requestTimeoutMs || 12000, context.deadlineMs || provider.timeoutMs || schedule.requestTimeoutMs || 12000),
           userAgent: providerUserAgent(provider, context),
           attempts: provider.fetchAttempts || schedule.maximumRetries,
+          signal: context.signal,
         }),
     });
     const events = result.events || [];
@@ -235,12 +249,35 @@ export async function orchestrateProviders(options = {}) {
   const now = options.now || Date.now();
   const hours = options.hours || 168;
   const env = options.env || globalThis?.process?.env || {};
-  const providerCache = options.providerCache || (await createProviderCache());
+  const providerCache = options.providerCache || (await createProviderCache(env));
   const requestBudgetStore = options.requestBudgetStore || (await createRequestBudgetStore());
   const providerStateStore = options.providerStateStore || (await createProviderStateStore());
-  const enabledProviders = EVENT_PROVIDERS.filter((provider) => provider.enabled !== false);
-  const settled = await Promise.allSettled(enabledProviders.map((provider) => runProvider(provider, { now, hours, env, providerCache, requestBudgetStore, providerStateStore })));
-  const providerResults = settled.map((item, index) =>
+  const overrides = Array.isArray(options.providerResultsOverride) ? options.providerResultsOverride : [];
+  const overriddenIds = new Set(overrides.map((result) => result.providerId));
+  const enabledProviders = EVENT_PROVIDERS.filter((provider) => provider.enabled !== false && !overriddenIds.has(provider.id));
+  const deadlineMs = Number.isFinite(options.deadlineMs) ? Math.max(1, options.deadlineMs) : EVENTS_ORCHESTRATION_DEADLINE_MS;
+  const deadline = createLinkedSignal(undefined, deadlineMs);
+  let settled;
+  try {
+    settled = await Promise.allSettled(enabledProviders.map((provider) => {
+      const schedule = scheduleForProvider(provider.id);
+      const providerBudget = Math.max(1, Math.min(provider.timeoutMs || schedule.requestTimeoutMs || deadlineMs, deadlineMs));
+      const linked = createLinkedSignal(deadline.signal, providerBudget);
+      return runProvider(provider, {
+        now,
+        hours,
+        env,
+        providerCache,
+        requestBudgetStore,
+        providerStateStore,
+        signal: linked.signal,
+        deadlineMs: providerBudget,
+      }).finally(() => linked.clear());
+    }));
+  } finally {
+    deadline.clear();
+  }
+  const providerResults = [...overrides, ...settled.map((item, index) =>
     item.status === "fulfilled"
       ? item.value
       : {
@@ -256,12 +293,16 @@ export async function orchestrateProviders(options = {}) {
           errorCode: "orchestration_error",
           errorMessage: item.reason?.message || "Provider failed",
         }
-  );
+  )];
   const cutoff = now - hours * 3600000;
   const events = providerResults
     .flatMap((result) => result.events)
-    .filter((event) => new Date(event.startedAt).getTime() >= cutoff);
-  const dedupedEvents = mergeDuplicateEvents(events);
+    .filter((event) => {
+      const occurredAt = timestampMs(event.startedAt);
+      return occurredAt === null || occurredAt >= cutoff;
+    });
+  // Merge may keep an older stored score after it adopts a newer updatedAt.
+  const dedupedEvents = mergeDuplicateEvents(events).map((event) => withReadTimeQuality(event, now));
   const duplicateCount = Math.max(0, events.length - dedupedEvents.length);
   const duplicateCountByProvider = Object.fromEntries(providerResults.map((result) => [result.providerId, 0]));
   if (duplicateCount) {
@@ -272,13 +313,14 @@ export async function orchestrateProviders(options = {}) {
     providerResults.map((result) => {
       const provider = EVENT_PROVIDERS.find((item) => item.id === result.providerId);
       const status = providerStatus(provider, result, now);
-      const latest = result.events.reduce((max, event) => Math.max(max, new Date(event.updatedAt || event.startedAt).getTime()), 0);
+      const times = result.events.map((event) => timestampMs(event.updatedAt ?? event.startedAt)).filter((time) => time !== null);
+      const latest = times.length ? Math.max(...times) : null;
       return [
         result.providerId,
         {
           ...status,
           duplicateCount: duplicateCountByProvider[result.providerId] || 0,
-          mostRecentSourceEventAt: latest ? new Date(latest).toISOString() : null,
+          mostRecentSourceEventAt: latest !== null ? new Date(latest).toISOString() : null,
         },
       ];
     })
@@ -290,7 +332,12 @@ export async function orchestrateProviders(options = {}) {
   return {
     events: dedupedEvents.map(toLegacyEvent),
     canonicalEvents: dedupedEvents,
-    providerResults: providerResults.map((result) => ({ ...result, duplicateCount: duplicateCountByProvider[result.providerId] || 0 })),
+    providerResults: providerResults.map((result) => ({
+      ...result,
+      // Copy. The provider cache keeps the retrieval-time score.
+      events: (result.events || []).map((event) => withReadTimeQuality(event, now)),
+      duplicateCount: duplicateCountByProvider[result.providerId] || 0,
+    })),
     observations: providerResults.flatMap((result) => result.observations || []).slice(0, 500),
     storylines: buildStorylines(providerResults.flatMap((result) => result.observations || []).slice(0, 500), { now }),
     sourceStatus,

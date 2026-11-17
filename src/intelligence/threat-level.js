@@ -1,3 +1,5 @@
+import { severityScore } from "../events/severity.js";
+import { confidenceValue } from "../events/event-values.js";
 /**
  * OSINT Forge Threat Level v0 — explainable local heuristic.
  * Uses only existing normalized event fields. No network. No AI.
@@ -39,8 +41,8 @@ function asTs(value) {
 function severityKey(event) {
   const s = String(event?.severity || "").toLowerCase();
   if (SEVERITY_BASE[s] != null) return s;
-  const score = Number(event?.severityScore);
-  if (Number.isFinite(score)) {
+  const score = severityScore(event);
+  if (score !== null) {
     if (score >= 80) return "critical";
     if (score >= 60) return "high";
     if (score >= 40) return "medium";
@@ -99,10 +101,7 @@ export function computeThreatLevel(event, opts = {}) {
     score = SEVERITY_BASE[sev];
     reasons.push(`Provider/UI severity band: ${sev}`);
   } else {
-    score = 20;
-    reasons.push("Severity missing — using low baseline");
-    caveats.push("Severity field missing; threat level is under-informed.");
-    certainty = "low";
+    return { level: "unknown", score: null, reasons: ["Severity unknown"], caveats: [...caveats, ...(confidenceValue(event.confidence) === null ? ["Confidence not scored on this record."] : [])], label: THREAT_LEVEL_LABEL, certainty: "low" };
   }
 
   const occurred = asTs(event.occurredAt);
@@ -171,8 +170,8 @@ export function computeThreatLevel(event, opts = {}) {
     reasons.push(`Part of a ${clusterSize}-event cluster`);
   }
 
-  const confidence = Number(event.confidence);
-  if (Number.isFinite(confidence)) {
+  const confidence = confidenceValue(event.confidence);
+  if (confidence !== null) {
     if (confidence >= 80) {
       score += 3;
       reasons.push(`Higher record confidence (${Math.round(confidence)}%)`);
@@ -248,8 +247,10 @@ export function computeClusterThreatLevel(cluster, opts = {}) {
       cluster,
       relatedCount: Math.max(0, members.length - 1),
     });
-    if (!best || result.score > best.score) best = result;
+    if (!best || (result.score ?? -1) > (best.score ?? -1)) best = result;
   }
+
+  if (best?.score === null) return best;
 
   const reasons = [
     `Cluster of ${members.length} events`,
@@ -273,6 +274,7 @@ export function computeClusterThreatLevel(cluster, opts = {}) {
 
 export function threatLevelDisplay(level) {
   const map = {
+    unknown: "Unknown",
     low: "Low",
     guarded: "Guarded",
     elevated: "Elevated",

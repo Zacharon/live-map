@@ -73,8 +73,8 @@ export function normalizeFredObservation(seriesConfig, observation, previousObse
     geographic: false,
     mapDisplayStatus: "not-mapped",
     nonGeographicReason: "FRED macroeconomic observations are time-series records, not event coordinates.",
-    startedAt: classification.observationDate || now,
-    updatedAt: classification.revisedAt || classification.publishedAt || classification.observationDate || now,
+    startedAt: classification.observationDate || null,
+    updatedAt: classification.revisedAt || classification.publishedAt || classification.observationDate || null,
     ingestedAt: now,
     severity: classification.eventType === "macro-revision" ? 45 : 55,
     confidence: 90,
@@ -105,7 +105,7 @@ export function normalizeFredObservation(seriesConfig, observation, previousObse
 }
 
 export async function fetchFredEvents(context = {}) {
-  const apiKey = globalThis?.process?.env?.FRED_API_KEY;
+  const apiKey = (context.env ?? globalThis?.process?.env ?? {}).FRED_API_KEY;
   if (!apiKey) {
     return {
       events: [],

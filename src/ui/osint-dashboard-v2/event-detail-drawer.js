@@ -1,3 +1,6 @@
+import { projectUsgsEvidence } from '../../intelligence/event-evidence.js';
+import { sourceLink, safeSourceUrl } from "../../sources/source-url.js";
+import { confidenceText, timestampMs } from "../../events/event-values.js";
 import { CATEGORIES, SEVERITIES } from "../../config.js";
 import { escapeHtml, exactTime, relativeTime } from "../../events/event-normalizer.js";
 import { renderEventArtifactSection, renderClusterArtifactSection } from "./event-artifact-card.js";
@@ -19,7 +22,9 @@ function whyShownCopy(event, changeStatus, connections) {
   } else if (connections?.relatedEvents?.length) {
     bits.push(`${connections.relatedEvents.length} related event(s) share place, time, provider, or category.`);
   } else {
-    bits.push("Included because it matches active filters and time window.");
+    bits.push(timestampMs(event.occurredAt) === null
+      ? "Source occurrence time is unknown; this record does not establish recency."
+      : "Included because it matches active filters and time window.");
   }
   if (event?.geographic === false) bits.push("Non-geographic record — listed without a map pin.");
   else if (!(Number.isFinite(event?.lat) && Number.isFinite(event?.lon))) bits.push("Coordinates missing or incomplete.");
@@ -66,7 +71,7 @@ export function renderClusterDetailDrawer(cluster, { allEvents = [] } = {}) {
       <h2 class="v2-detail-title">Related cluster</h2>
     </div>
     <p class="v2-detail-summary">${escapeHtml(cluster.attentionLabel)} — ${escapeHtml(cluster.locationLabel)} across ${cluster.sourceCount} source${cluster.sourceCount === 1 ? "" : "s"}.</p>
-    ${renderThreatExplain(threat)}
+    <details class="detail-extra"><summary>Heuristic context</summary>${renderThreatExplain(threat)}</details>
     ${mapNote}
     <div class="v2-detail-actions"><button type="button" class="v2-detail-link secondary" data-v2-clear-selection>Clear selection</button></div>
     <dl class="v2-detail-facts">
@@ -83,10 +88,11 @@ export function renderClusterDetailDrawer(cluster, { allEvents = [] } = {}) {
   </aside>`;
 }
 
-export function renderEventDetailDrawer(event, { changeStatus = null, allEvents = [], clusters = [] } = {}) {
+export function renderEventDetailDrawer(event, { changeStatus = null, allEvents = [], clusters = [], sourceStatus = {} } = {}) {
   if (!event) {
     return `<aside class="v2-event-detail v2-event-detail-empty" aria-label="Event details"><p class="v2-empty">Select an event from the feed, timeline, map, or connected list to open the analyst card.</p></aside>`;
   }
+  const evidence = projectUsgsEvidence(event, { sourceStatus });
   const subjectCluster = resolveClusterForEvent(event, clusters);
   const connections = buildEventConnections(event, { allEvents, clusters });
   const threat = computeThreatLevel(event, {
@@ -104,20 +110,26 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
   const severityColor = SEVERITIES[event.severity]?.color || SEVERITIES.low.color;
   const categoryColor = event.taxonomyColor || CATEGORIES[event.category]?.color || CATEGORIES.other.color;
   const location = event.geographic === false ? "No map location" : event.place || event.country || "Location pending";
-  const confidence = Number.isFinite(event.confidence) ? `${Math.round(event.confidence)}%` : "Not scored";
+  const confidence = confidenceText(event.confidence);
   const sourceBadge = event.sourceName || event.provider || "Unknown source";
-  const sourceLink = event.sourceUrl
-    ? `<a class="v2-detail-link" href="${escapeHtml(event.sourceUrl)}" target="_blank" rel="noopener noreferrer">Open source</a>`
-    : `<span class="v2-detail-link secondary v2-detail-link-disabled" title="No source URL on this record">No source URL</span>`;
-  const providerLink = event.providerUrl
-    ? `<a class="v2-detail-link secondary" href="${escapeHtml(event.providerUrl)}" target="_blank" rel="noopener noreferrer">Provider info</a>`
-    : "";
+  const sourceUrl = safeSourceUrl(event.sourceUrl);
+  // Older cached NWS records may still contain the collection/homepage fallback.
+  const nwsCollection = event.provider === "nws-alerts" && sourceUrl && ["/", "/alerts", "/alerts/active"].includes(new URL(sourceUrl).pathname.replace(/\/$/, "") || "/");
+  const sourceAction = sourceLink(nwsCollection ? null : sourceUrl, "Open original source", "v2-detail-link");
+  const providerLink = sourceLink(event.providerUrl, "Provider info", "v2-detail-link secondary");
   const mapLink = Number.isFinite(event.lat) && Number.isFinite(event.lon)
     ? `<a class="v2-detail-link secondary" href="https://www.openstreetmap.org/?mlat=${event.lat}&mlon=${event.lon}#map=7/${event.lat}/${event.lon}" target="_blank" rel="noopener noreferrer">Coordinates</a>`
     : `<span class="v2-detail-link secondary v2-detail-link-disabled" title="Coordinates unavailable">No coordinates</span>`;
   const why = whyShownCopy(event, changeStatus, connections);
+  const limitations = event.qualityLimitations || event.metadata?.qualityLimitations;
+  const limitationText = Array.isArray(limitations) ? limitations.join(" ") : typeof limitations === "string" ? limitations : "Independent corroboration and unreported areas remain unknown.";
+  const suppliedDetails = event.details && Object.keys(event.details).length ? event.details : event.metadata?.details;
+  const measurements = suppliedDetails && typeof suppliedDetails === "object" && !Array.isArray(suppliedDetails)
+    ? Object.entries(suppliedDetails).filter(([, value]) => ["string", "number", "boolean"].includes(typeof value)).slice(0, 20)
+      .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(String(value))}</dd></div>`).join("") : "";
 
   return `<aside class="v2-event-detail" aria-label="Event details">
+    <button class="inspector-back" type="button" data-v2-close-detail>← Back to developments</button>
     <div class="v2-detail-head">
       <button type="button" class="v2-detail-close" data-v2-close-detail aria-label="Close details">×</button>
       <div class="v2-detail-badges">
@@ -131,23 +143,30 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
       <h2 class="v2-detail-title">${escapeHtml(event.title)}</h2>
     </div>
     <p class="v2-detail-summary">${escapeHtml(event.summary || "No summary available.")}</p>
-    ${renderThreatExplain(threat)}
-    <div class="v2-why-shown">
-      <div class="v2-section-title"><span>Why am I seeing this?</span></div>
-      <p class="v2-empty">${escapeHtml(why)}</p>
-    </div>
+    <section class="detail-source-evidence" aria-label="Supporting source"><h3>Supporting source</h3><p>${escapeHtml(event.sourceName || 'Unknown source')} · ${escapeHtml(event.verificationStatus || 'unverified')}</p><div class="v2-detail-actions">${sourceAction}${providerLink}</div><p>Occurrence: ${escapeHtml(exactTime(event.occurredAt))}<br>Source revision: ${escapeHtml(exactTime(event.updatedAt))}<br>Retrieved: ${escapeHtml(exactTime(event.fetchedAt ?? event.retrievedAt ?? event.metadata?.retrievedAt))}</p><p>Retrieval time does not establish when the event occurred. Missing source times remain unknown.</p></section>
+    ${evidence ? `<section aria-label="Evidence record" data-event-evidence="${escapeHtml(evidence.id)}"><h3>Evidence record</h3><p><code>${escapeHtml(evidence.id)}</code></p><p>Freshness: ${escapeHtml(evidence.extra.freshness)} · Source: ${escapeHtml(evidence.extra.providerStatus)}</p><p>Review: not reviewed · Read-only snapshot</p></section>` : ''}
     <dl class="v2-detail-facts">
+      <div><dt>Source coverage</dt><dd>${escapeHtml(event.coverage || event.metadata?.coverage || "Not supplied; do not infer complete coverage")} </dd></div>
+      <div><dt>Limits of this evidence</dt><dd>${escapeHtml(limitationText)}</dd></div>
+      ${measurements}
       <div><dt>Location</dt><dd>${escapeHtml(location)}</dd></div>
+      <div><dt>Geographic precision</dt><dd>${escapeHtml(event.coordinateMethod || event.locationPrecision || 'Not supplied — do not infer street-level accuracy')}</dd></div>
+      <div><dt>Reported</dt><dd>${escapeHtml(exactTime(event.firstReportedAt ?? event.sourcePublishedAt))}</dd></div>
+      <div><dt>Retrieved</dt><dd>${escapeHtml(exactTime(event.fetchedAt ?? event.retrievedAt ?? event.metadata?.retrievedAt))}</dd></div>
       <div><dt>Occurred</dt><dd>${escapeHtml(exactTime(event.occurredAt))}</dd></div>
-      <div><dt>Updated</dt><dd>${escapeHtml(relativeTime(event.updatedAt || event.occurredAt))}</dd></div>
+      <div><dt>Updated</dt><dd>${escapeHtml(relativeTime(event.updatedAt))}</dd></div>
+      <div><dt>Verified at</dt><dd>${escapeHtml(exactTime(event.lastVerifiedAt))}</dd></div>
+      <div><dt>Independent sources</dt><dd>${escapeHtml(event.independentSourceCount ?? 'Not established')}</dd></div>
+      <div><dt>Impact</dt><dd>${Number.isFinite(event.impactScore) ? `${event.impactScore}/100 · supplied assessment` : 'Not assessed'}</dd></div>
       <div><dt>Source</dt><dd>${escapeHtml(event.sourceName || "Unknown")}</dd></div>
       <div><dt>Verification</dt><dd>${escapeHtml(event.verificationStatus || "Reported")}</dd></div>
       <div><dt>Type</dt><dd>${escapeHtml(event.typeLabel || event.category || "—")}</dd></div>
       <div><dt>Domain</dt><dd>${escapeHtml(event.domainLabel || event.domain || "—")}</dd></div>
       <div><dt>Provider</dt><dd>${escapeHtml(event.provider || event.providerName || "—")}</dd></div>
     </dl>
-    <div class="v2-detail-actions">${sourceLink}${providerLink}${mapLink}<button type="button" class="v2-detail-link secondary" data-v2-clear-selection>Clear selection</button></div>
-    ${renderConnectionsPanel(connections)}
-    ${renderEventArtifactSection(event, { allEvents, clusters, changeStatus })}
+    <div class="v2-detail-actions">${mapLink}<button type="button" class="v2-detail-link secondary" data-v2-clear-selection>Clear selection</button></div>
+    <details class="detail-extra"><summary>Why shown · heuristic context</summary><p class="v2-empty">${escapeHtml(why)}</p>${renderThreatExplain(threat)}</details>
+    <details class="detail-extra"><summary>Related reports · heuristic links</summary>${renderConnectionsPanel(connections)}</details>
+    <details class="detail-extra"><summary>Export source snapshot</summary>${renderEventArtifactSection(event, { allEvents, clusters, changeStatus, sourceStatus })}</details>
   </aside>`;
 }

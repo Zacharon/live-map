@@ -39,6 +39,7 @@ import { fetchOfficialFeedEvents, parseFeedItems, normalizeFeedItem } from "../s
 import { normalizeStatuspageIncident } from "../src/data/providers/statuspage.js";
 import { normalizeRipestatObservation } from "../src/data/providers/ripestat.js";
 import { assertSafeFetchUrl } from "../src/data/providers/ssrf-protection.js";
+import { runRssRedirectRegressionTests, runRssBodyRegressionTests } from "./rss-redirect-tests.mjs";
 import { applyPublicationPolicy } from "../src/data/providers/publication-policy.js";
 import { createCompanyIdentity, sameCompany } from "../src/data/providers/company-identity.js";
 import { createMemoryProviderCache } from "../src/data/providers/cache.js";
@@ -779,7 +780,7 @@ test("Events API output survives default Explore frontend filters", async () => 
 test("Source Explorer markup supports routing, fallback state, and escaping-safe controls", () => {
   const html = fs.readFileSync(new URL("../source-explorer.html", import.meta.url), "utf8");
   const app = fs.readFileSync(new URL("../src/source-explorer-app.js", import.meta.url), "utf8");
-  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8");
+  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8").replace(/\r\n/g, "\n");
   assert.match(netlifyConfig, /from = "\/api\/sources"[\s\S]*to = "\/\.netlify\/functions\/sources"/);
   assert.match(netlifyConfig, /from = "\/sources"[\s\S]*to = "\/source-explorer\.html"/);
   assert.match(html, /role="listbox"/);
@@ -823,7 +824,8 @@ test("Quality dimensions remain separate", () => {
   const quality = computeQualityDimensions({ severityScore: 80, confidence: 66, updatedAt: Date.now(), independentSourceCount: 2, verificationStatus: "Provider reviewed" });
   assert.equal(quality.severity, 80);
   assert.equal(quality.confidence, 66);
-  assert.ok(quality.impactScore >= 0 && quality.impactScore <= 100);
+  assert.equal(quality.impactScore, null);
+  assert.ok(quality.attentionScore >= 0 && quality.attentionScore <= 100);
   assert.equal(normalizeVerificationStatus("Provider reviewed"), "primary-confirmed");
 });
 
@@ -854,16 +856,90 @@ test("Saved view serialization captures shareable feed state", () => {
   assert.equal(view.query, "japan");
 });
 
+function netlifyCspRules() {
+  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8").replace(/\r\n/g, "\n");
+  return [...netlifyConfig.matchAll(/\[\[headers\]\]\n\s*for = "([^"]+)"\n\s*\[headers\.values\]\n((?:\s*[A-Za-z-]+ = "[^"]*"\n?)+)/g)]
+    .map(([, path, body]) => ({ path, csp: body.match(/Content-Security-Policy = "([^"]+)"/)?.[1] || null }));
+}
+
 test("CSP is explicit and production assets are same-origin", () => {
-  const netlifyConfig = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8");
-  const csp = netlifyConfig.match(/Content-Security-Policy = "([^"]+)"/)?.[1] || "";
+  const rules = netlifyCspRules();
+  const byPath = new Map(rules.map((rule) => [rule.path, rule.csp]));
+  const csp = byPath.get("/") || "";
   const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(csp, /script-src 'self'/);
-  assert.doesNotMatch(csp, /unsafe-eval|\*/);
+  assert.match(csp, /script-src 'self' 'wasm-unsafe-eval'/);
+  assert.doesNotMatch(csp, /(?<!wasm-)unsafe-eval/);
+  assert.doesNotMatch(csp, /\*/);
   assert.doesNotMatch(csp, /unpkg\.com/);
+  // The catch-all rule carries no CSP, so no response gets two policies.
+  assert.ok(byPath.has("/*"));
+  assert.equal(byPath.get("/*"), null);
+  for (const page of ["/index.html", "/about.html", "/countries", "/countries.html", "/diagnostics", "/diagnostics.html", "/sources", "/source-explorer.html", "/404.html", "/vendor/*"]) {
+    assert.equal(byPath.get(page), csp, `${page} uses the strict policy`);
+  }
   assert.doesNotMatch(html, /unpkg\.com/);
   assert.match(html, /vendor\/leaflet\/leaflet\.js/);
   assert.match(html, /vendor\/leaflet-markercluster\/leaflet\.markercluster\.js/);
+});
+
+test("Only the globe page CSP adds unsafe-eval, otherwise matching the strict policy", () => {
+  const rules = netlifyCspRules();
+  const strict = rules.find((rule) => rule.path === "/").csp;
+  const loose = rules.filter((rule) => rule.csp && /(?<!wasm-)unsafe-eval/.test(rule.csp)).map((rule) => rule.path).sort();
+  assert.deepEqual(loose, ["/globe", "/globe.html"]);
+  for (const path of loose) {
+    const csp = rules.find((rule) => rule.path === path).csp;
+    assert.equal(csp.replace("'unsafe-eval' ", ""), strict);
+  }
+});
+
+test("globe.html is generated from index.html and marked as the globe page", async () => {
+  const { buildGlobePage } = await import("../scripts/build-globe-page.mjs");
+  const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const globe = fs.readFileSync(new URL("../globe.html", import.meta.url), "utf8");
+  assert.equal(globe, buildGlobePage(index), "run node scripts/build-globe-page.mjs");
+  assert.match(globe, /<meta name="live-map-page" content="globe" \/>/);
+  assert.doesNotMatch(index, /live-map-page/);
+});
+
+test("Globe page link keeps the current view state", async () => {
+  const { globePageHref, isGlobePage } = await import("../src/map/globe-controller.js");
+  assert.equal(globePageHref({ search: "?lat=10&mapMode=2d", hash: "#e1" }), "/globe.html?lat=10&mapMode=3d#e1");
+  assert.equal(globePageHref({ search: "", hash: "" }), "/globe.html?mapMode=3d");
+  assert.equal(isGlobePage(null), false);
+  assert.equal(globePageHref({ search: "?mapMode=2d", hash: "" }, "auto"), "/globe.html?mapMode=auto");
+});
+
+test("Main page opens in 2D and reserves globe routing for explicit 3D", async () => {
+  const { needsGlobePage } = await import("../src/map/globe-controller.js");
+  const globeDoc = { querySelector: () => ({ getAttribute: () => "globe" }) };
+  const mainDoc = { querySelector: () => null };
+  assert.equal(needsGlobePage("3d", mainDoc), true);
+  assert.equal(needsGlobePage("auto", mainDoc), false);
+  assert.equal(needsGlobePage("2d", mainDoc), false);
+  assert.equal(needsGlobePage("3d", globeDoc), false);
+  const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const globe = fs.readFileSync(new URL("../globe.html", import.meta.url), "utf8");
+  assert.match(index, /<option value="2d" selected>2D map<\/option>/);
+  assert.match(globe, /<option value="3d" selected>3D globe<\/option>/);
+});
+
+test("Netlify events and changes functions both pass the environment", () => {
+  // Without env, LIVE_MAP_STORED_USGS is never read on Netlify and /api/events
+  // ignores stored observations while /api/changes uses them.
+  for (const name of ["events", "changes"]) {
+    const source = fs.readFileSync(new URL(`../netlify/functions/${name}.mjs`, import.meta.url), "utf8");
+    assert.match(source, /\{ env: process\.env \}/, `${name}.mjs passes process.env`);
+  }
+});
+
+test("Vendored Natural Earth borders parse and stay small", async () => {
+  const { borderLines, NATURAL_EARTH_BORDERS_URL } = await import("../src/map/globe-style.js");
+  const file = new URL(`../${NATURAL_EARTH_BORDERS_URL.replace(/^\.\//, "")}`, import.meta.url);
+  assert.ok(fs.statSync(file).size < 80_000);
+  const data = JSON.parse(fs.readFileSync(file, "utf8"));
+  assert.match(data.license, /Public domain/);
+  assert.ok(borderLines(data).length > 300);
 });
 
 test("Repository browser code does not use eval-like patterns", () => {
@@ -894,9 +970,9 @@ test("Detailed diagnostics are separated from the public dashboard", () => {
 test("Consumer shell exposes simple navigation, tools, onboarding, and drawers", () => {
   const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
-  assert.match(index, /Overview/);
-  assert.match(index, /Events/);
-  assert.match(index, /Chokepoints/);
+  assert.match(index, />Watch</);
+  assert.match(index, />Passages</);
+  assert.match(index, />Open reports</);
   assert.match(index, /Countries/);
   assert.match(index, /Diagnostics/);
   assert.match(index, /id="toolsMenu"/);
@@ -904,7 +980,8 @@ test("Consumer shell exposes simple navigation, tools, onboarding, and drawers",
   assert.match(index, /id="onboardingDialog"/);
   assert.match(index, /id="filterDrawer"/);
   assert.match(index, /id="eventDrawer"/);
-  assert.match(index, /Live Tracking/);
+  assert.match(index, /Transport &amp; context|Transport & context/);
+  assert.match(index, /Positions require configured, authorized sources/);
   assert.match(css, /\.drawer-left/);
   assert.match(css, /\.drawer-right/);
   assert.match(css, /\.standard-mode \.advanced-only/);
@@ -1179,6 +1256,9 @@ test("Open signal normalizers preserve metadata-only social boundaries", () => {
   assert.equal(observation.rawRetention, "none");
   assert.equal(observation.verificationState, "unverified");
 });
+
+test("Official RSS redirects remain inside the configured feed origin", runRssRedirectRegressionTests);
+test("Official RSS bodies enforce byte limits before buffering", runRssBodyRegressionTests);
 
 test("Official feed parsing strips unsafe markup and rejects local feed URLs", () => {
   const items = parseFeedItems(`<?xml version="1.0"?><rss><channel><item><title><![CDATA[Test alert]]></title><link>https://example.gov/a</link><pubDate>Tue, 09 Jun 2026 00:00:00 GMT</pubDate><description><![CDATA[<script>x</script><b>Official</b> update]]></description></item></channel></rss>`);
@@ -1889,7 +1969,8 @@ test("Threat level missing fields do not crash", () => {
   assert.equal(empty.level, "low");
   assert.ok(empty.caveats.length);
   const sparse = computeThreatLevel({});
-  assert.ok(THREAT_LEVELS_OR_SCORE(sparse));
+  assert.equal(sparse.level, "unknown");
+  assert.equal(sparse.score, null);
 });
 
 test("Threat level ranks high/recent/clustered above low/old/single", () => {
@@ -2073,7 +2154,7 @@ test("Chokepoint condition scoring requires authoritative disruption evidence", 
   const correlations = [{ chokepointId: chokepoint.id, eventId: event.id, relationship: "directly-references", confidence: 90 }];
   assert.equal(assessChokepointCondition(chokepoint, [event], correlations, { now }).status, "closed");
   assert.equal(assessChokepointCondition(chokepoint, [], [], { now, sourceStatus: { provider: { ok: false, stale: true } } }).status, "unknown");
-  assert.equal(assessChokepoints([], [], { now }).find((item) => item.chokepointId === chokepoint.id).status, "normal");
+  assert.equal(assessChokepoints([], [], { now }).find((item) => item.chokepointId === chokepoint.id).status, "unknown");
 });
 
 test("Chokepoint UI filtering, rendering, and event enrichment remain safe", () => {
@@ -2093,3 +2174,15 @@ test("Frozen multi-site incident preserves claim and impact boundaries", runMult
 test("Frozen grid multi-site incident keeps regions and report-time impact separate", runUkraineGridIncidentEvaluationTests);
 await runPendingTests();
 console.log("All tests passed.");
+import './zoom-density-tests.mjs';
+import './operational-evidence-tests.mjs';
+import './investigation-workbench-tests.mjs';
+import './portwatch-hormuz-frozen-sample-tests.mjs';
+import './public-source-snapshot-tests.mjs';
+import './chokepoint-brief-tests.mjs';
+import './usability-dark-globe-tests.mjs';
+import './semantic-globe-weather-tests.mjs';
+import './runtime-acceptance-labels-tests.mjs';
+import './globe-style-tests.mjs';
+
+import './page-mode-tests.mjs';

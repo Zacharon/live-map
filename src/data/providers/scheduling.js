@@ -2,6 +2,7 @@ const MIN_REFRESH_MS = 5 * 60 * 1000;
 const MIN_CACHE_TTL_MS = 60 * 1000;
 
 export const PROVIDER_SCHEDULES = {
+  'nhc-current-storms':schedule('nhc-current-storms',{refreshIntervalMs:300000,cacheTtlMs:300000,staleAfterMs:8*3600000,maximumRetries:1,dailyRequestBudget:288}),
   usgs: schedule("usgs", { refreshIntervalMs: 2 * 60 * 1000, cacheTtlMs: 2 * 60 * 1000, staleAfterMs: 15 * 60 * 1000, dailyRequestBudget: 720 }),
   eonet: schedule("eonet", { refreshIntervalMs: 2 * 60 * 1000, cacheTtlMs: 5 * 60 * 1000, staleAfterMs: 30 * 60 * 1000, dailyRequestBudget: 720 }),
   "nws-alerts": schedule("nws-alerts", { refreshIntervalMs: 2 * 60 * 1000, cacheTtlMs: 2 * 60 * 1000, staleAfterMs: 10 * 60 * 1000, dailyRequestBudget: 720 }),
