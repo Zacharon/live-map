@@ -27,7 +27,7 @@ function firstTimestamp(...values) {
   return null;
 }
 
-export function normalizeEvent(event) {
+export function normalizeEvent(event, now = Date.now()) {
   const rawLat=event.lat ?? event.latitude, rawLon=event.lon ?? event.longitude;
   const coordinatesPresent = validCoordinates(rawLat, rawLon);
   const sourceName = event.sourceName || event.source || event.providerName || "Unknown source";
@@ -73,7 +73,7 @@ export function normalizeEvent(event) {
     place: event.place || event.locationName || event.countryName || "Unknown location",
     country: event.country || event.countryName || "Multiple/unknown",
   };
-  const quality = computeQualityDimensions(normalized);
+  const quality = computeQualityDimensions(normalized, now);
   const { severity: qualitySeverity, ...qualityRest } = quality;
   return { ...normalized, qualitySeverity, ...qualityRest };
 }

@@ -127,6 +127,7 @@ export async function fetchEonetEvents(context) {
       break;
     } catch (error) {
       lastError = error;
+      if (context.signal?.aborted || error?.name === "AbortError") break;
     }
   }
   if (!data) throw lastError;

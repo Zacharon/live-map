@@ -32,7 +32,7 @@ export function validateMapView(input = {}) {
   view.semanticBand = bandFromZoom(view.zoom);
   return view;
 }
-export function readMapView(params) {
+export function readMapView(params, pathname = typeof window !== "undefined" ? window.location.pathname : "/") {
   const tracks = (params.get('tracking') || '').split(',');
   const refs = (params.get('context') || '').split(',');
   const layers = (params.get('layers') || '').split(',');
@@ -48,7 +48,7 @@ export function readMapView(params) {
     chokepoints: refs.includes('chokepoints'),
     viewportOnly: params.get('scope') === 'viewport',
     verification: params.get('verification'),
-    mapMode: params.get('mapMode') || params.get('map') || (params.has('mapState') ? '2d' : '3d'),
+    mapMode: params.get('mapMode') || params.get('map') || (/^\/globe(?:\.html)?\/?$/.test(pathname) ? '3d' : '2d'),
     asOf: params.get('asOf'),
     graph: layers.includes('graph'),
     weather: layers.includes('weather'),

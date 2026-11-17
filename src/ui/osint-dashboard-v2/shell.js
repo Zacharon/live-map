@@ -74,12 +74,13 @@ export function renderOsintEventDetailDrawer(container, {
   changeStatus = null,
   allEvents = [],
   clusters = [],
+  sourceStatus = {},
 } = {}) {
   if (!container) return;
   const active = Boolean(event || cluster);
   const markup = cluster
     ? renderClusterDetailDrawer(cluster, { allEvents })
-    : renderEventDetailDrawer(event, { changeStatus, allEvents, clusters });
+    : renderEventDetailDrawer(event, { changeStatus, allEvents, clusters, sourceStatus });
   // Camera changes must not replace a focused inspector or collapse its disclosures.
   if (container.dataset.renderedMarkup !== markup) {
     const focused = container.contains(document.activeElement) ? document.activeElement : null;

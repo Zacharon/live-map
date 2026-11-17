@@ -1,4 +1,5 @@
 import { mergeDuplicateEvents } from "../../events/event-deduplication.js";
+import { withReadTimeQuality } from "../../events/event-quality.js";
 import { toLegacyEvent } from "../../events/normalized-event.js";
 import { timestampMs } from "../../events/value-semantics.js";
 import { EVENT_PROVIDERS } from "./registry.js";
@@ -27,6 +28,10 @@ import { createProviderStateStore } from "./provider-state.js";
 
 import { fetchNhcEvents } from './nhc.js';
 import { providerActivation } from './provider-activation.js';
+import { abortError, createLinkedSignal } from "./fetch-timeout.js";
+
+// Stay under Netlify's synchronous function limit (~10s) and the browser events timeout (15s).
+export const EVENTS_ORCHESTRATION_DEADLINE_MS = 8000;
 
 const ADAPTERS = {
   'nhc-current-storms': fetchNhcEvents,
@@ -83,11 +88,11 @@ export async function fetchJsonWithTimeout(url, sourceName, options = {}) {
   const timeoutMs = options.timeoutMs ?? 12000;
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    if (options.signal?.aborted) throw abortError(`${sourceName} timed out.`);
+    const linked = createLinkedSignal(options.signal, timeoutMs);
     try {
       const response = await fetch(url, {
-        signal: controller.signal,
+        signal: linked.signal,
         headers: {
           accept: "application/json",
           "user-agent": options.userAgent || "LiveWorldMap/1.0 (+https://liveworldmap.netlify.app/)",
@@ -97,10 +102,11 @@ export async function fetchJsonWithTimeout(url, sourceName, options = {}) {
       if (!response.ok) throw new Error(`${sourceName} returned ${response.status}`);
       return await response.json();
     } catch (error) {
-      lastError = error;
-      if (attempt < attempts) await sleep(300 * attempt + Math.round(Math.random() * 150));
+      lastError = error?.name === "AbortError" ? abortError(`${sourceName} timed out.`) : error;
+      if (lastError.name === "AbortError" || options.signal?.aborted || attempt >= attempts) break;
+      await sleep(300 * attempt + Math.round(Math.random() * 150));
     } finally {
-      clearTimeout(timeout);
+      linked.clear();
     }
   }
   throw lastError;
@@ -168,9 +174,10 @@ export async function runProvider(provider, context) {
       requestBudget,
       fetchJson: (url, sourceName) =>
         fetchJsonWithTimeout(url, sourceName, {
-          timeoutMs: provider.timeoutMs || schedule.requestTimeoutMs,
+          timeoutMs: Math.min(provider.timeoutMs || schedule.requestTimeoutMs || 12000, context.deadlineMs || provider.timeoutMs || schedule.requestTimeoutMs || 12000),
           userAgent: providerUserAgent(provider, context),
           attempts: provider.fetchAttempts || schedule.maximumRetries,
+          signal: context.signal,
         }),
     });
     const events = result.events || [];
@@ -248,7 +255,28 @@ export async function orchestrateProviders(options = {}) {
   const overrides = Array.isArray(options.providerResultsOverride) ? options.providerResultsOverride : [];
   const overriddenIds = new Set(overrides.map((result) => result.providerId));
   const enabledProviders = EVENT_PROVIDERS.filter((provider) => provider.enabled !== false && !overriddenIds.has(provider.id));
-  const settled = await Promise.allSettled(enabledProviders.map((provider) => runProvider(provider, { now, hours, env, providerCache, requestBudgetStore, providerStateStore })));
+  const deadlineMs = Number.isFinite(options.deadlineMs) ? Math.max(1, options.deadlineMs) : EVENTS_ORCHESTRATION_DEADLINE_MS;
+  const deadline = createLinkedSignal(undefined, deadlineMs);
+  let settled;
+  try {
+    settled = await Promise.allSettled(enabledProviders.map((provider) => {
+      const schedule = scheduleForProvider(provider.id);
+      const providerBudget = Math.max(1, Math.min(provider.timeoutMs || schedule.requestTimeoutMs || deadlineMs, deadlineMs));
+      const linked = createLinkedSignal(deadline.signal, providerBudget);
+      return runProvider(provider, {
+        now,
+        hours,
+        env,
+        providerCache,
+        requestBudgetStore,
+        providerStateStore,
+        signal: linked.signal,
+        deadlineMs: providerBudget,
+      }).finally(() => linked.clear());
+    }));
+  } finally {
+    deadline.clear();
+  }
   const providerResults = [...overrides, ...settled.map((item, index) =>
     item.status === "fulfilled"
       ? item.value
@@ -273,7 +301,8 @@ export async function orchestrateProviders(options = {}) {
       const occurredAt = timestampMs(event.startedAt);
       return occurredAt === null || occurredAt >= cutoff;
     });
-  const dedupedEvents = mergeDuplicateEvents(events);
+  // Merge may keep an older stored score after it adopts a newer updatedAt.
+  const dedupedEvents = mergeDuplicateEvents(events).map((event) => withReadTimeQuality(event, now));
   const duplicateCount = Math.max(0, events.length - dedupedEvents.length);
   const duplicateCountByProvider = Object.fromEntries(providerResults.map((result) => [result.providerId, 0]));
   if (duplicateCount) {
@@ -303,7 +332,12 @@ export async function orchestrateProviders(options = {}) {
   return {
     events: dedupedEvents.map(toLegacyEvent),
     canonicalEvents: dedupedEvents,
-    providerResults: providerResults.map((result) => ({ ...result, duplicateCount: duplicateCountByProvider[result.providerId] || 0 })),
+    providerResults: providerResults.map((result) => ({
+      ...result,
+      // Copy. The provider cache keeps the retrieval-time score.
+      events: (result.events || []).map((event) => withReadTimeQuality(event, now)),
+      duplicateCount: duplicateCountByProvider[result.providerId] || 0,
+    })),
     observations: providerResults.flatMap((result) => result.observations || []).slice(0, 500),
     storylines: buildStorylines(providerResults.flatMap((result) => result.observations || []).slice(0, 500), { now }),
     sourceStatus,
