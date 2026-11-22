@@ -44,7 +44,14 @@ export function workspaceCoverage({ demo, dataMode, sourceStatus = {}, apiStatus
   if (apiFailure && apiFailure.kind !== 'offline-preview') return { label: "Data unavailable", detail: "The API failed. Any retained records are cached; coverage is not current.", status: "unavailable" };
   if (dataMode === "public" && !providers.length) return { label: "Historical snapshots", detail: "Saved public extracts; current operating conditions and unreported areas remain unknown.", status: "historical" };
   if (!providers.length) return { label: "Coverage unknown", detail: "No source diagnostics are available. Loaded records do not establish current coverage.", status: "unknown" };
-  return { label: `${healthy}/${providers.length} sources healthy`, detail: `${stale} stale sources. Unreported areas are coverage gaps, not evidence of safety.`, status: stale || healthy < providers.length ? "partial" : "available" };
+  // Each source lands in exactly one bucket. A source that responded but is degraded is "delayed or partial"
+  // (as on /diagnostics), not failing; switched-off sources are never also counted as out of date.
+  const off = (item) => ['configuration-required', 'disabled'].includes(item.status);
+  const switchedOff = providers.filter(off).length;
+  const outOfDate = providers.filter((item) => item.stale && !off(item)).length;
+  const partial = providers.filter((item) => item.ok && !item.stale && !off(item) && ['degraded', 'unavailable', 'stale'].includes(item.status)).length;
+  const failing = providers.filter((item) => !item.ok && !item.stale && !off(item)).length;
+  return { label: `${healthy} of ${providers.length} sources reporting`, detail: `${healthy} reporting, ${partial} delayed or partial, ${outOfDate} out of date, ${failing} failing, ${switchedOff} switched off or awaiting setup. Unreported areas are coverage gaps, not evidence of safety.`, status: stale || healthy < providers.length ? "partial" : "available" };
 }
 
 export function renderWorkspaceSummary(container, { state, events, band }) {
@@ -54,7 +61,7 @@ export function renderWorkspaceSummary(container, { state, events, band }) {
   const undated = events.filter((event) => event.occurredAt === null).length;
   const end = workspaceWindowEnd(state);
   const date = new Date(end).toISOString().slice(0,10);
-  const markup = `<div class="scope-fact"><span>${scope}</span><strong>${events.length} reports<small> · ${band.toLowerCase()}${undated ? ` · ${undated} undated` : ""}</small></strong></div><div class="scope-time"><span>${state.mapView.asOf ? 'Historical window' : state.demo ? 'Demo window' : 'Loaded data window'}</span><strong>Ends ${date} · UTC</strong></div><details class="coverage-summary" data-coverage="${coverage.status}"><summary>${escapeHtml(coverage.label)}</summary><div class="coverage-popover"><p>${escapeHtml(coverage.detail)}</p><a href="/sources">Inspect source coverage ↗</a></div></details>`;
+  const markup = `<div class="scope-fact"><span>${scope}</span><strong>${events.length} reports<small> · ${band.toLowerCase()}${undated ? ` · ${undated} undated` : ""}</small></strong></div><div class="scope-time"><span>${state.mapView.asOf ? 'Historical window' : state.demo ? 'Demo window' : 'Loaded data window'}</span><strong>Ends ${date} · UTC</strong></div><details class="coverage-summary" data-coverage="${coverage.status}"><summary>${escapeHtml(coverage.label)}</summary><div class="coverage-popover"><p>${escapeHtml(coverage.detail)}</p><a href="/diagnostics">See each source’s status</a></div></details>`;
   // Preserve an open coverage explanation while the camera changes.
   if (container.dataset.markup !== markup) {
     const wasOpen = container.querySelector('details')?.open;

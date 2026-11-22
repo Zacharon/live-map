@@ -1,3 +1,7 @@
+## 2026-11-18 - Review the chart interface pass
+
+Owner review of the local design branch `design/human-pass-20261118`. Check it with real hosted tiles and the Netlify CSP on a deploy preview before merging. Screen-reader testing is still outstanding.
+
 ## 2026-11-16 - USGS inspection and export candidate
 
 USGS evidence and response-clock scores now share the inspection/export path.

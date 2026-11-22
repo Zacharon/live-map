@@ -3,6 +3,7 @@ import { DOMAIN_LABELS, IMPLEMENTATION_STATUSES, MASTER_SOURCE_REGISTRY, SOURCE_
 import { resourceById } from "./intelligence/resource-catalog.js";
 import { escapeHtml, relativeTime } from "./events/event-normalizer.js";
 import { allowedParam, safeSearchParams, textParam, tokenParam } from "./url-params.js";
+import { createDetailSheet, foldFiltersOnPhones } from "./ui/detail-sheet.js";
 
 const els = {
   search: document.getElementById("sourceSearch"),
@@ -35,7 +36,23 @@ const state = {
 };
 
 function title(text) {
-  return String(text || "").replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  return String(text || "").replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
+    .replace(/\bApi\b/g, "API").replace(/\bOsint\b/g, "OSINT").replace(/\bRss\b/g, "RSS");
+}
+
+const linkedSource = new URLSearchParams(location.search).get("source") || "";
+let openLinkedDetail = Boolean(linkedSource);
+// Back to the chosen card; if the filters hide it, to the first card, so keyboard focus never drops to the page.
+const sheet = createDetailSheet({ panel: els.detail, restoreFocus: () => (els.list.querySelector(".source-card.active") || els.list.querySelector(".source-card"))?.focus() });
+
+// Connection status is always a word plus an icon, and only "live" reads as working.
+function statusBadge(status) {
+  const value = String(status || "unknown");
+  const state = value === "live" ? "ok"
+    : ["delayed", "partial", "degraded"].includes(value) ? "warn"
+      : ["unavailable", "failed", "error", "blocked"].includes(value) ? "down"
+        : ["disabled", "retired", "deprecated"].includes(value) ? "off" : "setup";
+  return `<span class="source-badge chart-state ${escapeHtml(value)}" data-state="${state}">${escapeHtml(title(value))}</span>`;
 }
 
 function optionList(select, values, labels = {}) {
@@ -89,10 +106,12 @@ function badge(value, className = "") {
 }
 
 function renderStatus() {
-  const loaded = state.lastSuccessfulLoadAt ? `Loaded ${relativeTime(state.lastSuccessfulLoadAt)}` : "Using local fallback";
-  const generated = state.generatedAt ? `Generated ${new Date(state.generatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : "Generated locally";
-  const issue = state.apiFailed ? "Source API unavailable; local registry fallback is active." : state.warnings[0] || "Source registry loaded.";
-  els.status.innerHTML = `<strong>${escapeHtml(issue)}</strong><span>${escapeHtml(loaded)} / ${escapeHtml(generated)} / Registry v${escapeHtml(state.registryVersion)} / ${escapeHtml(state.requestId || "no request id")}</span>`;
+  const loaded = state.lastSuccessfulLoadAt ? `Updated ${relativeTime(state.lastSuccessfulLoadAt)}.` : "Live registry not reached.";
+  const issue = state.apiFailed ? "Showing the saved copy of the registry." : state.warnings[0] || "Registry loaded.";
+  const detail = state.apiFailed ? "The source service did not respond, so this list may be out of date." : `${loaded} Registry version ${state.registryVersion}.`;
+  els.status.dataset.tone = state.apiFailed ? "warn" : "";
+  els.status.title = state.requestId ? `Request ${state.requestId}` : "";
+  els.status.innerHTML = `<strong>${escapeHtml(issue)}</strong><span>${escapeHtml(detail)}</span>`;
   els.retry.hidden = !state.apiFailed;
 }
 
@@ -100,7 +119,7 @@ function sourceCard(sourceRecord, selectedId) {
   return `<button class="source-card ${sourceRecord.id === selectedId ? "active" : ""}" type="button" role="option" aria-selected="${sourceRecord.id === selectedId ? "true" : "false"}" data-source-id="${escapeHtml(sourceRecord.id)}">
     <span class="source-card-head">
       <span class="source-title">${escapeHtml(sourceRecord.name)}</span>
-      ${badge(sourceRecord.status, sourceRecord.status)}
+      ${statusBadge(sourceRecord.status)}
     </span>
     <span class="source-description">${escapeHtml(sourceRecord.description)}</span>
     <span class="source-card-meta">
@@ -134,15 +153,16 @@ function selectedSourceFor(value, sources = state.sources) {
 
 function renderDetail(sourceRecord) {
   if (!sourceRecord) {
-    els.detail.innerHTML = '<div class="empty" role="status">No source selected. Choose a source to inspect access, licensing, freshness, and implementation status.</div>';
+    els.detail.innerHTML = '<button class="sheet-back" type="button" data-sheet-back>← Back to sources</button><div class="empty" role="status">Choose a source to see its access, licensing, freshness and connection status.</div>';
     return;
   }
   els.detail.innerHTML = `
+    <button class="sheet-back" type="button" data-sheet-back>← Back to sources</button>
     <div class="source-detail-head" aria-live="polite">
       <span class="eyebrow">${escapeHtml(DOMAIN_LABELS[sourceRecord.domain] || sourceRecord.domain)}</span>
       <h2>${escapeHtml(sourceRecord.name)}</h2>
       <p>${escapeHtml(sourceRecord.description)}</p>
-      <div class="source-card-meta">${badge(sourceRecord.status, sourceRecord.status)}${badge(sourceRecord.accessMode)}${badge(sourceRecord.verificationState)}</div>
+      <div class="source-card-meta">${statusBadge(sourceRecord.status)}${badge(sourceRecord.accessMode)}${badge(sourceRecord.verificationState)}</div>
     </div>
     <dl class="source-detail-grid">
       ${row("Best use", sourceRecord.bestUse)}
@@ -188,10 +208,10 @@ function render(options = {}) {
   renderSummary(filtered);
   els.list.setAttribute("aria-activedescendant", state.selectedId);
   els.list.innerHTML = state.loading
-    ? '<div class="empty" role="status">Loading source registry...</div>'
+    ? '<div class="chart-loading" role="status" aria-label="Loading source registry"><span></span><span></span><span></span><span></span></div>'
     : filtered.length
       ? filtered.map((sourceRecord) => sourceCard(sourceRecord, state.selectedId)).join("")
-      : '<div class="empty" role="status">No sources match the current filters.</div>';
+      : '<div class="chart-message" role="status"><strong>No sources match these filters</strong><p>Try a broader search or set the filters back to Any.</p></div>';
   renderDetail(selected);
   syncUrl(state.selectedId, options.historyMode || "replace");
   const active = els.list.querySelector(".source-card.active");
@@ -231,6 +251,9 @@ async function loadSources() {
   } finally {
     state.loading = false;
     render({ scrollSelected: true });
+    // A link that names a source shows that source's detail on phones too.
+    // Only when the link names a real source; never the fallback first card.
+    if (openLinkedDetail) { openLinkedDetail = false; if (state.selectedId && selectedSourceFor(linkedSource)?.id === state.selectedId) sheet.open(); }
   }
 }
 
@@ -246,6 +269,7 @@ for (const key of ["dashboard", "sort", "group", "cards"]) {
 }
 els.backToMap.href = `/${dashboardParams.toString() ? `?${dashboardParams}` : ""}`;
 readUrl();
+foldFiltersOnPhones(document.getElementById("sourceFilters"));
 loadSources();
 
 document.addEventListener("input", (event) => {
@@ -265,6 +289,7 @@ document.addEventListener("click", (event) => {
   if (card) {
     state.selectedId = card.dataset.sourceId;
     render({ historyMode: "push", scrollSelected: true });
+    sheet.open();
     return;
   }
   if (event.target.closest("#sourceRetry")) loadSources();
@@ -276,8 +301,10 @@ document.addEventListener("keydown", (event) => {
   event.preventDefault();
   state.selectedId = card.dataset.sourceId;
   render({ historyMode: "push", scrollSelected: true });
+  sheet.open();
 });
 
 window.addEventListener("popstate", () => {
+  sheet.close();
   render({ readLocation: true, scrollSelected: true });
 });

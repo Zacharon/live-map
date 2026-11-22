@@ -7,31 +7,34 @@
   <title>Source Explorer - Live Map</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="source-explorer.css" />
-  <link rel="stylesheet" href="operator-polish.css" />
+  <link rel="stylesheet" href="chart-tokens.css" />
+  <link rel="stylesheet" href="chart.css" />
 </head>
 <body class="source-explorer-page">
   <div class="source-shell">
     <header class="source-header">
-      <a class="brand source-brand" href="/"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Source Explorer</span></div></a>
-      <nav class="source-links" aria-label="Source explorer navigation">
+      <a class="brand source-brand" href="/"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13"/><ellipse cx="16" cy="16" rx="6" ry="13"/><path d="M3 16h26M6 8h20M6 24h20"/></svg></span><strong>Live Map</strong></a>
+      <nav class="source-links" aria-label="Main navigation">
         <a id="backToMap" href="/">Map</a>
+        <a href="/countries">Countries</a>
         <a href="/sources" aria-current="page">Sources</a>
+        <a href="/diagnostics">Diagnostics</a>
         <a href="/about.html">About / Limits</a>
-        <a href="/docs/MASTER_SOURCE_REGISTRY.md">Registry docs</a>
-        <a href="/docs/SOURCE_ACCESS_CLASSIFICATIONS.md">Access</a>
       </nav>
     </header>
 
     <main class="source-workspace">
+      <div class="page-head"><div><h1>Source Explorer</h1><p>Every source Live Map tracks: whether it is connected, how it can be used, and what limits apply.</p></div><div class="page-head-links"><a href="/docs/MASTER_SOURCE_REGISTRY.md">Registry docs</a><a href="/docs/SOURCE_ACCESS_CLASSIFICATIONS.md">Access classes</a></div></div>
       <section class="source-controls" aria-label="Source filters">
         <div class="source-status-row">
-          <div id="sourceExplorerStatus" class="source-load-status" role="status" aria-live="polite"><strong>Loading source registry...</strong></div>
+          <div id="sourceExplorerStatus" class="source-load-status" role="status" aria-live="polite"><strong>Loading source registry…</strong></div>
           <button id="sourceRetry" type="button" hidden>Retry</button>
         </div>
         <div class="source-control-row">
           <label for="sourceSearch">Search</label>
-          <input id="sourceSearch" type="search" placeholder="NOAA, ACLED, aviation, RSS..." />
+          <input id="sourceSearch" type="search" placeholder="NOAA, ACLED, aviation, RSS…" />
         </div>
+        <details id="sourceFilters" class="filter-disclosure" open><summary>Filters</summary>
         <div class="source-filter-grid">
           <label for="domainFilter">Domain<select id="domainFilter"></select></label>
           <label for="accessFilter">Access<select id="accessFilter"></select></label>
@@ -40,6 +43,7 @@
           <label for="officialFilter">Official<select id="officialFilter"><option value="">Any</option><option value="true">Official only</option></select></label>
           <label for="implementedFilter">Implemented<select id="implementedFilter"><option value="">Any</option><option value="true">Implemented only</option></select></label>
         </div>
+        </details>
       </section>
 
       <section class="source-summary" id="sourceSummary" aria-live="polite"></section>

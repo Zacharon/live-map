@@ -1,3 +1,11 @@
+## 2026-11-18 - Chart interface pass (local, uncommitted)
+
+All pages move to one light chart identity (`chart-tokens.css`, `chart.css`, `DESIGN.md`) with self-hosted fonts in `vendor/fonts`.
+Fixed the unreadable map title, the table covered by the country detail, invisible Open reports titles, a loading state that claimed no events matched, the "Future-dated" retry message, two tabs active at once, and "No provider data" showing a healthy marker.
+Diagnostics now groups providers by real state, and only healthy current providers read as working. Phones get full-screen detail for countries and sources.
+No data pipeline, function, API, route or evaluation changed. Local evidence only; not deployed.
+Verification fixes, 2026-11-21: the Watch coverage note counts sources that responded but are degraded as "delayed or partial" (the label /diagnostics uses), not failing, and each source is counted once; the empty report list no longer says the sources returned nothing; country details show when the score was calculated; phone links to a country or source open its detail; the phone header status no longer runs under the search box.
+
 ## 2026-11-17 - Forge staging CI moves to Node 22
 
 Dependabot PR #108 (PGlite 0.5.13 to 0.5.16, pglite-postgis 0.2.13 to 0.2.16) failed `forge-staging`:

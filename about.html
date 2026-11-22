@@ -7,16 +7,19 @@
   <title>About / Limits - Live Map</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="source-explorer.css" />
+  <link rel="stylesheet" href="chart-tokens.css" />
+  <link rel="stylesheet" href="chart.css" />
 </head>
 <body class="source-explorer-page about-page">
   <div class="source-shell">
     <header class="source-header">
-      <a class="brand source-brand" href="/"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>About / Limits</span></div></a>
-      <nav class="source-links" aria-label="About navigation">
+      <a class="brand source-brand" href="/"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13"/><ellipse cx="16" cy="16" rx="6" ry="13"/><path d="M3 16h26M6 8h20M6 24h20"/></svg></span><strong>Live Map</strong></a>
+      <nav class="source-links" aria-label="Main navigation">
         <a href="/">Map</a>
+        <a href="/countries">Countries</a>
         <a href="/sources">Sources</a>
-        <a href="/about.html" aria-current="page">About / Limits</a>
         <a href="/diagnostics">Diagnostics</a>
+        <a href="/about.html" aria-current="page">About / Limits</a>
       </nav>
     </header>
 
@@ -29,25 +32,25 @@
 
       <section class="about-grid" aria-label="Live Map limits">
         <article>
-          <h2>Use Limits</h2>
+          <h2>Use limits</h2>
           <p>Live Map is public-information awareness software. It is not for emergency response, navigation, financial decisions, legal decisions, medical decisions, or professional risk advice.</p>
         </article>
         <article>
-          <h2>Source Status</h2>
+          <h2>Source status</h2>
           <p>Provider status can be live, degraded, fallback, disabled, or unavailable. A partial feed can still show useful events while some public providers are down.</p>
         </article>
         <article>
-          <h2>Source Links</h2>
+          <h2>Source links</h2>
           <p>Event cards should keep source attribution and original links visible. When a provider is unavailable, the app should say so instead of pretending coverage is complete.</p>
         </article>
         <article>
-          <h2>Free Data Rule</h2>
+          <h2>Free data rule</h2>
           <p>The default project uses APIs, feeds, downloads, RSS/Atom, GeoJSON, CSV, or official bulk datasets. Paid providers, secrets, and licensed scraping are not part of the core demo.</p>
         </article>
       </section>
 
       <section class="about-status-list" aria-label="Provider status meanings">
-        <h2>Status Meanings</h2>
+        <h2>Status meanings</h2>
         <dl>
           <dt>Live</dt><dd>The provider returned usable public data recently.</dd>
           <dt>Degraded</dt><dd>The provider responded only partially, slowly, or with stale data.</dd>

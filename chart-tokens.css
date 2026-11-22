@@ -1,0 +1,58 @@
+/* Live Map chart tokens. Fonts: Overpass, Overpass Mono and Atkinson Hyperlegible (SIL OFL 1.1, see vendor/fonts).
+   Icons: Phosphor Icons regular (MIT). Palette is taken from printed hydrographic charts. */
+@font-face{font-family:"Overpass";src:url("vendor/fonts/overpass-latin-600-normal.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Overpass";src:url("vendor/fonts/overpass-latin-ext-600-normal.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Overpass";src:url("vendor/fonts/overpass-latin-700-normal.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Overpass";src:url("vendor/fonts/overpass-latin-ext-700-normal.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Overpass";src:url("vendor/fonts/overpass-latin-800-normal.woff2") format("woff2");font-weight:800;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Overpass";src:url("vendor/fonts/overpass-latin-ext-800-normal.woff2") format("woff2");font-weight:800;font-style:normal;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Overpass Mono";src:url("vendor/fonts/overpass-mono-latin-400-normal.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Overpass Mono";src:url("vendor/fonts/overpass-mono-latin-600-normal.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Atkinson Hyperlegible";src:url("vendor/fonts/atkinson-hyperlegible-latin-400-normal.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Atkinson Hyperlegible";src:url("vendor/fonts/atkinson-hyperlegible-latin-ext-400-normal.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Atkinson Hyperlegible";src:url("vendor/fonts/atkinson-hyperlegible-latin-700-normal.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Atkinson Hyperlegible";src:url("vendor/fonts/atkinson-hyperlegible-latin-ext-700-normal.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Atkinson Hyperlegible";src:url("vendor/fonts/atkinson-hyperlegible-latin-400-italic.woff2") format("woff2");font-weight:400;font-style:italic;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD}
+:root{
+  color-scheme:light;
+  /* Named chart colours */
+  --chart-paper:#edf3f3;   /* sheet margin */
+  --chart-sheet:#fafcfb;   /* working surface */
+  --chart-shoal:#d3e6ea;   /* shallow-water tint: selected and hover surfaces */
+  --chart-buff:#eadfbe;    /* land tint: title block and the current-page mark */
+  --chart-ink:#12304a;     /* survey ink: text and primary actions */
+  --chart-ink-soft:#445d6e;/* secondary text */
+  --chart-rule:#b7c9ce;    /* quiet rules */
+  --chart-rule-strong:#64808d;/* control borders, 3:1 on sheet */
+  --chart-overprint:#a1125e;/* magenta overprint: selection and keyboard focus only */
+  --chart-sounding:#0e5a82;/* links */
+  /* Status always pairs one of these with an icon and a word */
+  --state-ok:#256a3c;--state-ok-bg:#dcefe1;
+  --state-warn:#744900;--state-warn-bg:#f8e8c4;
+  --state-down:#a1231b;--state-down-bg:#f9dfdb;
+  --state-off:#465b68;--state-off-bg:#e2e9eb;
+  --font-display:"Overpass","Trebuchet MS",sans-serif;
+  --font-body:"Atkinson Hyperlegible","Verdana",sans-serif;
+  --font-data:"Overpass Mono","Consolas",monospace;
+  --radius:4px;
+  --tick:44px;
+  --lift:0 6px 20px rgb(18 48 74 / 16%);
+  /* Bridge every legacy token onto the chart palette */
+  --bg:var(--chart-paper);--panel:var(--chart-sheet);--panel2:#e4edee;--line:var(--chart-rule);--text:var(--chart-ink);--muted:var(--chart-ink-soft);
+  --accent:var(--chart-sounding);--warn:var(--state-warn);--surface-map:var(--chart-shoal);--surface-input:#fdfefd;--selection:var(--chart-shoal);--shadow:var(--lift);
+  --radius-control:var(--radius);--radius-panel:6px;
+  --of-bg:var(--chart-paper);--of-bg-grid:var(--chart-paper);--of-panel:var(--chart-sheet);--of-panel-strong:#e4edee;--of-panel-glass:var(--chart-sheet);
+  --of-border:var(--chart-rule);--of-border-hot:var(--chart-rule-strong);--of-text:var(--chart-ink);--of-text-muted:var(--chart-ink-soft);--of-text-faint:#506a78;
+  --of-cyan:var(--chart-sounding);--of-cyan-soft:var(--chart-sounding);--of-green:var(--state-ok);--of-amber:var(--state-warn);--of-red:var(--state-down);--of-orange:#93470c;--of-violet:#5c3f97;--of-blue:#1c5f9e;
+  --of-shadow:var(--lift);--of-glow-cyan:none;--of-glow-red:none;--of-elev-1:none;--of-elev-2:var(--lift);--of-elev-3:var(--lift);--of-radius:6px;--of-radius-sm:var(--radius);--of-mono:var(--font-data);
+  --icon-search:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23000'%3E%3Cpath d='M229.66%2C218.34l-50.07-50.06a88.11%2C88.11%2C0%2C1%2C0-11.31%2C11.31l50.06%2C50.07a8%2C8%2C0%2C0%2C0%2C11.32-11.32ZM40%2C112a72%2C72%2C0%2C1%2C1%2C72%2C72A72.08%2C72.08%2C0%2C0%2C1%2C40%2C112Z'/%3E%3C/svg%3E");
+  --icon-caret:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23000'%3E%3Cpath d='M213.66%2C101.66l-80%2C80a8%2C8%2C0%2C0%2C1-11.32%2C0l-80-80A8%2C8%2C0%2C0%2C1%2C53.66%2C90.34L128%2C164.69l74.34-74.35a8%2C8%2C0%2C0%2C1%2C11.32%2C11.32Z'/%3E%3C/svg%3E");
+  --icon-ok:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23000'%3E%3Cpath d='M173.66%2C98.34a8%2C8%2C0%2C0%2C1%2C0%2C11.32l-56%2C56a8%2C8%2C0%2C0%2C1-11.32%2C0l-24-24a8%2C8%2C0%2C0%2C1%2C11.32-11.32L112%2C148.69l50.34-50.35A8%2C8%2C0%2C0%2C1%2C173.66%2C98.34ZM232%2C128A104%2C104%2C0%2C1%2C1%2C128%2C24%2C104.11%2C104.11%2C0%2C0%2C1%2C232%2C128Zm-16%2C0a88%2C88%2C0%2C1%2C0-88%2C88A88.1%2C88.1%2C0%2C0%2C0%2C216%2C128Z'/%3E%3C/svg%3E");
+  --icon-warn:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23000'%3E%3Cpath d='M236.8%2C188.09%2C149.35%2C36.22h0a24.76%2C24.76%2C0%2C0%2C0-42.7%2C0L19.2%2C188.09a23.51%2C23.51%2C0%2C0%2C0%2C0%2C23.72A24.35%2C24.35%2C0%2C0%2C0%2C40.55%2C224h174.9a24.35%2C24.35%2C0%2C0%2C0%2C21.33-12.19A23.51%2C23.51%2C0%2C0%2C0%2C236.8%2C188.09ZM222.93%2C203.8a8.5%2C8.5%2C0%2C0%2C1-7.48%2C4.2H40.55a8.5%2C8.5%2C0%2C0%2C1-7.48-4.2%2C7.59%2C7.59%2C0%2C0%2C1%2C0-7.72L120.52%2C44.21a8.75%2C8.75%2C0%2C0%2C1%2C15%2C0l87.45%2C151.87A7.59%2C7.59%2C0%2C0%2C1%2C222.93%2C203.8ZM120%2C144V104a8%2C8%2C0%2C0%2C1%2C16%2C0v40a8%2C8%2C0%2C0%2C1-16%2C0Zm20%2C36a12%2C12%2C0%2C1%2C1-12-12A12%2C12%2C0%2C0%2C1%2C140%2C180Z'/%3E%3C/svg%3E");
+  --icon-down:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23000'%3E%3Cpath d='M165.66%2C101.66%2C139.31%2C128l26.35%2C26.34a8%2C8%2C0%2C0%2C1-11.32%2C11.32L128%2C139.31l-26.34%2C26.35a8%2C8%2C0%2C0%2C1-11.32-11.32L116.69%2C128%2C90.34%2C101.66a8%2C8%2C0%2C0%2C1%2C11.32-11.32L128%2C116.69l26.34-26.35a8%2C8%2C0%2C0%2C1%2C11.32%2C11.32ZM232%2C128A104%2C104%2C0%2C1%2C1%2C128%2C24%2C104.11%2C104.11%2C0%2C0%2C1%2C232%2C128Zm-16%2C0a88%2C88%2C0%2C1%2C0-88%2C88A88.1%2C88.1%2C0%2C0%2C0%2C216%2C128Z'/%3E%3C/svg%3E");
+  --icon-off:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23000'%3E%3Cpath d='M128%2C24A104%2C104%2C0%2C1%2C0%2C232%2C128%2C104.11%2C104.11%2C0%2C0%2C0%2C128%2C24Zm88%2C104a87.56%2C87.56%2C0%2C0%2C1-20.41%2C56.28L71.72%2C60.4A88%2C88%2C0%2C0%2C1%2C216%2C128ZM40%2C128A87.56%2C87.56%2C0%2C0%2C1%2C60.41%2C71.72L184.28%2C195.6A88%2C88%2C0%2C0%2C1%2C40%2C128Z'/%3E%3C/svg%3E");
+  --icon-setup:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23000'%3E%3Cpath d='M226.76%2C69a8%2C8%2C0%2C0%2C0-12.84-2.88l-40.3%2C37.19-17.23-3.7-3.7-17.23%2C37.19-40.3A8%2C8%2C0%2C0%2C0%2C187%2C29.24%2C72%2C72%2C0%2C0%2C0%2C88%2C96%2C72.34%2C72.34%2C0%2C0%2C0%2C94%2C124.94L33.79%2C177c-.15.12-.29.26-.43.39a32%2C32%2C0%2C0%2C0%2C45.26%2C45.26c.13-.13.27-.28.39-.42L131.06%2C162A72%2C72%2C0%2C0%2C0%2C232%2C96%2C71.56%2C71.56%2C0%2C0%2C0%2C226.76%2C69ZM160%2C152a56.14%2C56.14%2C0%2C0%2C1-27.07-7%2C8%2C8%2C0%2C0%2C0-9.92%2C1.77L67.11%2C211.51a16%2C16%2C0%2C0%2C1-22.62-22.62L109.18%2C133a8%2C8%2C0%2C0%2C0%2C1.77-9.93%2C56%2C56%2C0%2C0%2C1%2C58.36-82.31l-31.2%2C33.81a8%2C8%2C0%2C0%2C0-1.94%2C7.1L141.83%2C108a8%2C8%2C0%2C0%2C0%2C6.14%2C6.14l26.35%2C5.66a8%2C8%2C0%2C0%2C0%2C7.1-1.94l33.81-31.2A56.06%2C56.06%2C0%2C0%2C1%2C160%2C152Z'/%3E%3C/svg%3E");
+  --icon-out:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23000'%3E%3Cpath d='M200%2C64V168a8%2C8%2C0%2C0%2C1-16%2C0V83.31L69.66%2C197.66a8%2C8%2C0%2C0%2C1-11.32-11.32L172.69%2C72H88a8%2C8%2C0%2C0%2C1%2C0-16H192A8%2C8%2C0%2C0%2C1%2C200%2C64Z'/%3E%3C/svg%3E");
+  --icon-back:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23000'%3E%3Cpath d='M224%2C128a8%2C8%2C0%2C0%2C1-8%2C8H59.31l58.35%2C58.34a8%2C8%2C0%2C0%2C1-11.32%2C11.32l-72-72a8%2C8%2C0%2C0%2C1%2C0-11.32l72-72a8%2C8%2C0%2C0%2C1%2C11.32%2C11.32L59.31%2C120H216A8%2C8%2C0%2C0%2C1%2C224%2C128Z'/%3E%3C/svg%3E");
+  --icon-clock:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23000'%3E%3Cpath d='M128%2C24A104%2C104%2C0%2C1%2C0%2C232%2C128%2C104.11%2C104.11%2C0%2C0%2C0%2C128%2C24Zm0%2C192a88%2C88%2C0%2C1%2C1%2C88-88A88.1%2C88.1%2C0%2C0%2C1%2C128%2C216Zm64-88a8%2C8%2C0%2C0%2C1-8%2C8H128a8%2C8%2C0%2C0%2C1-8-8V72a8%2C8%2C0%2C0%2C1%2C16%2C0v48h48A8%2C8%2C0%2C0%2C1%2C192%2C128Z'/%3E%3C/svg%3E");
+}

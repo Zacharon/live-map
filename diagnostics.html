@@ -7,22 +7,27 @@
   <meta name="description" content="Technical diagnostics for Live Map provider health." />
   <title>Diagnostics - Live Map</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="operator-polish.css" />
   <link rel="stylesheet" href="source-explorer.css" />
+  <link rel="stylesheet" href="chart-tokens.css" />
+  <link rel="stylesheet" href="chart.css" />
 </head>
 <body class="source-explorer-page diagnostics-page">
   <div class="source-shell">
     <header class="source-header">
-      <a class="brand source-brand" href="/"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Technical diagnostics</span></div></a>
-      <nav class="source-links" aria-label="Diagnostics navigation">
-        <a href="/">Back to map</a>
+      <a class="brand source-brand" href="/"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13"/><ellipse cx="16" cy="16" rx="6" ry="13"/><path d="M3 16h26M6 8h20M6 24h20"/></svg></span><strong>Live Map</strong></a>
+      <nav class="source-links" aria-label="Main navigation">
+        <a href="/">Map</a>
+        <a href="/countries">Countries</a>
         <a href="/sources">Sources</a>
+        <a href="/diagnostics" aria-current="page">Diagnostics</a>
+        <a href="/about.html">About / Limits</a>
       </nav>
     </header>
     <main class="source-workspace">
+      <div class="page-head"><div><h1>Source diagnostics</h1><p>Which public sources are reporting right now, and why the others are not.</p></div></div>
       <section class="source-controls">
         <div class="source-status-row">
-          <div id="diagnosticsStatus" class="source-load-status" role="status" aria-live="polite"><strong>Loading diagnostics...</strong></div>
+          <div id="diagnosticsStatus" class="source-load-status" role="status" aria-live="polite"><strong>Loading diagnostics…</strong></div>
           <button id="diagnosticsRefresh" type="button">Refresh</button>
         </div>
         <p class="panel-help">Technical diagnostics are sanitized and are not an authentication or security boundary. API keys, headers, stack traces, raw upstream payloads, and private environment values are never displayed.</p>

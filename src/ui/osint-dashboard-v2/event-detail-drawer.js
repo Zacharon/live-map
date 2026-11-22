@@ -129,7 +129,7 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
       .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(String(value))}</dd></div>`).join("") : "";
 
   return `<aside class="v2-event-detail" aria-label="Event details">
-    <button class="inspector-back" type="button" data-v2-close-detail>← Back to developments</button>
+    <button class="inspector-back" type="button" data-v2-close-detail>← Back to reports</button>
     <div class="v2-detail-head">
       <button type="button" class="v2-detail-close" data-v2-close-detail aria-label="Close details">×</button>
       <div class="v2-detail-badges">
@@ -143,7 +143,7 @@ export function renderEventDetailDrawer(event, { changeStatus = null, allEvents 
       <h2 class="v2-detail-title">${escapeHtml(event.title)}</h2>
     </div>
     <p class="v2-detail-summary">${escapeHtml(event.summary || "No summary available.")}</p>
-    <section class="detail-source-evidence" aria-label="Supporting source"><h3>Supporting source</h3><p>${escapeHtml(event.sourceName || 'Unknown source')} · ${escapeHtml(event.verificationStatus || 'unverified')}</p><div class="v2-detail-actions">${sourceAction}${providerLink}</div><p>Occurrence: ${escapeHtml(exactTime(event.occurredAt))}<br>Source revision: ${escapeHtml(exactTime(event.updatedAt))}<br>Retrieved: ${escapeHtml(exactTime(event.fetchedAt ?? event.retrievedAt ?? event.metadata?.retrievedAt))}</p><p>Retrieval time does not establish when the event occurred. Missing source times remain unknown.</p></section>
+    <section class="detail-source-evidence" aria-label="Supporting source"><h3>Supporting source</h3><p>${escapeHtml(event.sourceName || 'Unknown source')} · ${escapeHtml(String(event.verificationStatus || 'unverified').replace(/-/g, ' '))}</p><div class="v2-detail-actions">${sourceAction}${providerLink}</div><p>Occurrence: ${escapeHtml(exactTime(event.occurredAt))}<br>Source revision: ${escapeHtml(exactTime(event.updatedAt))}<br>Retrieved: ${escapeHtml(exactTime(event.fetchedAt ?? event.retrievedAt ?? event.metadata?.retrievedAt))}</p><p>Retrieval time does not establish when the event occurred. Missing source times remain unknown.</p></section>
     ${evidence ? `<section aria-label="Evidence record" data-event-evidence="${escapeHtml(evidence.id)}"><h3>Evidence record</h3><p><code>${escapeHtml(evidence.id)}</code></p><p>Freshness: ${escapeHtml(evidence.extra.freshness)} · Source: ${escapeHtml(evidence.extra.providerStatus)}</p><p>Review: not reviewed · Read-only snapshot</p></section>` : ''}
     <dl class="v2-detail-facts">
       <div><dt>Source coverage</dt><dd>${escapeHtml(event.coverage || event.metadata?.coverage || "Not supplied; do not infer complete coverage")} </dd></div>

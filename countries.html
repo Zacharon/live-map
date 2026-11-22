@@ -7,31 +7,41 @@
   <title>Country Scores - Live Map</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="source-explorer.css" />
-  <link rel="stylesheet" href="operator-polish.css" />
+  <link rel="stylesheet" href="chart-tokens.css" />
+  <link rel="stylesheet" href="chart.css" />
 </head>
 <body class="source-explorer-page countries-page">
   <div class="source-shell">
     <header class="source-header">
-      <a class="brand source-brand" href="/"><span class="brand-mark">LM</span><div><strong>LIVE MAP</strong><span>Country Scores</span></div></a>
-      <nav class="source-links" aria-label="Country scores navigation">
-        <a href="/">Back to map</a>
+      <a class="brand source-brand" href="/"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13"/><ellipse cx="16" cy="16" rx="6" ry="13"/><path d="M3 16h26M6 8h20M6 24h20"/></svg></span><strong>Live Map</strong></a>
+      <nav class="source-links" aria-label="Main navigation">
+        <a href="/">Map</a>
+        <a href="/countries" aria-current="page">Countries</a>
         <a href="/sources">Sources</a>
+        <a href="/diagnostics">Diagnostics</a>
+        <a href="/about.html">About / Limits</a>
       </nav>
     </header>
     <main class="source-workspace">
+      <div class="page-head"><div><h1>Country scores</h1><p>Each score combines recent public reports with a slow-moving country baseline. Confidence and completeness are shown separately.</p></div></div>
       <section class="source-controls">
         <div class="source-status-row">
-          <div id="countriesStatus" class="source-load-status" role="status" aria-live="polite"><strong>Loading country scores...</strong></div>
+          <div id="countriesStatus" class="source-load-status" role="status" aria-live="polite"><strong>Loading country scores…</strong></div>
           <button id="countriesRefresh" type="button">Refresh</button>
         </div>
+        <div class="source-control-row">
+          <label for="countrySearch">Search</label>
+          <input id="countrySearch" type="search" placeholder="Ukraine, Europe, high…" />
+        </div>
+        <details id="countryFilters" class="filter-disclosure" open><summary>Filters</summary>
         <div class="source-filter-grid">
-          <label for="countrySearch">Search<input id="countrySearch" type="search" placeholder="Ukraine, Europe, high..." /></label>
           <label for="countrySort">Sort<select id="countrySort"></select></label>
           <label for="countryRegion">Region<select id="countryRegion"></select></label>
           <label for="countryLevel">Level<select id="countryLevel"></select></label>
           <label for="confidenceFilter">Confidence<select id="confidenceFilter"><option value="">Any</option><option value="70">70%+</option><option value="50">50%+</option></select></label>
           <label for="completenessFilter">Completeness<select id="completenessFilter"><option value="">Any</option><option value="70">70%+</option><option value="50">50%+</option></select></label>
         </div>
+        </details>
       </section>
       <section id="countryDistribution" class="source-summary"></section>
       <section class="source-layout country-layout">

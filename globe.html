@@ -19,15 +19,17 @@
   <link rel="stylesheet" href="source-explorer.css" />
   <link rel="stylesheet" href="dashboard-v2.css" />
   <link rel="stylesheet" href="map-workspace.css" />
+  <link rel="stylesheet" href="chart-tokens.css" />
+  <link rel="stylesheet" href="chart.css" />
 </head>
 <body class="map-workspace">
   <div class="app-shell">
     <header class="topbar" role="banner">
-      <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13"/><ellipse cx="16" cy="16" rx="6" ry="13"/><path d="M3 16h26M6 8h20M6 24h20"/></svg></span><div><strong>Live Map</strong><span>Explore. Trace. Understand.</span></div></div>
+      <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13"/><ellipse cx="16" cy="16" rx="6" ry="13"/><path d="M3 16h26M6 8h20M6 24h20"/></svg></span><div><strong>Live Map</strong><span>Public reports, linked to their sources</span></div></div>
       <nav id="dashboardNav" class="dashboard-nav consumer-nav" aria-label="Main navigation"><button class="dashboard-tab active" type="button">Watch</button><button class="dashboard-tab" type="button">Passages</button><button class="dashboard-tab" type="button">Open reports</button></nav>
       <section class="global-search search-wrap" aria-label="Global search">
         <label for="globalSearch">Search</label>
-        <input id="globalSearch" type="search" autocomplete="off" placeholder="Country, city, airport, event..." />
+        <input id="globalSearch" type="search" autocomplete="off" placeholder="Search places and reports…" />
         <div id="globalSearchResults" class="global-search-results" hidden></div>
       </section>
       <div class="topbar-actions">
@@ -37,7 +39,7 @@
             <label class="mode-toggle"><span>Advanced tools</span><input id="advancedMode" type="checkbox" /></label>
             <a id="sourcesLink" href="/sources" data-sources-link>Source Explorer</a>
             <a href="/diagnostics">Diagnostics</a>
-            <a href="/countries">Country context</a>
+            <a href="/countries">Country scores</a>
             <button type="button" data-open-drawer="left">Advanced filters</button>
             <button type="button" data-open-drawer="right">Saved views</button>
             <label for="baseMap">2D basemap</label><select id="baseMap"><option value="satellite">Satellite</option><option value="dark">Dark map</option><option value="street" selected>Street map</option><option value="local-earth">Offline dark geography</option></select>
@@ -66,7 +68,7 @@
       <section data-view-section="presets"><div class="section-title"><span>Presets</span></div><div id="presetList" class="preset-list"></div></section>
       <section id="chokepointControls" class="chokepoint-controls" data-view-section="chokepoints" hidden>
         <div class="section-title"><span>Chokepoint filters</span><button id="resetChokepointFilters" type="button">Reset</button></div>
-        <label for="chokepointSearch">Search</label><input id="chokepointSearch" type="search" placeholder="Strait, canal, region..." />
+        <label for="chokepointSearch">Search</label><input id="chokepointSearch" type="search" placeholder="Strait, canal, region…" />
         <div class="chokepoint-filter-grid"><select id="chokepointRegion" aria-label="Chokepoint region"></select><select id="chokepointType" aria-label="Chokepoint type"></select><select id="chokepointStatus" aria-label="Chokepoint status"></select><select id="chokepointDomain" aria-label="Chokepoint event domain"></select><select id="chokepointSort" aria-label="Chokepoint sorting"></select></div>
         <label id="scenarioStageLabel" for="scenarioStage" hidden>Synthetic scenario step (fixture only)</label>
         <select id="scenarioStage" hidden aria-label="Synthetic scenario step"></select>
@@ -88,7 +90,7 @@
       <section class="stats-grid" data-view-section="stats"><article><span>Visible</span><strong id="visibleCount">0</strong></article><article><span>High / critical</span><strong id="highCount">0</strong></article><article><span>Countries</span><strong id="countryCount">0</strong></article><article><span>Last refresh</span><strong id="updatedAt">-</strong></article></section>
       <section id="sourcesStatusPanel" class="sources-status-panel" data-view-section="sources"></section>
       <section class="method-note" data-view-section="method-note"><strong>Source-aware reporting</strong><p>Public-information awareness only. Verify with original sources; data may be delayed, incomplete, or unavailable and is not emergency or professional advice.</p></section>
-      <section class="method-note source-note" data-view-section="method-note"><strong>Source health</strong><p id="sourceHealth">Waiting for live feeds...</p></section>
+      <section class="method-note source-note" data-view-section="method-note"><strong>Source health</strong><p id="sourceHealth">Waiting for live feeds…</p></section>
       <section id="publicDataStatus" class="method-note" data-view-section="method-note"></section>
       <section id="countrySummaryPanel" class="country-summary-panel" data-view-section="country"></section>
       <section id="dashboardPanel" class="dashboard-panel" data-view-section="dashboard"></section>
@@ -101,10 +103,10 @@
       <div id="globeStage" class="globe-stage" hidden></div>
       <div class="map-toolbar">
         <button id="fitWorld">World</button><button id="fitEvents">Fit events</button>
-        <button id="refreshNow">Reload saved data</button>
+        <button id="refreshNow">Refresh reports</button>
       </div>
-      <div class="map-context"><span class="context-kicker">SPATIAL VIEW</span><strong id="mapScale">World</strong><span id="mapCount">Loading observations</span><span id="watchModeChip" class="watch-mode-chip" data-watch-mode="historical">Historical public extract</span><details><summary>Coverage & map selection</summary><p id="attentionNote"></p><p>Unreported areas are coverage gaps, not an indication of safety.</p></details></div>
-      <details class="map-legend-disclosure"><summary>Map key</summary><div id="mapLegend" class="legend"></div><p>Dots show report locations. Zoom reveals more eligible reports. Selection has a ring and an inspector.</p></details>
+      <div class="map-context"><span class="context-kicker">SPATIAL VIEW</span><strong id="mapScale">World</strong><span id="mapCount">Loading reports…</span><span id="watchModeChip" class="watch-mode-chip" data-watch-mode="historical">Historical public extract</span><details><summary>What this map leaves out</summary><p id="attentionNote"></p><p>Unreported areas are coverage gaps, not an indication of safety.</p></details></div>
+      <details class="map-legend-disclosure"><summary>Map key</summary><div id="mapLegend" class="legend"></div><p>Each dot is a report location. Zoom in to see more. The selected report has a ring.</p></details>
       <details id="lensGuide" class="lens-guide" hidden><summary id="lensGuideTitle">Layer guide</summary><div id="lensGuideContent"></div></details>
       <div id="mapHealth" class="map-health" hidden></div>
       <div id="watchDockHost"></div>
@@ -131,14 +133,14 @@
             <select id="sortOrder" aria-label="Sort events"></select>
             <select id="cardMode" aria-label="Card density"><option value="compact">Compact</option><option value="expanded">Expanded</option></select>
           </div>
-          <details class="feed-options"><summary>Organize & save view</summary><div class="feed-controls-secondary">
+          <details class="feed-options"><summary>Organize</summary><div class="feed-controls-secondary">
             <select id="groupBy" aria-label="Group events"></select>
             <select id="savedViews" aria-label="Saved views"></select>
             <button id="saveView" type="button">Save view</button>
           </div></details>
         </div>
       </div>
-      <section class="search-wrap event-search"><label for="search">Search events, countries, or sources</label><input id="search" type="search" placeholder="Japan, M6.2, wildfire..." /></section>
+      <section class="search-wrap event-search"><label for="search">Search events, countries, or sources</label><input id="search" type="search" placeholder="Japan, M6.2, wildfire…" /></section>
       <section id="watchOperator" class="watch-operator" aria-label="Find reports and track source revisions"></section>
       <details id="contactsPanel" class="contacts-panel"><summary>Aircraft & vessel contacts</summary><section id="contactDetail" aria-label="Selected contact" hidden></section><div id="contactRoster"></div></details>
       <div id="eventDetailDrawer" class="event-detail-drawer-host" hidden></div>
@@ -147,8 +149,8 @@
     </aside>
   </div>
 
-  <dialog id="eventDialog"><button id="closeDialog" class="dialog-close" aria-label="Close">x</button><div id="dialogContent"></div></dialog>
-  <dialog id="methodologyDialog"><button id="closeMethodology" class="dialog-close" aria-label="Close">x</button><div id="methodologyContent"></div></dialog>
+  <dialog id="eventDialog"><button id="closeDialog" class="dialog-close">Close</button><div id="dialogContent"></div></dialog>
+  <dialog id="methodologyDialog"><button id="closeMethodology" class="dialog-close">Close</button><div id="methodologyContent"></div></dialog>
   <dialog id="onboardingDialog" class="onboarding-dialog">
     <div id="onboardingContent">
       <p class="dialog-kicker">Welcome</p>

@@ -86,19 +86,19 @@ function classifyFetchError(error) {
 function safeFailureMessage(kind) {
   switch (kind) {
     case "browser-offline":
-      return "Browser appears offline. Event data temporarily unavailable.";
+      return "Your browser appears to be offline.";
     case "timeout":
-      return "Event data request timed out. Existing map and filters are still usable.";
+      return "The report service took too long to respond.";
     case "non-json-response":
-      return "Event API returned a non-JSON response.";
+      return "The report service sent an unreadable response.";
     case "event-api-unavailable":
-      return "Event API unavailable. Event data temporarily unavailable.";
+      return "The report service is unavailable.";
     case "dns-network-failure":
-      return "DNS or network request failed. Event data temporarily unavailable.";
+      return "The network request failed.";
     case "http-error":
-      return "Event API returned an HTTP error.";
+      return "The report service returned an error.";
     default:
-      return "Event data temporarily unavailable.";
+      return "The report service could not be reached.";
   }
 }
 
@@ -157,10 +157,22 @@ function renderList(els, events) {
     return;
   }
   if (!events.length) {
+    if (!state.events.length && ["idle", "loading"].includes(state.apiStatus)) {
+      updateFeedMarkup(els.eventList, '<div class="chart-loading" role="status" aria-label="Loading reports"><span></span><span></span><span></span><span></span></div>');
+      return;
+    }
+    if (!state.events.length && state.apiFailure && state.apiFailure.kind !== "offline-preview") {
+      updateFeedMarkup(els.eventList, '<div class="chart-message" data-tone="error"><strong>Reports could not be loaded</strong><p>The map and filters still work. Live Map will keep trying, or you can retry now.</p><button type="button" data-provider-retry>Retry now</button></div>');
+      return;
+    }
+    if (!state.events.length) {
+      updateFeedMarkup(els.eventList, '<div class="chart-message"><strong>No reports available</strong><p>Live Map has no reports for this time range. Some sources may have failed or may not be set up yet, so an empty list does not mean nothing happened.</p><a class="chart-btn" href="/diagnostics">Check source status</a></div>');
+      return;
+    }
     const filters = dashboardFilters();
     const selectedDomain = filters.domains.size === 1 ? [...filters.domains][0] : null;
-    const message = selectedDomain ? emptyDomainMessage(selectedDomain, state.events, true, state.sourceStatus) : "No events match the selected filters and time range.";
-    updateFeedMarkup(els.eventList, `<div class="empty">${escapeHtml(message)}</div>`);
+    const message = selectedDomain ? emptyDomainMessage(selectedDomain, state.events, true, state.sourceStatus) : "Try a longer time window, or clear the filters.";
+    updateFeedMarkup(els.eventList, `<div class="chart-message"><strong>No reports match these filters</strong><p>${escapeHtml(message)}</p><button type="button" class="chart-btn" data-watch-reset>Clear filters</button></div>`);
     return;
   }
   const pageCount = Math.ceil(events.length / 60);
@@ -169,7 +181,7 @@ function renderList(els, events) {
   const markup = groups.map((group) => {
     const collapsed = state.collapsedGroups.has(group.id);
     const warning = group.stats.providerWarning ? '<span class="group-warning">provider warning</span>' : "";
-    return `<section class="event-group"><button class="group-header" type="button" data-group-toggle="${escapeHtml(group.id)}"><span>${collapsed ? "+" : "-"}</span><strong>${escapeHtml(group.label)}</strong><small>${group.stats.total} events / ${group.stats.highCount} high / ${group.stats.newCount} new / updated ${group.stats.newestUpdate}</small>${warning}</button><div class="group-body" ${collapsed ? "hidden" : ""}>${group.events.slice(0, 80).map(renderEventCard).join("")}${group.events.length > 80 ? `<div class="empty">${group.events.length - 80} more events hidden for performance.</div>` : ""}</div></section>`;
+    return `<section class="event-group"><button class="group-header" type="button" aria-expanded="${collapsed ? "false" : "true"}" data-group-toggle="${escapeHtml(group.id)}"><span>${collapsed ? "+" : "-"}</span><strong>${escapeHtml(group.label)}</strong><small>${group.stats.total} reports, ${group.stats.highCount} high, ${group.stats.newCount} new, updated ${group.stats.newestUpdate}</small>${warning}</button><div class="group-body" ${collapsed ? "hidden" : ""}>${group.events.slice(0, 80).map(renderEventCard).join("")}${group.events.length > 80 ? `<div class="empty">${group.events.length - 80} more events hidden for performance.</div>` : ""}</div></section>`;
   }).join("");
   updateFeedMarkup(els.eventList, markup + `<div class="list-pagination"><button data-list-page="prev" ${state.listPage===0?'disabled':''}>Previous</button><span>${state.listPage+1} / ${pageCount} · ${events.length} records</span><button data-list-page="next" ${state.listPage===pageCount-1?'disabled':''}>Next</button></div>`);
 }
@@ -217,9 +229,9 @@ function renderFeedError(element) {
     return;
   }
   const cached = state.lastLoaded ? `Last successful refresh ${new Date(state.lastLoaded).toLocaleString()}.` : "No cached refresh is available yet.";
-  const retry = state.nextRetryAt ? `Next automatic retry ${relativeTime(state.nextRetryAt)}.` : "Automatic retry is paused.";
+  const retry = state.nextRetryAt ? `Retrying automatically in about ${Math.max(1, Math.round((state.nextRetryAt - Date.now()) / 1000))} seconds.` : "Automatic retry is paused.";
   element.hidden = false;
-  element.innerHTML = `<strong>Event data temporarily unavailable</strong><p>${escapeHtml(state.apiFailure.message)} ${escapeHtml(cached)} ${escapeHtml(retry)}</p><button type="button" data-provider-retry>Retry now</button>`;
+  element.innerHTML = `<strong>Reports could not be loaded</strong><p>${escapeHtml(state.apiFailure.message)} ${escapeHtml(cached)} ${escapeHtml(retry)}</p><button type="button" data-provider-retry>Retry now</button>`;
 }
 
 function updateCountDebug(events) {
@@ -739,7 +751,7 @@ export function bootLiveMap() {
     const presentation = selectMapEvents(events,{zoom:viewport.zoom,bbox:viewport.bbox,selectedId:state.selectedEventId});
     state.visibleMapEvents = presentation.displayed.length;
     document.getElementById('mapScale').textContent = presentation.band;
-    document.getElementById('mapCount').textContent = `${presentation.displayed.length} map records · ${presentation.eligible} geographically eligible`;
+    document.getElementById('mapCount').textContent = !state.events.length && ['idle', 'loading'].includes(state.apiStatus) ? 'Loading reports…' : !state.events.length && state.apiFailure ? 'No reports loaded' : `Showing ${presentation.displayed.length} of ${presentation.eligible} mapped reports`;
     renderWorkspaceSummary(document.getElementById('workspaceSummary'), { state, events, band: presentation.band });
     document.getElementById('attentionNote').textContent = `${presentation.hiddenByScale} hidden until closer zoom; ${presentation.hiddenByBudget} hidden by the ${presentation.budget}-marker limit. ${events.length} records available in the list. ${presentation.explanation}`;
     const markerStats = renderMarkers(mapController.markerLayer, presentation.displayed, (event) => {
@@ -850,10 +862,10 @@ export function bootLiveMap() {
     applyDashboardTitle(state.dashboard, els.dashboardEyebrow, els.dashboardTitle);
     if (state.activeArea === "latest-intelligence") {
       els.dashboardEyebrow.textContent = "OPEN WEB";
-      els.dashboardTitle.textContent = "Latest Intelligence";
+      els.dashboardTitle.textContent = "Open reports";
     } else if (state.activeArea === "chokepoints") {
       els.dashboardEyebrow.textContent = "STRATEGIC";
-      els.dashboardTitle.textContent = "Chokepoints";
+      els.dashboardTitle.textContent = "Passages";
     } else if (state.activeArea === "feed") {
       els.dashboardEyebrow.textContent = "EVENTS";
       els.dashboardTitle.textContent = state.localPreview ? "Current public reports" : "Event feed";
@@ -908,6 +920,7 @@ export function bootLiveMap() {
       });
     }
     const showWorkbench = chokepointActive && investigation.open;
+    if (showWorkbench) els.dashboardTitle.textContent = 'Evidence ledger';
     if (showWorkbench && isAviationCase(investigation.caseObject)) {els.dashboardTitle.textContent='Aviation case review';els.dashboardEyebrow.textContent='DATED LOCAL REPORTING';}
     els.chokepointDetailDrawer.hidden = !showWorkbench;
     updateFeedMarkup(els.chokepointDetailDrawer, showWorkbench
@@ -1130,8 +1143,8 @@ export function bootLiveMap() {
       if (id === "sources") return `<a class="dashboard-tab" href="/sources" data-sources-link>${label}</a>`;
       if (id === "diagnostics") return `<a class="dashboard-tab" href="/diagnostics">${label}</a>`;
       if (id === "countries") return `<a class="dashboard-tab ${state.activeArea === id ? "active" : ""}" href="/countries">${label}</a>`;
-      if (id === "investigate") return `<button class="dashboard-tab ${investigation.open ? "active" : ""}" data-investigate-nav type="button">${label}</button>`;
-      const active = state.activeArea === id || (id === 'explore' && state.activeArea === 'feed');
+      if (id === "investigate") return `<button class="dashboard-tab ${investigation.open ? "active" : ""}" aria-pressed="${Boolean(investigation.open)}" data-investigate-nav type="button">${label}</button>`;
+      const active = !investigation.open && (state.activeArea === id || (id === 'explore' && state.activeArea === 'feed'));
       return `<button class="dashboard-tab ${active ? "active" : ""}" aria-pressed="${active}" data-area="${id}" type="button">${label}</button>`;
     }).join("");
   }
@@ -1267,8 +1280,8 @@ export function bootLiveMap() {
       state.nextRetryAt = Date.now() + CONFIG.refreshSeconds * 1000;
       const isPartial = result.systemStatus === "partial-data" || result.mode === "partial-netlify-function" || state.errors.length > 0;
       const noData = result.systemStatus === "no-current-provider-data" || !state.events.length;
-      els.systemStatus.classList.toggle("warn", isPartial);
-      els.systemStatus.innerHTML = `<i></i> ${result.localPreview ? (result.localPreview.cacheOnly ? 'Saved public reads' : 'Local public data') : noData ? "No provider data" : isPartial ? "Partial data" : "Operational"}`;
+      els.systemStatus.classList.toggle("warn", isPartial || noData);
+      els.systemStatus.innerHTML = `<i></i> ${result.localPreview ? (result.localPreview.cacheOnly ? 'Saved public reads' : 'Local public data') : noData ? "No provider data" : isPartial ? "Partial data" : "Feed online"}`;
       renderSourceHealth(els.sourceHealth, result, state.errors);
       render();
       scheduleNextLoad(CONFIG.refreshSeconds * 1000);
