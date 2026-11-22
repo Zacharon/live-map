@@ -95,3 +95,7 @@ Netlify helper responses use:
 ## Nullable event/source metadata (October 12 repair candidate)
 
 Canonical source occurrence/publication/update/verification clocks are ISO strings or null, and legacy/UI clocks are epoch milliseconds or null. Ingestion/generated clocks describe processing, never source observation. Confidence is numeric (including legitimate zero) or null. Unknown source freshness is null. Source/provider URLs are absolute HTTP(S) without embedded credentials or null; invalid supplied ingestion URLs produce errors and raw imported UI links remain unavailable. Existing route names/envelopes are preserved. See [repair capability and editing guide](AUDIT_REPAIR_2026-10-12.md).
+
+## NWS geography in this local candidate
+
+NWS alerts without usable supported Point, Polygon or MultiPolygon geometry remain in the existing event response with null coordinates, `geographic: false`, `mapDisplayStatus: not-mapped`, and an explanatory reason. Coverage labels do not establish a pin. Valid points and the existing representative polygon calculation are retained. Routes and response shape are unchanged; see [local rationale and evidence limits](NWS_GEOMETRY_LOCAL.md).

@@ -170,3 +170,7 @@ Extended the reviewed maritime/selection candidate into a running local Reports 
 # 2026-10-12 — bounded repository audit repair candidate
 
 Separate branch `fix/audit-20261012-live-map` repairs source URL safety, nullable zero/unknown confidence and source clocks with ingestion kept separate, obsolete USGS documentation references, and enforceable local/CI regressions. CodeQL's unchanged supported job now fails on analysis errors. Existing main/canonical installations and release/hosted/provider gates remain separate. See [candidate editing guide](AUDIT_REPAIR_2026-10-12.md). Independent review and hosted CI are tracked in the external repair receipt, not assumed from local tests.
+
+## 2026-11-18 — NWS geometry local candidate
+
+- Replaced the invented US-center fallback with an inspectable non-geographic NWS alert when provider geometry is missing or invalid. Preserved valid point/polygon behavior and source clocks. This is an uncommitted isolated candidate; independent review and browser/hosted acceptance remain pending. See [rationale and scope](NWS_GEOMETRY_LOCAL.md).

@@ -966,7 +966,7 @@ test("NWS severity and polygon normalization map to weather taxonomy", () => {
   assert.equal(result.event.geometry.type, "Polygon");
 });
 
-test("NWS alerts without geometry use labeled coverage fallback", () => {
+test("NWS alerts without geometry remain non-geographic", () => {
   const result = normalizeNwsAlert({
     properties: {
       id: "no-geometry",
@@ -981,7 +981,11 @@ test("NWS alerts without geometry use labeled coverage fallback", () => {
   }, new Date("2026-06-08T00:30:00Z"));
   assert.ok(result.event);
   assert.equal(result.event.domain, "weather");
-  assert.match(result.event.metadata.coordinateMethod, /fallback/);
+  assert.equal(result.event.latitude, null);
+  assert.equal(result.event.longitude, null);
+  assert.equal(result.event.geographic, false);
+  assert.equal(result.event.mapDisplayStatus, "not-mapped");
+  assert.match(result.event.metadata.coordinateMethod, /geometry/);
 });
 
 test("CISA KEV normalization creates safe non-geographic cyber events", () => {
@@ -2106,3 +2110,5 @@ import './usability-dark-globe-tests.mjs';
 import './semantic-globe-weather-tests.mjs';
 import './runtime-acceptance-labels-tests.mjs';
 import './globe-style-tests.mjs';
+
+import './nws-geography-tests.mjs';

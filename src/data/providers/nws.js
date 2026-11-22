@@ -2,7 +2,7 @@ import { createNormalizedEvent } from "../../events/normalized-event.js";
 
 export const NWS_ACTIVE_ALERTS_URL = "https://api.weather.gov/alerts/active";
 
-const FALLBACK_US_POINT = { latitude: 39.8283, longitude: -98.5795, method: "United States coverage fallback; alert has no provider geometry" };
+const MISSING_NWS_POINT = { latitude: null, longitude: null, method: "No usable NWS provider geometry supplied" };
 
 const SEVERITY_SCORE = {
   Extreme: 95,
@@ -24,25 +24,50 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function collectCoordinatePairs(value, output = []) {
-  if (!Array.isArray(value)) return output;
-  if (
-    value.length >= 2 &&
-    typeof value[0] === "number" &&
-    typeof value[1] === "number" &&
-    Math.abs(value[0]) <= 180 &&
-    Math.abs(value[1]) <= 90
-  ) {
-    output.push(value);
-    return output;
+function validPosition(value) {
+  return Array.isArray(value) && (value.length === 2 || value.length === 3) &&
+    value.every((part) => typeof part === "number" && Number.isFinite(part)) &&
+    typeof value[0] === "number" && Number.isFinite(value[0]) && Math.abs(value[0]) <= 180 &&
+    typeof value[1] === "number" && Number.isFinite(value[1]) && Math.abs(value[1]) <= 90;
+}
+
+function geometryPairs(geometry) {
+  const coordinates = geometry?.coordinates;
+  if (geometry?.type === "Point") return validPosition(coordinates) ? [coordinates] : null;
+  const polygons = geometry?.type === "Polygon" ? [coordinates] : geometry?.type === "MultiPolygon" ? coordinates : null;
+  if (!Array.isArray(polygons) || !polygons.length) return null;
+  const pairs = [];
+  for (const polygon of polygons) {
+    if (!Array.isArray(polygon) || !polygon.length) return null;
+    for (const ring of polygon) {
+      if (!Array.isArray(ring) || ring.length < 4 || !ring.every(validPosition)) return null;
+      const first = ring[0];
+      const last = ring[ring.length - 1];
+      if (!ring.every((position) => position.length === first.length) ||
+          !first.every((part, index) => part === last[index])) return null;
+      const vertices = ring.slice(0, -1);
+      const distinct = [];
+      for (const position of vertices) {
+        if (!distinct.some((other) => other[0] === position[0] && other[1] === position[1])) distinct.push(position);
+      }
+      if (distinct.length < 3) return null;
+      // Planar signed area is a minimal degeneracy check, not topology validation.
+      let twiceArea = 0;
+      for (let i = 0; i < ring.length - 1; i++) {
+        const a = ring[i];
+        const b = ring[i + 1];
+        twiceArea += (a[0] - first[0]) * (b[1] - first[1]) - (b[0] - first[0]) * (a[1] - first[1]);
+      }
+      if (twiceArea === 0) return null;
+      pairs.push(...ring);
+    }
   }
-  value.forEach((item) => collectCoordinatePairs(item, output));
-  return output;
+  return pairs;
 }
 
 export function representativeNwsPoint(geometry) {
-  const pairs = collectCoordinatePairs(geometry?.coordinates || []);
-  if (!pairs.length) return FALLBACK_US_POINT;
+  const pairs = geometryPairs(geometry);
+  if (!pairs?.length) return MISSING_NWS_POINT;
   const sum = pairs.reduce(
     (acc, pair) => {
       acc.longitude += pair[0];
@@ -107,6 +132,7 @@ export function normalizeNwsAlert(feature, now = new Date()) {
     description: [description, instruction ? `Recommended action: ${instruction}` : ""].filter(Boolean).join(" "),
     latitude: point.latitude,
     longitude: point.longitude,
+    nonGeographicReason: point.latitude === null ? "NWS alert has no usable provider geometry." : null,
     countryCode: "US",
     countryName: "United States",
     region: properties.areaDesc || null,
